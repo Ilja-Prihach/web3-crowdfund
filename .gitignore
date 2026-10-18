@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Secrets: never commit private keys, API keys, or RPC URLs
+.env
+.env.*
+!.env.example
+
+# Smart-contract build output
+artifacts/
+cache/
+coverage/
+
+# Frontend build output
+.next/
+dist/
+
+# OS and editor files
+.DS_Store
+.idea/
