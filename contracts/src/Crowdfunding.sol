@@ -33,4 +33,19 @@ contract Crowdfunding {
 
         campaign.totalRaised += msg.value;
     }
+
+    function withdrawFunds(uint256 campaignId) public {
+        Campaign storage campaign = campaigns[campaignId];
+
+        require(campaign.creator != address(0), "Campaign does not exist");
+        require(msg.sender == campaign.creator, "Only creator can withdraw");
+        require(block.timestamp >= campaign.deadline, "Campaign is still active");
+        require(campaign.totalRaised >= campaign.goal, "Goal was not reached");
+        require(!campaign.fundsWithdrawn, "Funds already withdrawn");
+
+        campaign.fundsWithdrawn = true;
+
+        (bool success,) = payable(campaign.creator).call{value: campaign.totalRaised}("");
+        require(success, "Transfer failed");
+    }
 }

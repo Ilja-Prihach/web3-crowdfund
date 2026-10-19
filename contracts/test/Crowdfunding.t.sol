@@ -84,4 +84,113 @@ contract CrowdfundingTest is Test {
         vm.expectRevert();
         crowdfunding.donate{value: 1 ether}(0);
     }
+
+    function testCreatorCanWithdrawAfterSuccessfulCampaign() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, goal);
+        vm.prank(donor);
+        crowdfunding.donate{value: goal}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        uint256 creatorBalanceBefore = creator.balance;
+
+        vm.prank(creator);
+        crowdfunding.withdrawFunds(0);
+
+        (,,,, bool fundsWithdrawn) = crowdfunding.campaigns(0);
+
+        assertEq(creator.balance, creatorBalanceBefore + goal);
+        assertEq(address(crowdfunding).balance, 0);
+        assertTrue(fundsWithdrawn);
+    }
+
+    function testOnlyCreatorCanWithdraw() public {
+        address creator = makeAddr("creator");
+        address attacker = makeAddr("attacker");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, goal);
+        vm.prank(donor);
+        crowdfunding.donate{value: goal}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        vm.prank(attacker);
+        vm.expectRevert();
+        crowdfunding.withdrawFunds(0);
+    }
+
+    function testCreatorCannotWithdrawBeforeDeadline() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, goal);
+        vm.prank(donor);
+        crowdfunding.donate{value: goal}(0);
+
+        vm.prank(creator);
+        vm.expectRevert();
+        crowdfunding.withdrawFunds(0);
+    }
+
+    function testCreatorCannotWithdrawWhenGoalNotReached() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+        uint256 donation = 0.5 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, donation);
+        vm.prank(donor);
+        crowdfunding.donate{value: donation}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        vm.prank(creator);
+        vm.expectRevert();
+        crowdfunding.withdrawFunds(0);
+    }
+
+    function testCreatorCannotWithdrawTwice() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, goal);
+        vm.prank(donor);
+        crowdfunding.donate{value: goal}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        vm.prank(creator);
+        crowdfunding.withdrawFunds(0);
+
+        vm.prank(creator);
+        vm.expectRevert();
+        crowdfunding.withdrawFunds(0);
+    }
 }
