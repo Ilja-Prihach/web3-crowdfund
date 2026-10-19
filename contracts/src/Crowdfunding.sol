@@ -11,6 +11,7 @@ contract Crowdfunding {
     }
 
     mapping(uint256 => Campaign) public campaigns;
+    mapping(uint256 => mapping(address => uint256)) public contributions;
     uint256 public nextCampaignId;
 
     function createCampaign(uint256 goal, uint256 durationInDays) public {
@@ -32,6 +33,7 @@ contract Crowdfunding {
         require(block.timestamp < campaign.deadline, "Campaign has ended");
 
         campaign.totalRaised += msg.value;
+        contributions[campaignId][msg.sender] += msg.value;
     }
 
     function withdrawFunds(uint256 campaignId) public {
@@ -47,5 +49,20 @@ contract Crowdfunding {
 
         (bool success,) = payable(campaign.creator).call{value: campaign.totalRaised}("");
         require(success, "Transfer failed");
+    }
+
+    function refund(uint256 campaignId) public {
+        Campaign storage campaign = campaigns[campaignId];
+        uint256 contribution = contributions[campaignId][msg.sender];
+
+        require(campaign.creator != address(0), "Campaign does not exist");
+        require(block.timestamp >= campaign.deadline, "Campaign is still active");
+        require(campaign.totalRaised < campaign.goal, "Goal was reached");
+        require(contribution > 0, "No contribution to refund");
+
+        contributions[campaignId][msg.sender] = 0;
+
+        (bool success,) = payable(msg.sender).call{value: contribution}("");
+        require(success, "Refund failed");
     }
 }

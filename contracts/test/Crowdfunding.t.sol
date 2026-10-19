@@ -53,6 +53,7 @@ contract CrowdfundingTest is Test {
 
         assertEq(totalRaised, donation);
         assertEq(address(crowdfunding).balance, donation);
+        assertEq(crowdfunding.contributions(0, donor), donation);
     }
 
     function testDonateRevertsWithZeroValue() public {
@@ -192,5 +193,93 @@ contract CrowdfundingTest is Test {
         vm.prank(creator);
         vm.expectRevert();
         crowdfunding.withdrawFunds(0);
+    }
+
+    function testDonorCanRefundAfterFailedCampaign() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+        uint256 donation = 0.5 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, donation);
+        vm.prank(donor);
+        crowdfunding.donate{value: donation}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        uint256 donorBalanceBefore = donor.balance;
+
+        vm.prank(donor);
+        crowdfunding.refund(0);
+
+        assertEq(donor.balance, donorBalanceBefore + donation);
+        assertEq(address(crowdfunding).balance, 0);
+        assertEq(crowdfunding.contributions(0, donor), 0);
+    }
+
+    function testDonorCannotRefundBeforeDeadline() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+        uint256 donation = 0.5 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, donation);
+        vm.prank(donor);
+        crowdfunding.donate{value: donation}(0);
+
+        vm.prank(donor);
+        vm.expectRevert();
+        crowdfunding.refund(0);
+    }
+
+    function testDonorCannotRefundSuccessfulCampaign() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, goal);
+        vm.prank(donor);
+        crowdfunding.donate{value: goal}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        vm.prank(donor);
+        vm.expectRevert();
+        crowdfunding.refund(0);
+    }
+
+    function testDonorCannotRefundTwice() public {
+        address creator = makeAddr("creator");
+        address donor = makeAddr("donor");
+        uint256 goal = 1 ether;
+        uint256 donation = 0.5 ether;
+
+        vm.prank(creator);
+        crowdfunding.createCampaign(goal, 7);
+
+        vm.deal(donor, donation);
+        vm.prank(donor);
+        crowdfunding.donate{value: donation}(0);
+
+        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        vm.prank(donor);
+        crowdfunding.refund(0);
+
+        vm.prank(donor);
+        vm.expectRevert();
+        crowdfunding.refund(0);
     }
 }
