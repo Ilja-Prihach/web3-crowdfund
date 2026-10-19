@@ -19,13 +19,18 @@ contract Crowdfunding {
         uint256 campaignId = nextCampaignId;
         address creator = msg.sender;
         uint256 deadline = block.timestamp + durationInDays * 1 days;
-        campaigns[campaignId] = Campaign({
-            creator: creator,
-            goal: goal,
-            deadline: deadline,
-            totalRaised: 0,
-            fundsWithdrawn: false
-        });
+        campaigns[campaignId] =
+            Campaign({creator: creator, goal: goal, deadline: deadline, totalRaised: 0, fundsWithdrawn: false});
         nextCampaignId += 1;
+    }
+
+    function donate(uint256 campaignId) public payable {
+        Campaign storage campaign = campaigns[campaignId];
+
+        require(campaign.creator != address(0), "Campaign does not exist");
+        require(msg.value > 0, "Donation must be greater than zero");
+        require(block.timestamp < campaign.deadline, "Campaign has ended");
+
+        campaign.totalRaised += msg.value;
     }
 }
