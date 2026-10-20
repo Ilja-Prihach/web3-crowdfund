@@ -31,11 +31,20 @@ contract CrowdfundingTest is Test {
         vm.expectEmit(true, true, false, true);
         emit CampaignCreated(0, address(this), goal, expectedDeadline);
 
-        crowdfunding.createCampaign(goal, durationInDays);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, durationInDays);
         assertEq(crowdfunding.nextCampaignId(), 1);
-        (address creator, uint256 storedGoal, uint256 deadline, uint256 totalRaised, bool fundsWithdrawn) =
-            crowdfunding.campaigns(0);
+        (
+            address creator,
+            string memory storedTitle,
+            string memory storedDescription,
+            uint256 storedGoal,
+            uint256 deadline,
+            uint256 totalRaised,
+            bool fundsWithdrawn
+        ) = crowdfunding.campaigns(0);
         assertEq(creator, address(this));
+        assertEq(storedTitle, "Test Campaign");
+        assertEq(storedDescription, "Test Description");
         assertEq(storedGoal, goal);
         assertEq(deadline, block.timestamp + durationInDays * 1 days);
         assertEq(totalRaised, 0);
@@ -44,16 +53,49 @@ contract CrowdfundingTest is Test {
 
     function testCreateCampaignRevertsWithZeroGoal() public {
         vm.expectRevert();
-        crowdfunding.createCampaign(0, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", 0, 7);
     }
 
     function testCreateCampaignRevertsWithZeroDuration() public {
         vm.expectRevert();
-        crowdfunding.createCampaign(1 ether, 0);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 0);
+    }
+
+    function testCreateCampaignRevertsWithEmptyTitle() public {
+        vm.expectRevert();
+        crowdfunding.createCampaign("", "Test Description", 1 ether, 7);
+    }
+
+    function testCreateCampaignRevertsWithEmptyDescription() public {
+        vm.expectRevert();
+        crowdfunding.createCampaign("Test Campaign", "", 1 ether, 7);
+    }
+
+    function testCreateCampaignRevertsWhenTitleIsTooLong() public {
+        string memory longTitle = new string(crowdfunding.MAX_TITLE_LENGTH() + 1);
+
+        vm.expectRevert();
+        crowdfunding.createCampaign(longTitle, "Test Description", 1 ether, 7);
+    }
+
+    function testCreateCampaignRevertsWhenDescriptionIsTooLong() public {
+        string memory longDescription = new string(crowdfunding.MAX_DESCRIPTION_LENGTH() + 1);
+
+        vm.expectRevert();
+        crowdfunding.createCampaign("Test Campaign", longDescription, 1 ether, 7);
+    }
+
+    function testCreateCampaignAcceptsMaximumMetadataLengths() public {
+        string memory maxTitle = new string(crowdfunding.MAX_TITLE_LENGTH());
+        string memory maxDescription = new string(crowdfunding.MAX_DESCRIPTION_LENGTH());
+
+        crowdfunding.createCampaign(maxTitle, maxDescription, 1 ether, 7);
+
+        assertEq(crowdfunding.nextCampaignId(), 1);
     }
 
     function testDonateIncreasesTotalRaised() public {
-        crowdfunding.createCampaign(1 ether, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
 
         address donor = makeAddr("donor");
         uint256 donation = 0.5 ether;
@@ -64,7 +106,7 @@ contract CrowdfundingTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, donation);
         assertEq(address(crowdfunding).balance, donation);
@@ -72,7 +114,7 @@ contract CrowdfundingTest is Test {
     }
 
     function testDonateRevertsWithZeroValue() public {
-        crowdfunding.createCampaign(1 ether, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
 
         vm.expectRevert();
         crowdfunding.donate(0);
@@ -88,9 +130,9 @@ contract CrowdfundingTest is Test {
     }
 
     function testDonateRevertsAfterDeadline() public {
-        crowdfunding.createCampaign(1 ether, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         address donor = makeAddr("donor");
@@ -107,13 +149,13 @@ contract CrowdfundingTest is Test {
         uint256 goal = 1 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         uint256 creatorBalanceBefore = creator.balance;
@@ -123,7 +165,7 @@ contract CrowdfundingTest is Test {
         vm.prank(creator);
         crowdfunding.withdrawFunds(0);
 
-        (,,,, bool fundsWithdrawn) = crowdfunding.campaigns(0);
+        (,,,,,, bool fundsWithdrawn) = crowdfunding.campaigns(0);
 
         assertEq(creator.balance, creatorBalanceBefore + goal);
         assertEq(address(crowdfunding).balance, 0);
@@ -137,13 +179,13 @@ contract CrowdfundingTest is Test {
         uint256 goal = 1 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(attacker);
@@ -157,7 +199,7 @@ contract CrowdfundingTest is Test {
         uint256 goal = 1 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, goal);
         vm.prank(donor);
@@ -175,13 +217,13 @@ contract CrowdfundingTest is Test {
         uint256 donation = 0.5 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, donation);
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(creator);
@@ -195,13 +237,13 @@ contract CrowdfundingTest is Test {
         uint256 goal = 1 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(creator);
@@ -219,13 +261,13 @@ contract CrowdfundingTest is Test {
         uint256 donation = 0.5 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, donation);
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         uint256 donorBalanceBefore = donor.balance;
@@ -247,7 +289,7 @@ contract CrowdfundingTest is Test {
         uint256 donation = 0.5 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, donation);
         vm.prank(donor);
@@ -264,13 +306,13 @@ contract CrowdfundingTest is Test {
         uint256 goal = 1 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(donor);
@@ -285,13 +327,13 @@ contract CrowdfundingTest is Test {
         uint256 donation = 0.5 ether;
 
         vm.prank(creator);
-        crowdfunding.createCampaign(goal, 7);
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
 
         vm.deal(donor, donation);
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(donor);
