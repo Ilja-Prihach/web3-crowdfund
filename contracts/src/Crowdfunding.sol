@@ -12,6 +12,25 @@ contract Crowdfunding {
         bool fundsWithdrawn;
     }
 
+    /// @dev Custom errors keep revert data compact and expose typed failures through the ABI.
+    error EmptyTitle();
+    error EmptyDescription();
+    error TitleTooLong();
+    error DescriptionTooLong();
+    error GoalMustBeGreaterThanZero();
+    error DurationMustBeGreaterThanZero();
+    error CampaignDoesNotExist();
+    error DonationMustBeGreaterThanZero();
+    error CampaignHasEnded();
+    error OnlyCreatorCanWithdraw();
+    error CampaignIsStillActive();
+    error GoalWasNotReached();
+    error FundsAlreadyWithdrawn();
+    error TransferFailed();
+    error GoalWasReached();
+    error NoContributionToRefund();
+    error RefundFailed();
+
     event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
 
     event DonationMade(uint256 indexed campaignId, address indexed donor, uint256 amount);
@@ -31,12 +50,12 @@ contract Crowdfunding {
     function createCampaign(string calldata title, string calldata description, uint256 goal, uint256 durationInDays)
         public
     {
-        require(bytes(title).length > 0, "Title cannot be empty");
-        require(bytes(description).length > 0, "Description cannot be empty");
-        require(bytes(title).length <= MAX_TITLE_LENGTH, "Title is too long");
-        require(bytes(description).length <= MAX_DESCRIPTION_LENGTH, "Description is too long");
-        require(goal > 0, "Goal must be greater than zero");
-        require(durationInDays > 0, "Duration must be greater than zero");
+        if (bytes(title).length == 0) revert EmptyTitle();
+        if (bytes(description).length == 0) revert EmptyDescription();
+        if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
+        if (bytes(description).length > MAX_DESCRIPTION_LENGTH) revert DescriptionTooLong();
+        if (goal == 0) revert GoalMustBeGreaterThanZero();
+        if (durationInDays == 0) revert DurationMustBeGreaterThanZero();
         uint256 campaignId = nextCampaignId;
         address creator = msg.sender;
         uint256 deadline = block.timestamp + durationInDays * 1 days;
@@ -57,9 +76,9 @@ contract Crowdfunding {
     function donate(uint256 campaignId) public payable {
         Campaign storage campaign = campaigns[campaignId];
 
-        require(campaign.creator != address(0), "Campaign does not exist");
-        require(msg.value > 0, "Donation must be greater than zero");
-        require(block.timestamp < campaign.deadline, "Campaign has ended");
+        if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (msg.value == 0) revert DonationMustBeGreaterThanZero();
+        if (block.timestamp >= campaign.deadline) revert CampaignHasEnded();
 
         campaign.totalRaised += msg.value;
         contributions[campaignId][msg.sender] += msg.value;
@@ -70,16 +89,16 @@ contract Crowdfunding {
     function withdrawFunds(uint256 campaignId) public {
         Campaign storage campaign = campaigns[campaignId];
 
-        require(campaign.creator != address(0), "Campaign does not exist");
-        require(msg.sender == campaign.creator, "Only creator can withdraw");
-        require(block.timestamp >= campaign.deadline, "Campaign is still active");
-        require(campaign.totalRaised >= campaign.goal, "Goal was not reached");
-        require(!campaign.fundsWithdrawn, "Funds already withdrawn");
+        if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (msg.sender != campaign.creator) revert OnlyCreatorCanWithdraw();
+        if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
+        if (campaign.totalRaised < campaign.goal) revert GoalWasNotReached();
+        if (campaign.fundsWithdrawn) revert FundsAlreadyWithdrawn();
 
         campaign.fundsWithdrawn = true;
 
         (bool success,) = payable(campaign.creator).call{value: campaign.totalRaised}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
 
         emit FundsWithdrawn(campaignId, campaign.creator, campaign.totalRaised);
     }
@@ -88,15 +107,15 @@ contract Crowdfunding {
         Campaign storage campaign = campaigns[campaignId];
         uint256 contribution = contributions[campaignId][msg.sender];
 
-        require(campaign.creator != address(0), "Campaign does not exist");
-        require(block.timestamp >= campaign.deadline, "Campaign is still active");
-        require(campaign.totalRaised < campaign.goal, "Goal was reached");
-        require(contribution > 0, "No contribution to refund");
+        if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
+        if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
+        if (contribution == 0) revert NoContributionToRefund();
 
         contributions[campaignId][msg.sender] = 0;
 
         (bool success,) = payable(msg.sender).call{value: contribution}("");
-        require(success, "Refund failed");
+        if (!success) revert RefundFailed();
 
         emit RefundClaimed(campaignId, msg.sender, contribution);
     }
