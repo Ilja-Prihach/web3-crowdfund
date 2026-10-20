@@ -10,6 +10,14 @@ contract Crowdfunding {
         bool fundsWithdrawn;
     }
 
+    event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
+
+    event DonationMade(uint256 indexed campaignId, address indexed donor, uint256 amount);
+
+    event FundsWithdrawn(uint256 indexed campaignId, address indexed creator, uint256 amount);
+
+    event RefundClaimed(uint256 indexed campaignId, address indexed donor, uint256 amount);
+
     mapping(uint256 => Campaign) public campaigns;
     mapping(uint256 => mapping(address => uint256)) public contributions;
     uint256 public nextCampaignId;
@@ -23,6 +31,8 @@ contract Crowdfunding {
         campaigns[campaignId] =
             Campaign({creator: creator, goal: goal, deadline: deadline, totalRaised: 0, fundsWithdrawn: false});
         nextCampaignId += 1;
+
+        emit CampaignCreated(campaignId, creator, goal, deadline);
     }
 
     function donate(uint256 campaignId) public payable {
@@ -34,6 +44,8 @@ contract Crowdfunding {
 
         campaign.totalRaised += msg.value;
         contributions[campaignId][msg.sender] += msg.value;
+
+        emit DonationMade(campaignId, msg.sender, msg.value);
     }
 
     function withdrawFunds(uint256 campaignId) public {
@@ -49,6 +61,8 @@ contract Crowdfunding {
 
         (bool success,) = payable(campaign.creator).call{value: campaign.totalRaised}("");
         require(success, "Transfer failed");
+
+        emit FundsWithdrawn(campaignId, campaign.creator, campaign.totalRaised);
     }
 
     function refund(uint256 campaignId) public {
@@ -64,5 +78,7 @@ contract Crowdfunding {
 
         (bool success,) = payable(msg.sender).call{value: contribution}("");
         require(success, "Refund failed");
+
+        emit RefundClaimed(campaignId, msg.sender, contribution);
     }
 }
