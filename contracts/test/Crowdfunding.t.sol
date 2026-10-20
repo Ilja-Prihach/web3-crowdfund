@@ -52,36 +52,36 @@ contract CrowdfundingTest is Test {
     }
 
     function testCreateCampaignRevertsWithZeroGoal() public {
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.GoalMustBeGreaterThanZero.selector);
         crowdfunding.createCampaign("Test Campaign", "Test Description", 0, 7);
     }
 
     function testCreateCampaignRevertsWithZeroDuration() public {
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.DurationMustBeGreaterThanZero.selector);
         crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 0);
     }
 
     function testCreateCampaignRevertsWithEmptyTitle() public {
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.EmptyTitle.selector);
         crowdfunding.createCampaign("", "Test Description", 1 ether, 7);
     }
 
     function testCreateCampaignRevertsWithEmptyDescription() public {
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.EmptyDescription.selector);
         crowdfunding.createCampaign("Test Campaign", "", 1 ether, 7);
     }
 
     function testCreateCampaignRevertsWhenTitleIsTooLong() public {
         string memory longTitle = new string(crowdfunding.MAX_TITLE_LENGTH() + 1);
 
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.TitleTooLong.selector);
         crowdfunding.createCampaign(longTitle, "Test Description", 1 ether, 7);
     }
 
     function testCreateCampaignRevertsWhenDescriptionIsTooLong() public {
         string memory longDescription = new string(crowdfunding.MAX_DESCRIPTION_LENGTH() + 1);
 
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.DescriptionTooLong.selector);
         crowdfunding.createCampaign("Test Campaign", longDescription, 1 ether, 7);
     }
 
@@ -116,7 +116,7 @@ contract CrowdfundingTest is Test {
     function testDonateRevertsWithZeroValue() public {
         crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
 
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.DonationMustBeGreaterThanZero.selector);
         crowdfunding.donate(0);
     }
 
@@ -125,7 +125,7 @@ contract CrowdfundingTest is Test {
         vm.deal(donor, 1 ether);
 
         vm.prank(donor);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.CampaignDoesNotExist.selector);
         crowdfunding.donate{value: 1 ether}(0);
     }
 
@@ -139,7 +139,7 @@ contract CrowdfundingTest is Test {
         vm.deal(donor, 1 ether);
 
         vm.prank(donor);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.CampaignHasEnded.selector);
         crowdfunding.donate{value: 1 ether}(0);
     }
 
@@ -189,7 +189,7 @@ contract CrowdfundingTest is Test {
         vm.warp(deadline);
 
         vm.prank(attacker);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.OnlyCreatorCanWithdraw.selector);
         crowdfunding.withdrawFunds(0);
     }
 
@@ -206,7 +206,7 @@ contract CrowdfundingTest is Test {
         crowdfunding.donate{value: goal}(0);
 
         vm.prank(creator);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.CampaignIsStillActive.selector);
         crowdfunding.withdrawFunds(0);
     }
 
@@ -227,7 +227,7 @@ contract CrowdfundingTest is Test {
         vm.warp(deadline);
 
         vm.prank(creator);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.GoalWasNotReached.selector);
         crowdfunding.withdrawFunds(0);
     }
 
@@ -250,7 +250,7 @@ contract CrowdfundingTest is Test {
         crowdfunding.withdrawFunds(0);
 
         vm.prank(creator);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.FundsAlreadyWithdrawn.selector);
         crowdfunding.withdrawFunds(0);
     }
 
@@ -296,7 +296,7 @@ contract CrowdfundingTest is Test {
         crowdfunding.donate{value: donation}(0);
 
         vm.prank(donor);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.CampaignIsStillActive.selector);
         crowdfunding.refund(0);
     }
 
@@ -316,7 +316,7 @@ contract CrowdfundingTest is Test {
         vm.warp(deadline);
 
         vm.prank(donor);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.GoalWasReached.selector);
         crowdfunding.refund(0);
     }
 
@@ -340,7 +340,7 @@ contract CrowdfundingTest is Test {
         crowdfunding.refund(0);
 
         vm.prank(donor);
-        vm.expectRevert();
+        vm.expectRevert(Crowdfunding.NoContributionToRefund.selector);
         crowdfunding.refund(0);
     }
 }
