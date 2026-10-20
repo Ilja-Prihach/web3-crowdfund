@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 contract Crowdfunding {
     struct Campaign {
         address creator;
+        string title;
+        string description;
         uint256 goal;
         uint256 deadline;
         uint256 totalRaised;
@@ -18,18 +20,35 @@ contract Crowdfunding {
 
     event RefundClaimed(uint256 indexed campaignId, address indexed donor, uint256 amount);
 
+    /// @dev Lengths are measured in UTF-8 bytes to bound permanent on-chain storage costs.
+    uint256 public constant MAX_TITLE_LENGTH = 100;
+    uint256 public constant MAX_DESCRIPTION_LENGTH = 1000;
+
     mapping(uint256 => Campaign) public campaigns;
     mapping(uint256 => mapping(address => uint256)) public contributions;
     uint256 public nextCampaignId;
 
-    function createCampaign(uint256 goal, uint256 durationInDays) public {
+    function createCampaign(string calldata title, string calldata description, uint256 goal, uint256 durationInDays)
+        public
+    {
+        require(bytes(title).length > 0, "Title cannot be empty");
+        require(bytes(description).length > 0, "Description cannot be empty");
+        require(bytes(title).length <= MAX_TITLE_LENGTH, "Title is too long");
+        require(bytes(description).length <= MAX_DESCRIPTION_LENGTH, "Description is too long");
         require(goal > 0, "Goal must be greater than zero");
         require(durationInDays > 0, "Duration must be greater than zero");
         uint256 campaignId = nextCampaignId;
         address creator = msg.sender;
         uint256 deadline = block.timestamp + durationInDays * 1 days;
-        campaigns[campaignId] =
-            Campaign({creator: creator, goal: goal, deadline: deadline, totalRaised: 0, fundsWithdrawn: false});
+        campaigns[campaignId] = Campaign({
+            creator: creator,
+            title: title,
+            description: description,
+            goal: goal,
+            deadline: deadline,
+            totalRaised: 0,
+            fundsWithdrawn: false
+        });
         nextCampaignId += 1;
 
         emit CampaignCreated(campaignId, creator, goal, deadline);
