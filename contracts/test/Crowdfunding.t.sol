@@ -7,6 +7,14 @@ import {Crowdfunding} from "../src/Crowdfunding.sol";
 contract CrowdfundingTest is Test {
     Crowdfunding crowdfunding;
 
+    event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
+
+    event DonationMade(uint256 indexed campaignId, address indexed donor, uint256 amount);
+
+    event FundsWithdrawn(uint256 indexed campaignId, address indexed creator, uint256 amount);
+
+    event RefundClaimed(uint256 indexed campaignId, address indexed donor, uint256 amount);
+
     function setUp() public {
         crowdfunding = new Crowdfunding();
     }
@@ -18,6 +26,11 @@ contract CrowdfundingTest is Test {
     function testCreateCampaignStoresData() public {
         uint256 goal = 1 ether;
         uint256 durationInDays = 7;
+        uint256 expectedDeadline = block.timestamp + durationInDays * 1 days;
+
+        vm.expectEmit(true, true, false, true);
+        emit CampaignCreated(0, address(this), goal, expectedDeadline);
+
         crowdfunding.createCampaign(goal, durationInDays);
         assertEq(crowdfunding.nextCampaignId(), 1);
         (address creator, uint256 storedGoal, uint256 deadline, uint256 totalRaised, bool fundsWithdrawn) =
@@ -46,6 +59,8 @@ contract CrowdfundingTest is Test {
         uint256 donation = 0.5 ether;
 
         vm.deal(donor, donation);
+        vm.expectEmit(true, true, false, true);
+        emit DonationMade(0, donor, donation);
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
@@ -103,6 +118,8 @@ contract CrowdfundingTest is Test {
 
         uint256 creatorBalanceBefore = creator.balance;
 
+        vm.expectEmit(true, true, false, true);
+        emit FundsWithdrawn(0, creator, goal);
         vm.prank(creator);
         crowdfunding.withdrawFunds(0);
 
@@ -213,6 +230,8 @@ contract CrowdfundingTest is Test {
 
         uint256 donorBalanceBefore = donor.balance;
 
+        vm.expectEmit(true, true, false, true);
+        emit RefundClaimed(0, donor, donation);
         vm.prank(donor);
         crowdfunding.refund(0);
 
