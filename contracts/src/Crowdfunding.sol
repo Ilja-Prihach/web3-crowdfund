@@ -14,6 +14,13 @@ contract Crowdfunding is ReentrancyGuardTransient {
         bool fundsWithdrawn;
     }
 
+    enum CampaignStatus {
+        Active,
+        Successful,
+        Failed,
+        Withdrawn
+    }
+
     /// @dev Custom errors keep revert data compact and expose typed failures through the ABI.
     error EmptyTitle();
     error EmptyDescription();
@@ -48,6 +55,28 @@ contract Crowdfunding is ReentrancyGuardTransient {
     mapping(uint256 => Campaign) public campaigns;
     mapping(uint256 => mapping(address => uint256)) public contributions;
     uint256 public nextCampaignId;
+
+    function getCampaignStatus(uint256 campaignId) public view returns (CampaignStatus) {
+        Campaign storage campaign = campaigns[campaignId];
+
+        if (campaign.creator == address(0)) {
+            revert CampaignDoesNotExist();
+        }
+
+        if (campaign.fundsWithdrawn) {
+            return CampaignStatus.Withdrawn;
+        }
+
+        if (block.timestamp < campaign.deadline) {
+            return CampaignStatus.Active;
+        }
+
+        if (campaign.totalRaised >= campaign.goal) {
+            return CampaignStatus.Successful;
+        }
+
+        return CampaignStatus.Failed;
+    }
 
     function createCampaign(string calldata title, string calldata description, uint256 goal, uint256 durationInDays)
         public
