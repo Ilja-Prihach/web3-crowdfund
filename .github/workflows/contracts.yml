@@ -3,14 +3,8 @@ name: Contracts CI
 on:
   push:
     branches: [main]
-    paths:
-      - "contracts/**"
-      - ".github/workflows/contracts.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "contracts/**"
-      - ".github/workflows/contracts.yml"
 
 jobs:
   test:
