@@ -21,7 +21,7 @@ contract CrowdfundingTest is Test {
         crowdfunding = new Crowdfunding();
     }
 
-    function testInitialCampaignIdIsZero() public {
+    function testInitialCampaignIdIsZero() public view {
         assertEq(crowdfunding.nextCampaignId(), 0);
     }
 
