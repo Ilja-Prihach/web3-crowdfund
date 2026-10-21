@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-contract Crowdfunding {
+import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
+
+contract Crowdfunding is ReentrancyGuardTransient {
     struct Campaign {
         address creator;
         string title;
@@ -86,7 +88,7 @@ contract Crowdfunding {
         emit DonationMade(campaignId, msg.sender, msg.value);
     }
 
-    function withdrawFunds(uint256 campaignId) public {
+    function withdrawFunds(uint256 campaignId) public nonReentrant {
         Campaign storage campaign = campaigns[campaignId];
 
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
@@ -103,7 +105,7 @@ contract Crowdfunding {
         emit FundsWithdrawn(campaignId, campaign.creator, campaign.totalRaised);
     }
 
-    function refund(uint256 campaignId) public {
+    function refund(uint256 campaignId) public nonReentrant {
         Campaign storage campaign = campaigns[campaignId];
         uint256 contribution = contributions[campaignId][msg.sender];
 
