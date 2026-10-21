@@ -12,3 +12,6 @@ remappings = [
 ]
 optimizer = true
 optimizer_runs = 200
+
+[profile.default.fuzz]
+runs = 256
