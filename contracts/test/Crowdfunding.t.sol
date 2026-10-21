@@ -2,7 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 import {Crowdfunding} from "../src/Crowdfunding.sol";
+import {ReentrantRefundAttacker} from "./helpers/ReentrantRefundAttacker.sol";
 
 contract CrowdfundingTest is Test {
     Crowdfunding crowdfunding;
@@ -342,5 +344,31 @@ contract CrowdfundingTest is Test {
         vm.prank(donor);
         vm.expectRevert(Crowdfunding.NoContributionToRefund.selector);
         crowdfunding.refund(0);
+    }
+
+    function testRefundBlocksReentrantCall() public {
+        uint256 goal = 2 ether;
+        uint256 donation = 1 ether;
+
+        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+
+        ReentrantRefundAttacker attacker = new ReentrantRefundAttacker(crowdfunding);
+
+        vm.deal(address(this), donation);
+        attacker.donate{value: donation}(0);
+
+        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        vm.warp(deadline);
+
+        attacker.attackRefund();
+
+        assertEq(address(attacker).balance, donation);
+        assertFalse(attacker.reentrySucceeded());
+        assertEq(
+            attacker.reentryRevertData(),
+            abi.encodeWithSelector(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector)
+        );
+        assertEq(crowdfunding.contributions(0, address(attacker)), 0);
+        assertEq(address(crowdfunding).balance, 0);
     }
 }
