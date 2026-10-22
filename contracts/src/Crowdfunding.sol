@@ -128,10 +128,10 @@ contract Crowdfunding is ReentrancyGuardTransient {
 
         campaign.fundsWithdrawn = true;
 
+        emit FundsWithdrawn(campaignId, campaign.creator, campaign.totalRaised);
+
         (bool success,) = payable(campaign.creator).call{value: campaign.totalRaised}("");
         if (!success) revert TransferFailed();
-
-        emit FundsWithdrawn(campaignId, campaign.creator, campaign.totalRaised);
     }
 
     function refund(uint256 campaignId) public nonReentrant {
@@ -145,9 +145,9 @@ contract Crowdfunding is ReentrancyGuardTransient {
 
         contributions[campaignId][msg.sender] = 0;
 
+        emit RefundClaimed(campaignId, msg.sender, contribution);
+
         (bool success,) = payable(msg.sender).call{value: contribution}("");
         if (!success) revert RefundFailed();
-
-        emit RefundClaimed(campaignId, msg.sender, contribution);
     }
 }
