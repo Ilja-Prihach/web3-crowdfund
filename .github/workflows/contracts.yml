@@ -29,6 +29,9 @@ jobs:
       - name: Check formatting
         run: forge fmt --check
 
+      - name: Lint production contract
+        run: forge lint src/Crowdfunding.sol --deny warnings
+
       - name: Build contracts
         run: forge build --sizes
 
