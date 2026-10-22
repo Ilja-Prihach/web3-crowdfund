@@ -31,4 +31,4 @@ CrowdfundingTransferFailuresTest:testRefundRevertsWhenDonorRejectsEther() (gas: 
 CrowdfundingTransferFailuresTest:testWithdrawRevertsForNonexistentCampaign() (gas: 32073)
 CrowdfundingTransferFailuresTest:testWithdrawRevertsWhenCreatorRejectsEther() (gas: 431888)
 CrowdfundingWithdrawReentrancyTest:testWithdrawBlocksReentrantCall() (gas: 942181)
-DeployCrowdfundingTest:testRunDeploysInitializedCrowdfunding() (gas: 1841498)
+DeployCrowdfundingTest:testRunDeploysInitializedCrowdfunding() (gas: 1841510)
