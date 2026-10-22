@@ -27,7 +27,7 @@ contract CrowdfundingWithdrawReentrancyTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: goal}(campaignId);
 
-        (,,,, uint256 deadline,,) = crowdfunding.campaigns(campaignId);
+        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(campaignId);
 
         vm.warp(deadline);
 
@@ -41,7 +41,7 @@ contract CrowdfundingWithdrawReentrancyTest is Test {
             abi.encodeWithSelector(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector)
         );
 
-        (,,,,,, bool fundsWithdrawn) = crowdfunding.campaigns(campaignId);
+        (,,,,,, bool fundsWithdrawn,) = crowdfunding.campaigns(campaignId);
 
         assertTrue(fundsWithdrawn);
         assertEq(address(crowdfunding).balance, 0);

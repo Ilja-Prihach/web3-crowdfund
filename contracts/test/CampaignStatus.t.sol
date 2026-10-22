@@ -33,7 +33,7 @@ contract CampaignStatusTest is Test {
     function testStatusIsFailedAtDeadlineWhenGoalNotReached() public {
         crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
 
-        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Failed));
@@ -49,7 +49,7 @@ contract CampaignStatusTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Successful));
@@ -67,7 +67,7 @@ contract CampaignStatusTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(creator);

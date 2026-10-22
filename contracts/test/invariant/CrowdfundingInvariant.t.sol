@@ -27,7 +27,7 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
     }
 
     function invariantBalanceMatchesRaised() public view {
-        (,,,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(address(crowdfunding).balance, totalRaised);
         assertEq(totalRaised, handler.ghostTotalDonated());
@@ -47,7 +47,7 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
             contributionSum += storedContribution;
         }
 
-        (,,,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(contributionSum, totalRaised);
     }
