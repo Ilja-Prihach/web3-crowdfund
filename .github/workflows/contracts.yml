@@ -37,3 +37,24 @@ jobs:
 
       - name: Run tests
         run: forge test -vvv
+
+  security:
+    name: Slither analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.2
+        with:
+          target: contracts
+          slither-version: 0.11.6
+          fail-on: medium
+          slither-args: --filter-paths "(lib/|test/|script/)"
