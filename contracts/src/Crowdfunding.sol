@@ -12,13 +12,15 @@ contract Crowdfunding is ReentrancyGuardTransient {
         uint256 deadline;
         uint256 totalRaised;
         bool fundsWithdrawn;
+        bool cancelled;
     }
 
     enum CampaignStatus {
         Active,
         Successful,
         Failed,
-        Withdrawn
+        Withdrawn,
+        Cancelled
     }
 
     /// @dev Custom errors keep revert data compact and expose typed failures through the ABI.
@@ -31,6 +33,9 @@ contract Crowdfunding is ReentrancyGuardTransient {
     error CampaignDoesNotExist();
     error DonationMustBeGreaterThanZero();
     error CampaignHasEnded();
+    error OnlyCreatorCanCancel();
+    error CampaignAlreadyCancelled();
+    error CampaignIsCancelled();
     error OnlyCreatorCanWithdraw();
     error CampaignIsStillActive();
     error GoalWasNotReached();
@@ -41,6 +46,8 @@ contract Crowdfunding is ReentrancyGuardTransient {
     error RefundFailed();
 
     event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
+
+    event CampaignCancelled(uint256 indexed campaignId, address indexed creator);
 
     event DonationMade(uint256 indexed campaignId, address indexed donor, uint256 amount);
 
@@ -61,6 +68,10 @@ contract Crowdfunding is ReentrancyGuardTransient {
 
         if (campaign.creator == address(0)) {
             revert CampaignDoesNotExist();
+        }
+
+        if (campaign.cancelled) {
+            return CampaignStatus.Cancelled;
         }
 
         if (campaign.fundsWithdrawn) {
@@ -99,17 +110,35 @@ contract Crowdfunding is ReentrancyGuardTransient {
             goal: goal,
             deadline: deadline,
             totalRaised: 0,
-            fundsWithdrawn: false
+            fundsWithdrawn: false,
+            cancelled: false
         });
         nextCampaignId += 1;
 
         emit CampaignCreated(campaignId, creator, goal, deadline);
     }
 
+    function cancelCampaign(uint256 campaignId) public {
+        Campaign storage campaign = campaigns[campaignId];
+
+        if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (msg.sender != campaign.creator) revert OnlyCreatorCanCancel();
+        if (campaign.cancelled) revert CampaignAlreadyCancelled();
+
+        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp >= campaign.deadline) revert CampaignHasEnded();
+
+        campaign.cancelled = true;
+
+        emit CampaignCancelled(campaignId, campaign.creator);
+    }
+
     function donate(uint256 campaignId) public payable {
         Campaign storage campaign = campaigns[campaignId];
 
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (campaign.cancelled) revert CampaignIsCancelled();
         if (msg.value == 0) revert DonationMustBeGreaterThanZero();
         // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
         // forge-lint: disable-next-line(block-timestamp)
@@ -126,6 +155,7 @@ contract Crowdfunding is ReentrancyGuardTransient {
 
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
         if (msg.sender != campaign.creator) revert OnlyCreatorCanWithdraw();
+        if (campaign.cancelled) revert CampaignIsCancelled();
         // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
@@ -147,10 +177,12 @@ contract Crowdfunding is ReentrancyGuardTransient {
         uint256 contribution = contributions[campaignId][msg.sender];
 
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
-        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
-        // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
-        if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
+        if (!campaign.cancelled) {
+            // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
+            // forge-lint: disable-next-line(block-timestamp)
+            if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
+            if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
+        }
         if (contribution == 0) revert NoContributionToRefund();
 
         contributions[campaignId][msg.sender] = 0;

@@ -21,7 +21,7 @@ contract CrowdfundingFuzzTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: amount}(0);
 
-        (,,,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, amount);
         assertEq(crowdfunding.contributions(0, donor), amount);
@@ -43,7 +43,7 @@ contract CrowdfundingFuzzTest is Test {
         crowdfunding.donate{value: secondAmount}(0);
         vm.stopPrank();
 
-        (,,,,, uint256 totalRaised,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, expectedTotal);
         assertEq(crowdfunding.contributions(0, donor), expectedTotal);
@@ -61,7 +61,7 @@ contract CrowdfundingFuzzTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,,,, uint256 deadline,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         uint256 balanceBeforeRefund = donor.balance;
