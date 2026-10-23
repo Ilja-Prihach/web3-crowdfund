@@ -4,11 +4,11 @@ pragma solidity ^0.8.24;
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {Test} from "forge-std/Test.sol";
 import {Crowdfunding} from "../../src/Crowdfunding.sol";
-import {DonationHandler} from "./DonationHandler.sol";
+import {CampaignHandler} from "./CampaignHandler.sol";
 
 contract CrowdfundingInvariantTest is StdInvariant, Test {
     Crowdfunding crowdfunding;
-    DonationHandler handler;
+    CampaignHandler handler;
 
     function setUp() public {
         crowdfunding = new Crowdfunding();
@@ -17,20 +17,25 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
             "Invariant Campaign", "Campaign used for invariant testing", type(uint128).max, 36_500
         );
 
-        handler = new DonationHandler(crowdfunding);
+        handler = new CampaignHandler(crowdfunding, address(this));
 
-        bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = DonationHandler.donate.selector;
+        bytes4[] memory selectors = new bytes4[](3);
+        selectors[0] = CampaignHandler.donate.selector;
+        selectors[1] = CampaignHandler.cancel.selector;
+        selectors[2] = CampaignHandler.refund.selector;
 
         targetContract(address(handler));
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
-    function invariantBalanceMatchesRaised() public view {
+    function invariantBalanceMatchesGhostAccounting() public view {
         (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
-        assertEq(address(crowdfunding).balance, totalRaised);
-        assertEq(totalRaised, handler.ghostTotalDonated());
+        uint256 totalDonated = handler.ghostTotalDonated();
+        uint256 totalRefunded = handler.ghostTotalRefunded();
+
+        assertEq(totalRaised, totalDonated);
+        assertEq(address(crowdfunding).balance, totalDonated - totalRefunded);
     }
 
     function invariantContributionsMatchGhostAccounting() public view {
@@ -48,7 +53,15 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
         }
 
         (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
+        uint256 totalRefunded = handler.ghostTotalRefunded();
 
-        assertEq(contributionSum, totalRaised);
+        assertEq(address(crowdfunding).balance, contributionSum);
+        assertEq(contributionSum + totalRefunded, totalRaised);
+    }
+
+    function invariantCancellationMatchesGhostState() public view {
+        (,,,,,,, bool cancelled) = crowdfunding.campaigns(0);
+
+        assertEq(cancelled, handler.ghostCancelled());
     }
 }
