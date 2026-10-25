@@ -23,6 +23,12 @@ contract Crowdfunding is ReentrancyGuardTransient {
         Cancelled
     }
 
+    struct CampaignView {
+        uint256 id;
+        Campaign campaign;
+        CampaignStatus status;
+    }
+
     /// @dev Custom errors keep revert data compact and expose typed failures through the ABI.
     error EmptyTitle();
     error EmptyDescription();
@@ -44,6 +50,8 @@ contract Crowdfunding is ReentrancyGuardTransient {
     error GoalWasReached();
     error NoContributionToRefund();
     error RefundFailed();
+    error PageSizeMustBeGreaterThanZero();
+    error PageSizeTooLarge();
 
     event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
 
@@ -59,6 +67,9 @@ contract Crowdfunding is ReentrancyGuardTransient {
     uint256 public constant MAX_TITLE_LENGTH = 100;
     uint256 public constant MAX_DESCRIPTION_LENGTH = 1000;
 
+    /// @dev Bounds memory allocation and ABI response size for paginated reads.
+    uint256 public constant MAX_PAGE_SIZE = 20;
+
     mapping(uint256 => Campaign) public campaigns;
     mapping(uint256 => mapping(address => uint256)) public contributions;
     uint256 public nextCampaignId;
@@ -70,6 +81,10 @@ contract Crowdfunding is ReentrancyGuardTransient {
             revert CampaignDoesNotExist();
         }
 
+        return _getCampaignStatus(campaign);
+    }
+
+    function _getCampaignStatus(Campaign storage campaign) internal view returns (CampaignStatus) {
         if (campaign.cancelled) {
             return CampaignStatus.Cancelled;
         }
@@ -89,6 +104,27 @@ contract Crowdfunding is ReentrancyGuardTransient {
         }
 
         return CampaignStatus.Failed;
+    }
+
+    function getCampaigns(uint256 offset, uint256 limit) public view returns (CampaignView[] memory page) {
+        if (limit == 0) revert PageSizeMustBeGreaterThanZero();
+        if (limit > MAX_PAGE_SIZE) revert PageSizeTooLarge();
+
+        if (offset >= nextCampaignId) {
+            return new CampaignView[](0);
+        }
+
+        uint256 remaining = nextCampaignId - offset;
+        uint256 pageSize = limit < remaining ? limit : remaining;
+
+        page = new CampaignView[](pageSize);
+
+        for (uint256 index; index < pageSize; index++) {
+            uint256 campaignId = offset + index;
+            Campaign storage campaign = campaigns[campaignId];
+
+            page[index] = CampaignView({id: campaignId, campaign: campaign, status: _getCampaignStatus(campaign)});
+        }
     }
 
     function createCampaign(string calldata title, string calldata description, uint256 goal, uint256 durationInDays)
