@@ -8,7 +8,15 @@ Decentralized crowdfunding platform where campaign creators can raise ETH transp
 
 - `contracts/` — Solidity smart contracts, tests, and deployment scripts.
 - `frontend/` — the web application for campaign creators and contributors.
-- `docs/` — architecture and project decisions ([CI](docs/ci.md)).
+- `docs/` — architecture, project status, decisions and operational knowledge.
+
+## Documentation
+
+- [Documentation index](docs/README.md)
+- [Current project status](docs/project-status.md)
+- [Architecture decisions](docs/DECISIONS.md)
+- [Confirmed gotchas](docs/gotchas.md)
+- [CI](docs/ci.md)
 
 ## Status
 
