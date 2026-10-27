@@ -13,6 +13,9 @@ remappings = [
 optimizer = true
 optimizer_runs = 200
 
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+
 [profile.default.fuzz]
 runs = 256
 
