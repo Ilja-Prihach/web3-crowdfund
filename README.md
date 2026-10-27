@@ -13,3 +13,7 @@ Decentralized crowdfunding platform where campaign creators can raise ETH transp
 ## Status
 
 In development.
+
+## Deployments
+
+- [Sepolia deployment](docs/deployments.md) — source verified with an exact bytecode match.
