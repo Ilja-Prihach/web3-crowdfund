@@ -13,10 +13,11 @@
 Новый агент начинает с [`docs/README.md`](docs/README.md), а затем читает документы в указанном там порядке. Минимальный маршрут:
 
 1. [`docs/project-status.md`](docs/project-status.md) — текущее состояние и следующий этап;
-2. [`docs/architecture.md`](docs/architecture.md) — как устроен проект;
-3. [`docs/DECISIONS.md`](docs/DECISIONS.md) — почему приняты важные решения;
-4. [`docs/gotchas.md`](docs/gotchas.md) — уже подтверждённые ловушки;
-5. документ конкретной подсистемы, которую предстоит менять.
+2. [`docs/product-vision.md`](docs/product-vision.md) и [`docs/roadmap.md`](docs/roadmap.md) — что строится и в каком порядке;
+3. [`docs/architecture.md`](docs/architecture.md) — как устроен проект;
+4. [`docs/DECISIONS.md`](docs/DECISIONS.md) — почему приняты важные решения;
+5. [`docs/gotchas.md`](docs/gotchas.md) — уже подтверждённые ловушки;
+6. документ конкретной подсистемы, которую предстоит менять.
 
 ## Архитектура
 
@@ -60,6 +61,7 @@ Remix IDE допустим только как временная учебная
 ## Правила документации
 
 - `docs/project-status.md` — переписываемый снимок настоящего состояния, а не журнал;
+- `docs/product-vision.md` описывает границы и пользовательский смысл продукта, а `docs/roadmap.md` — порядок будущей работы;
 - `docs/architecture.md` объясняет, как система устроена сейчас;
 - `docs/DECISIONS.md` хранит причины важных решений; устаревшую карточку не удалять, а помечать заменённой;
 - `docs/gotchas.md` содержит только воспроизведённые ловушки с симптомом, причиной и проверкой;
