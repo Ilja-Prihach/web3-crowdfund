@@ -14,6 +14,8 @@ Decentralized crowdfunding platform where campaign creators can raise ETH transp
 
 - [Documentation index](docs/README.md)
 - [Current project status](docs/project-status.md)
+- [Product vision](docs/product-vision.md)
+- [Roadmap](docs/roadmap.md)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Confirmed gotchas](docs/gotchas.md)
 - [CI](docs/ci.md)
