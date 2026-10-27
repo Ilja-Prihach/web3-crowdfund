@@ -1,48 +1,74 @@
-# Web3 Crowdfunding — project guide
+# Web3 Crowdfunding — руководство проекта
 
-## Purpose
+## Назначение
 
-This repository is a portfolio-quality educational Web3 crowdfunding application. It must be understandable, secure by design, well tested, and presentable to future employers or collaborators.
+Это учебное Web3-приложение для краудфандинга уровня портфолио. Проект должен быть понятным, безопасным по дизайну, хорошо протестированным и пригодным для демонстрации работодателям и соавторам.
 
-The user is learning by writing the code themselves. Explain concepts before implementation, give small focused steps, and provide examples only when requested or needed. Do not silently implement lesson code on the user's behalf.
+Пользователь учится писать Solidity и работать с Foundry. Всегда отвечайте по-русски. Перед изменением учебного кода покажите точный предлагаемый результат, объясните новые конструкции и дождитесь явного подтверждения. Не реализуйте урок за пользователя молча. Тесты, документацию и технические проверки можно выполнять самостоятельно после согласования.
 
-## Architecture
+Текущий учебный фокус — Solidity и Foundry. Frontend отложен до отдельного решения пользователя.
 
-This is a single repository with two applications:
+## Обязательный порядок чтения
 
-- `contracts/`: Solidity smart contracts, Hardhat configuration, tests, deployment modules, and contract documentation.
-- `frontend/`: a TypeScript React/Next.js application that reads contract state and asks a connected wallet to sign transactions.
-- `docs/`: architecture decisions, security notes, diagrams, and other project documentation.
+Новый агент начинает с [`docs/README.md`](docs/README.md), а затем читает документы в указанном там порядке. Минимальный маршрут:
 
-The blockchain is the source of truth for funds and campaign state. The frontend must never contain or handle a private key.
+1. [`docs/project-status.md`](docs/project-status.md) — текущее состояние и следующий этап;
+2. [`docs/architecture.md`](docs/architecture.md) — как устроен проект;
+3. [`docs/DECISIONS.md`](docs/DECISIONS.md) — почему приняты важные решения;
+4. [`docs/gotchas.md`](docs/gotchas.md) — уже подтверждённые ловушки;
+5. документ конкретной подсистемы, которую предстоит менять.
 
-## Technology choices
+## Архитектура
 
-- Smart-contract language: Solidity.
-- Smart-contract development framework: Foundry (`forge`, `anvil`, and `cast`).
-- Frontend: Next.js, TypeScript, wagmi, and viem.
-- Initial network: local Hardhat network; later, an Ethereum testnet.
+Репозиторий содержит два приложения:
 
-Use Remix IDE only as a temporary learning sandbox for early Solidity exercises. All project code belongs in this repository and must be committed to Git.
+- `contracts/` — Solidity-контракт, конфигурация Foundry, тесты и deployment-скрипт;
+- `frontend/` — будущий интерфейс на TypeScript, React/Next.js, wagmi и viem;
+- `docs/` — каноническая документация архитектуры, решений, безопасности и состояния проекта.
+
+Блокчейн является источником истины для средств и состояния кампаний. Frontend никогда не должен получать или хранить приватный ключ.
+
+## Технологии
+
+- язык смарт-контракта: Solidity;
+- инструменты: Foundry (`forge`, `anvil`, `cast`);
+- локальная сеть: Anvil;
+- публичная тестовая сеть: Ethereum Sepolia;
+- frontend: Next.js, TypeScript, wagmi и viem, когда пользователь вернётся к этому этапу.
+
+Remix IDE допустим только как временная учебная песочница. Код проекта хранится в этом репозитории и проходит Git workflow.
 
 ## Git workflow
 
-- `main` contains stable, reviewed, working code only.
-- Create one short-lived feature branch per meaningful unit of work, for example `feature/campaign-contract` or `feature/wallet-connection`.
-- Start new work from an up-to-date `main` branch.
-- Keep commits small and logically focused. Use Conventional Commit-style messages, such as `feat: add campaign creation` or `test: cover donation validation`.
-- Run the relevant formatter, compiler, and tests before committing.
-- Never commit secrets, `.env` files, private keys, RPC credentials, generated artifacts, caches, or dependencies.
+- `main` содержит только стабильный, проверенный код;
+- каждая осмысленная единица работы выполняется в короткоживущей feature-ветке от актуального `main`;
+- коммиты маленькие и логически цельные, сообщения — Conventional Commits на английском;
+- production-код, тесты и документацию по возможности фиксировать отдельными коммитами;
+- перед коммитом запускать относящиеся к изменению formatter, compiler, lint и тесты;
+- никогда не коммитить `.env`, приватные ключи, RPC credentials, generated artifacts, cache и зависимости;
+- feature-ветки не удалять без прямой просьбы пользователя.
 
-## Smart-contract standards
+## Стандарты смарт-контракта
 
-- Prefer clear, explicit code over clever code.
-- Validate inputs and enforce access control.
-- Use checks-effects-interactions for external transfers.
-- Treat external calls as untrusted and consider reentrancy before implementing money movement.
-- Write tests for successful flows, access restrictions, invalid input, boundary conditions, and failure cases.
-- Record security-sensitive design decisions in `docs/`.
+- предпочитать ясный и явный код clever-решениям;
+- валидировать входные данные и права доступа;
+- для внешних переводов соблюдать checks-effects-interactions;
+- считать внешние вызовы недоверенными и учитывать reentrancy;
+- тестировать успешные сценарии, ограничения доступа, невалидный ввод, границы и отказы;
+- решения, влияющие на безопасность, фиксировать в `docs/`.
 
-## Required quality bar
+## Правила документации
 
-Each finished feature should include appropriate tests, documentation updates when behavior or architecture changes, and a clean Git status.
+- `docs/project-status.md` — переписываемый снимок настоящего состояния, а не журнал;
+- `docs/architecture.md` объясняет, как система устроена сейчас;
+- `docs/DECISIONS.md` хранит причины важных решений; устаревшую карточку не удалять, а помечать заменённой;
+- `docs/gotchas.md` содержит только воспроизведённые ловушки с симптомом, причиной и проверкой;
+- `docs/deployments.md` является источником истины для публичных адресов и транзакций deployment;
+- один факт должен иметь один канонический документ; в остальных местах ставить ссылку, а не копировать подробности;
+- изменение поведения, архитектуры, безопасности, deployment или рабочего процесса обновляет соответствующий документ в том же PR;
+- временные планы не смешивать с постоянной документацией; завершённые материалы при необходимости переносить в `docs/archive/`;
+- не объявлять измерение или проверку выполненными без команды, ссылки или другого проверяемого доказательства.
+
+## Требуемое качество
+
+Каждая законченная возможность включает подходящие тесты, обновление документации при изменении поведения или архитектуры и чистый Git status.
