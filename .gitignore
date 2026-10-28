@@ -15,6 +15,7 @@ coverage/
 # Frontend build output
 .next/
 dist/
+*.tsbuildinfo
 
 # OS and editor files
 .DS_Store

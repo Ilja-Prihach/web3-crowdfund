@@ -11,6 +11,7 @@
 | [shell-backslash-must-be-last](#shell-backslash-must-be-last) | Пробел после `\` разбивает одну команду на несколько |
 | [forge-format-must-skip-dependencies](#forge-format-must-skip-dependencies) | Formatter всего дерева проверяет vendored libraries |
 | [mapping-is-not-iterable](#mapping-is-not-iterable) | Получить список ключей `mapping` напрямую нельзя |
+| [frontend-major-versions-must-match-tooling](#frontend-major-versions-must-match-tooling) | Новейшие major-версии TypeScript и ESLint могут опережать поддержку Next.js tooling |
 
 ## Карточки
 
@@ -75,3 +76,11 @@ forge fmt --check src test script
 **Правило.** Для кампаний используется последовательный `nextCampaignId` и ограниченная функция `getCampaigns(offset, limit)`. Не добавляйте неограниченный возврат всех кампаний.
 
 Связано: [`DECISIONS.md#pagination-is-bounded`](DECISIONS.md#pagination-is-bounded).
+
+### frontend-major-versions-must-match-tooling
+
+**Симптом.** На bootstrap установка последних major-версий завершалась, но ESLint падал с сообщением `typescript-eslint does not support TS 7.0`, а плагины из `eslint-config-next` объявляли peer range только до ESLint 9.
+
+**Причина.** Компилятор TypeScript, ESLint core и плагины Next.js выпускаются независимо. Максимально новая версия каждого пакета не гарантирует совместимость всего набора.
+
+**Правило.** Используйте точные версии из `frontend/package.json` и устанавливайте их через `npm ci`. Major-обновления TypeScript и ESLint выполняйте отдельным PR только после проверки peer ranges, `npm run lint`, `npm run typecheck` и `npm run build`; не подавляйте конфликт через `--force`.

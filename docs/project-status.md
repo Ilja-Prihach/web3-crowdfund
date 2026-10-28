@@ -6,7 +6,7 @@
 
 Контракт V2 с режимами `FixedDeadline` и `OpenEnded` реализован, полностью проверен, влит в `main`, развёрнут и верифицирован в Ethereum Sepolia. Fixed и open-ended сценарии выполнены on-chain через `cast`.
 
-Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
+Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. PR 1 создал воспроизводимую техническую основу с App Router, Sass, quality scripts и отдельным frontend CI. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
 
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
@@ -34,6 +34,7 @@
 - Slither не нашёл medium/high-проблем; ожидаемые информационные находки по timestamp и low-level `call` проверены вручную;
 - gas snapshot обновлён после проверки роста: deployment-тест вырос примерно на 16,9% из-за нового ABI и переходов V2;
 - CI проверяет formatting, build, tests, gas snapshot и Slither;
+- frontend проходит чистый `npm ci`, ESLint без предупреждений, TypeScript-проверку и production build Next.js;
 - защита `main` требует успешных CI-проверок;
 - PR #25 успешно прошёл remote CI и влит в `main` merge-коммитом `00abe0e`;
 - исходники V1 Sepolia deployment получили Sourcify `exact_match`.
@@ -49,16 +50,16 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-После merge документационного PR начать PR 1 — bootstrap и quality gate:
+После merge PR 1 начать PR 2 — дизайн-система и application shell:
 
-1. инициализировать Next.js App Router, React и TypeScript в `frontend/`;
-2. добавить Sass, lint, typecheck и production build;
-3. добавить frontend job в CI;
-4. не смешивать bootstrap с визуальной системой или Web3-интеграцией.
+1. добавить шрифты, дизайн-токены, reset, focus styles и `prefers-reduced-motion`;
+2. реализовать базовые UI-примитивы и состояния;
+3. собрать адаптивные `AppHeader` и `AppFooter` без подключения кошелька;
+4. проверить shell на целевых ширинах и с клавиатуры.
 
 ## Известные ограничения
 
-- frontend пока содержит только принятый план и архитектурные правила; приложение ещё не инициализировано;
+- frontend пока содержит технический placeholder без дизайн-системы, изображений и Web3-интеграции;
 - backend и blockchain indexer ещё не созданы; PostgreSQL является кандидатом, но не утверждённым выбором;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
