@@ -18,6 +18,10 @@
 | [openfund-focuses-independent-projects](#openfund-focuses-independent-projects) | Продукт финансирует независимые и open-source проекты |
 | [backend-is-a-rebuildable-projection](#backend-is-a-rebuildable-projection) | Backend индексирует блокчейн, но не заменяет его финансовую истину |
 | [campaigns-support-fixed-and-open-ended-funding](#campaigns-support-fixed-and-open-ended-funding) | V2 поддерживает дедлайн и бессрочный сбор с разными правилами возврата |
+| [frontend-uses-lightweight-layers](#frontend-uses-lightweight-layers) | App Router дополняется слоями widgets, features, entities и shared |
+| [frontend-styles-are-colocated-scss-modules](#frontend-styles-are-colocated-scss-modules) | Компонентные стили изолированы и лежат рядом с TSX |
+| [frontend-reads-sepolia-directly](#frontend-reads-sepolia-directly) | MVP читает V2 напрямую через wagmi и viem без backend |
+| [frontend-media-is-optimized-before-commit](#frontend-media-is-optimized-before-commit) | Растровые ассеты сжимаются воспроизводимо до попадания в Git |
 
 ## Действующие решения
 
@@ -133,3 +137,51 @@ V2 поддерживает два режима:
 Причина: fixed-режим даёт участнику крайнюю дату возврата, а open-ended подходит проектам без искусственного срока. Активный возврат защищает участника бессрочной кампании от бесконечной блокировки средств.
 
 Связано: [`product-vision.md`](product-vision.md), [`roadmap.md`](roadmap.md), [`security.md`](security.md).
+
+### frontend-uses-lightweight-layers
+
+**Статус:** принято для Frontend MVP, реализация запланирована.
+
+Next.js App Router отвечает за маршруты, layouts, metadata и providers. Внутри `src` используются четыре практических слоя: `widgets` для крупных секций, `features` для пользовательских действий, `entities` для доменного представления кампании и `shared` для действительно переиспользуемых примитивов.
+
+Это не полный Feature-Sliced Design: обязательные index-файлы, формальные public API каждого slice и дробление простого кода не вводятся.
+
+Причина: route-файлы остаются читаемой композицией страницы, Web3-действия не смешиваются с отображением кампании, а архитектура не получает лишнюю бюрократию на раннем этапе.
+
+Связано: [`plans/frontend-mvp.md#архитектура-исходников`](plans/frontend-mvp.md#архитектура-исходников), [`../frontend/README.md`](../frontend/README.md).
+
+### frontend-styles-are-colocated-scss-modules
+
+**Статус:** принято для Frontend MVP, реализация запланирована.
+
+Самостоятельный компонент хранит `ComponentName.tsx` и `ComponentName.module.scss` в одной папке. `globals.scss` ограничен reset, CSS custom properties, базовой типографикой и глобальными accessibility-правилами. Общие Sass-токены и небольшие миксины находятся в `shared/styles`.
+
+Шрифты подключаются через `next/font`. Inline styles используются только для вычисляемых значений, например ширины прогресса.
+
+Причина: локальная изоляция упрощает сопровождение и удаление компонентов, а небольшой глобальный слой сохраняет единую систему без роста специфичности.
+
+Связано: [`plans/frontend-mvp.md#стили`](plans/frontend-mvp.md#стили).
+
+### frontend-reads-sepolia-directly
+
+**Статус:** принято для Frontend MVP, реализация запланирована.
+
+Frontend MVP использует wagmi, viem и TanStack Query для прямого чтения V2-контракта в Ethereum Sepolia и отправки транзакций через injected browser wallet. Backend, собственная финансовая база и WalletConnect не добавляются на этом этапе.
+
+Контракт остаётся источником истины. Локальные фильтры работают только по загруженной странице кампаний и не изображают глобальный indexer-поиск.
+
+Причина: MVP должен дать реальный Web3-сценарий без преждевременного backend-слоя и без зависимости от WalletConnect project ID. Следствие: каталог ограничен возможностями on-chain pagination до будущего indexer.
+
+Связано: [`plans/frontend-mvp.md#web3-границы`](plans/frontend-mvp.md#web3-границы), [`deployments.md`](deployments.md).
+
+### frontend-media-is-optimized-before-commit
+
+**Статус:** принято для Frontend MVP, реализация запланирована.
+
+Промежуточные несжатые изображения не коммитятся. Финальные растровые ассеты конвертируются воспроизводимым скриптом через `sharp`, сохраняются преимущественно в WebP и подключаются через `next/image` с явными размерами и `sizes`.
+
+Hero ограничен 1600 px по длинной стороне и целевым весом 180 KB; меньшие изображения — 960 px и 100 KB. Контракт не содержит campaign image, поэтому реальным кампаниям не назначаются вымышленные обложки: их визуальная графика строится детерминированно средствами CSS/SVG.
+
+Причина: исходно тяжёлые генерации ухудшают LCP и делают Git-историю невозвратно тяжёлой; сжатие только во время HTTP-выдачи не решает размер репозитория. Следствие: визуальная проверка выполняется уже на оптимизированном файле.
+
+Связано: [`plans/frontend-mvp.md#изображения-и-медиабюджет`](plans/frontend-mvp.md#изображения-и-медиабюджет).

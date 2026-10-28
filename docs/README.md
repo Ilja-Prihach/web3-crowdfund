@@ -26,6 +26,8 @@
 | Какие угрозы и защиты учтены? | [`security.md`](security.md) |
 | Где развёрнут контракт? | [`deployments.md`](deployments.md) |
 | Что проверяет CI? | [`ci.md`](ci.md) |
+| Как поэтапно строится frontend? | [`plans/frontend-mvp.md`](plans/frontend-mvp.md) |
+| Где практические frontend-инструкции? | [`../frontend/README.md`](../frontend/README.md) |
 | Как запускать deployment? | [`../contracts/script/README.md`](../contracts/script/README.md) |
 | Как устроены тесты? | [`../contracts/test/README.md`](../contracts/test/README.md) |
 
