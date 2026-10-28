@@ -113,7 +113,7 @@ Production-код, тесты и документация по возможно�
 
 ### campaigns-support-fixed-and-open-ended-funding
 
-**Статус:** принято для V2, реализация начата в `feature/funding-modes`.
+**Статус:** принято для V2, реализовано и проверено локально в `feature/funding-modes`.
 
 V2 поддерживает два режима:
 
