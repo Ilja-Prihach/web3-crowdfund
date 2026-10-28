@@ -113,7 +113,7 @@ Production-код, тесты и документация по возможно�
 
 ### campaigns-support-fixed-and-open-ended-funding
 
-**Статус:** принято для V2, реализовано и проверено локально в `feature/funding-modes`.
+**Статус:** действует в V2, проверено локально и on-chain в Sepolia.
 
 V2 поддерживает два режима:
 

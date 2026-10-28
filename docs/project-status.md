@@ -1,16 +1,16 @@
 # Текущее состояние проекта
 
-Обновлено: 28 октября 2026 года. Снимок проверен в ветке `feature/funding-modes`: production-коммит `0dcaefd`, тестовый коммит `f6882a0`.
+Обновлено: 28 октября 2026 года. Снимок проверен относительно `main` на merge-коммите `00abe0e`.
 
 ## Текущий этап
 
-Контракт V1 завершён, протестирован и развёрнут в Ethereum Sepolia. V2 с режимами `FixedDeadline` и `OpenEnded` реализован и полностью проверен локально в ветке `feature/funding-modes`, но ещё не влит в `main` и не развёрнут.
+Контракт V2 с режимами `FixedDeadline` и `OpenEnded` реализован, полностью проверен, влит в `main`, развёрнут и верифицирован в Ethereum Sepolia. Fixed и open-ended сценарии выполнены on-chain через `cast`.
 
 Текущий учебный фокус пользователя — Solidity и Foundry. Frontend и backend начнутся после стабилизации V2 ABI.
 
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
-## Что работает в текущей V2-ветке
+## Что работает в V2
 
 - создание fixed-кампаний сроком от 1 до 365 дней и open-ended-кампаний без дедлайна;
 - изменение дедлайна fixed-кампании creator до первого пожертвования;
@@ -35,29 +35,29 @@
 - gas snapshot обновлён после проверки роста: deployment-тест вырос примерно на 16,9% из-за нового ABI и переходов V2;
 - CI проверяет formatting, build, tests, gas snapshot и Slither;
 - защита `main` требует успешных CI-проверок;
+- PR #25 успешно прошёл remote CI и влит в `main` merge-коммитом `00abe0e`;
 - исходники V1 Sepolia deployment получили Sourcify `exact_match`.
+- исходники V2 Sepolia deployment получили Sourcify `exact_match`, а deployed bytecode точно совпал с локальной сборкой.
 
 Подробности тестовой стратегии находятся в [`../contracts/test/README.md`](../contracts/test/README.md), безопасности — в [`security.md`](security.md), CI — в [`ci.md`](ci.md).
 
 ## Публичное развёртывание
 
-Текущий V1-контракт в Sepolia: [`0x480EC361EBDD78465831eb555d3eFcF650D2A217`](https://sepolia.etherscan.io/address/0x480EC361EBDD78465831eb555d3eFcF650D2A217). V2 ещё не развёрнут.
+Текущий V2-контракт в Sepolia: [`0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A`](https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A). V1 сохранён как предыдущая версия и не скрывается.
 
 Chain ID, deployment-транзакция, gas и верификация записаны в [`deployments.md`](deployments.md).
 
 ## Следующий учебный шаг
 
-Завершить Git-этап V2 и перейти к Sepolia:
+Контрактный этап V2 завершён. После merge документации выбрать следующий учебный этап отдельным решением:
 
-1. построчно разобрать с пользователем текущие изменения `Campaign`, `FundingMode` и денежных переходов;
-2. отправить `feature/funding-modes` в remote и открыть PR;
-3. после успешного CI и merge развернуть V2 в Sepolia и пройти fixed/open-ended сценарии через `cast`.
+1. продолжить углубление в Solidity и Foundry; либо
+2. отдельно подтвердить переход к frontend MVP из [`roadmap.md`](roadmap.md).
 
 ## Известные ограничения
 
 - frontend пока содержит только placeholder README;
 - backend и blockchain indexer ещё не созданы; PostgreSQL является кандидатом, но не утверждённым выбором;
-- V2 ещё не прошёл remote CI и review в PR;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
-- актуальная Sepolia оценивает deployment gas значительно выше локальной Cancun-симуляции; перед следующим deployment требуется RPC estimate, см. [`gotchas.md`](gotchas.md#sepolia-deployment-gas-differs-from-local-simulation).
+- актуальная Sepolia оценивает deployment gas значительно выше локальной Cancun-симуляции; перед любым следующим deployment требуется новый RPC estimate, см. [`gotchas.md`](gotchas.md#sepolia-deployment-gas-differs-from-local-simulation).
