@@ -14,7 +14,7 @@ Roadmap задаёт порядок, а не обещание параллель
 
 Критерий выполнен: 54 теста проходят, production-контракт покрыт на 100%, deployment имеет Sourcify `exact_match`.
 
-## Этап 1. Контракт V2 — следующий
+## Этап 1. Контракт V2 — в работе
 
 ### Бизнес-правила
 
@@ -78,7 +78,7 @@ Roadmap задаёт порядок, а не обещание параллель
 
 Перед кодом принять отдельные решения о backend framework, БД, миграциях и модели повторной обработки событий. PostgreSQL — основной кандидат, но пока не утверждён.
 
-- чтение `CampaignCreated`, `DonationMade`, `CampaignCancelled`, `RefundClaimed` и `FundsWithdrawn`;
+- чтение `CampaignCreated`, `CampaignDeadlineUpdated`, `DonationMade`, `CampaignCancelled`, `RefundClaimed` и `FundsWithdrawn`;
 - идемпотентная обработка по chain ID, transaction hash и log index;
 - checkpoint последнего подтверждённого блока;
 - обработка повторного запуска и ограниченных chain reorg;
