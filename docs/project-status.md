@@ -1,12 +1,12 @@
 # Текущее состояние проекта
 
-Обновлено: 28 октября 2026 года. Снимок проверен относительно `main` на merge-коммите `00abe0e`.
+Обновлено: 28 октября 2026 года. Контрактный этап завершён; выбран переход к Frontend MVP.
 
 ## Текущий этап
 
 Контракт V2 с режимами `FixedDeadline` и `OpenEnded` реализован, полностью проверен, влит в `main`, развёрнут и верифицирован в Ethereum Sepolia. Fixed и open-ended сценарии выполнены on-chain через `cast`.
 
-Текущий учебный фокус пользователя — Solidity и Foundry. Frontend и backend начнутся после стабилизации V2 ABI.
+Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
 
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
@@ -49,14 +49,16 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-Контрактный этап V2 завершён. После merge документации выбрать следующий учебный этап отдельным решением:
+После merge документационного PR начать PR 1 — bootstrap и quality gate:
 
-1. продолжить углубление в Solidity и Foundry; либо
-2. отдельно подтвердить переход к frontend MVP из [`roadmap.md`](roadmap.md).
+1. инициализировать Next.js App Router, React и TypeScript в `frontend/`;
+2. добавить Sass, lint, typecheck и production build;
+3. добавить frontend job в CI;
+4. не смешивать bootstrap с визуальной системой или Web3-интеграцией.
 
 ## Известные ограничения
 
-- frontend пока содержит только placeholder README;
+- frontend пока содержит только принятый план и архитектурные правила; приложение ещё не инициализировано;
 - backend и blockchain indexer ещё не созданы; PostgreSQL является кандидатом, но не утверждённым выбором;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
