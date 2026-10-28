@@ -14,7 +14,11 @@ contract RejectingEtherReceiver {
 
     function createCampaign(uint256 goal, uint256 durationInDays) external {
         crowdfunding.createCampaign(
-            "Rejecting receiver", "Campaign created by a contract that rejects ETH", goal, durationInDays
+            "Rejecting receiver",
+            "Campaign created by a contract that rejects ETH",
+            goal,
+            Crowdfunding.FundingMode.FixedDeadline,
+            durationInDays
         );
     }
 

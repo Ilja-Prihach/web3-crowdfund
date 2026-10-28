@@ -15,13 +15,15 @@ contract CrowdfundingFuzzTest is Test {
         uint256 amount = bound(rawAmount, 1 wei, 1000 ether);
         address donor = makeAddr("donor");
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", 1 ether, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, amount);
         vm.prank(donor);
         crowdfunding.donate{value: amount}(0);
 
-        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
+        (,,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, amount);
         assertEq(crowdfunding.contributions(0, donor), amount);
@@ -32,9 +34,12 @@ contract CrowdfundingFuzzTest is Test {
         uint256 firstAmount = bound(rawFirstAmount, 1 wei, 500 ether);
         uint256 secondAmount = bound(rawSecondAmount, 1 wei, 500 ether);
         uint256 expectedTotal = firstAmount + secondAmount;
+        uint256 goal = expectedTotal + 1 wei;
         address donor = makeAddr("donor");
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, expectedTotal);
 
@@ -43,7 +48,7 @@ contract CrowdfundingFuzzTest is Test {
         crowdfunding.donate{value: secondAmount}(0);
         vm.stopPrank();
 
-        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
+        (,,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, expectedTotal);
         assertEq(crowdfunding.contributions(0, donor), expectedTotal);
@@ -55,13 +60,15 @@ contract CrowdfundingFuzzTest is Test {
         uint256 goal = donation + 1 wei;
         address donor = makeAddr("donor");
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, donation);
         vm.prank(donor);
         crowdfunding.donate{value: donation}(0);
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         uint256 balanceBeforeRefund = donor.balance;
@@ -72,5 +79,36 @@ contract CrowdfundingFuzzTest is Test {
         assertEq(donor.balance, balanceBeforeRefund + donation);
         assertEq(crowdfunding.contributions(0, donor), 0);
         assertEq(address(crowdfunding).balance, 0);
+    }
+
+    function testFuzzOpenEndedRefundKeepsActiveAccounting(uint256 rawFirstAmount, uint256 rawSecondAmount) public {
+        uint256 firstAmount = bound(rawFirstAmount, 1 wei, 500 ether);
+        uint256 secondAmount = bound(rawSecondAmount, 1 wei, 500 ether);
+        uint256 goal = firstAmount + secondAmount + 1 wei;
+        address firstDonor = makeAddr("first-donor");
+        address secondDonor = makeAddr("second-donor");
+
+        crowdfunding.createCampaign(
+            "Open campaign", "Campaign without a deadline", goal, Crowdfunding.FundingMode.OpenEnded, 0
+        );
+
+        vm.deal(firstDonor, firstAmount);
+        vm.prank(firstDonor);
+        crowdfunding.donate{value: firstAmount}(0);
+
+        vm.deal(secondDonor, secondAmount);
+        vm.prank(secondDonor);
+        crowdfunding.donate{value: secondAmount}(0);
+
+        vm.prank(firstDonor);
+        crowdfunding.refund(0);
+
+        (,,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
+
+        assertEq(totalRaised, secondAmount);
+        assertEq(address(crowdfunding).balance, secondAmount);
+        assertEq(crowdfunding.contributions(0, firstDonor), 0);
+        assertEq(crowdfunding.contributions(0, secondDonor), secondAmount);
+        assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Active));
     }
 }

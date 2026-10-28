@@ -4,8 +4,14 @@ pragma solidity ^0.8.24;
 import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 
 contract Crowdfunding is ReentrancyGuardTransient {
+    enum FundingMode {
+        FixedDeadline,
+        OpenEnded
+    }
+
     struct Campaign {
         address creator;
+        FundingMode fundingMode;
         string title;
         string description;
         uint256 goal;
@@ -36,6 +42,11 @@ contract Crowdfunding is ReentrancyGuardTransient {
     error DescriptionTooLong();
     error GoalMustBeGreaterThanZero();
     error DurationMustBeGreaterThanZero();
+    error DurationTooLong();
+    error OpenEndedCampaignMustNotHaveDuration();
+    error OnlyCreatorCanUpdateDeadline();
+    error OnlyFixedDeadlineCampaignCanUpdateDeadline();
+    error DeadlineCannotChangeAfterFirstDonation();
     error CampaignDoesNotExist();
     error DonationMustBeGreaterThanZero();
     error CampaignHasEnded();
@@ -55,6 +66,8 @@ contract Crowdfunding is ReentrancyGuardTransient {
 
     event CampaignCreated(uint256 indexed campaignId, address indexed creator, uint256 goal, uint256 deadline);
 
+    event CampaignDeadlineUpdated(uint256 indexed campaignId, uint256 previousDeadline, uint256 newDeadline);
+
     event CampaignCancelled(uint256 indexed campaignId, address indexed creator);
 
     event DonationMade(uint256 indexed campaignId, address indexed donor, uint256 amount);
@@ -66,6 +79,9 @@ contract Crowdfunding is ReentrancyGuardTransient {
     /// @dev Lengths are measured in UTF-8 bytes to bound permanent on-chain storage costs.
     uint256 public constant MAX_TITLE_LENGTH = 100;
     uint256 public constant MAX_DESCRIPTION_LENGTH = 1000;
+
+    /// @dev Fixed-deadline campaigns cannot last longer than one year.
+    uint256 public constant MAX_DURATION_DAYS = 365;
 
     /// @dev Bounds memory allocation and ABI response size for paginated reads.
     uint256 public constant MAX_PAGE_SIZE = 20;
@@ -93,14 +109,18 @@ contract Crowdfunding is ReentrancyGuardTransient {
             return CampaignStatus.Withdrawn;
         }
 
+        if (campaign.totalRaised >= campaign.goal) {
+            return CampaignStatus.Successful;
+        }
+
+        if (campaign.fundingMode == FundingMode.OpenEnded) {
+            return CampaignStatus.Active;
+        }
+
         // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < campaign.deadline) {
             return CampaignStatus.Active;
-        }
-
-        if (campaign.totalRaised >= campaign.goal) {
-            return CampaignStatus.Successful;
         }
 
         return CampaignStatus.Failed;
@@ -127,20 +147,36 @@ contract Crowdfunding is ReentrancyGuardTransient {
         }
     }
 
-    function createCampaign(string calldata title, string calldata description, uint256 goal, uint256 durationInDays)
-        public
-    {
+    function createCampaign(
+        string calldata title,
+        string calldata description,
+        uint256 goal,
+        FundingMode fundingMode,
+        uint256 durationInDays
+    ) public {
         if (bytes(title).length == 0) revert EmptyTitle();
         if (bytes(description).length == 0) revert EmptyDescription();
         if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
         if (bytes(description).length > MAX_DESCRIPTION_LENGTH) revert DescriptionTooLong();
         if (goal == 0) revert GoalMustBeGreaterThanZero();
-        if (durationInDays == 0) revert DurationMustBeGreaterThanZero();
+
+        uint256 deadline = 0;
+
+        if (fundingMode == FundingMode.FixedDeadline) {
+            if (durationInDays == 0) revert DurationMustBeGreaterThanZero();
+            if (durationInDays > MAX_DURATION_DAYS) revert DurationTooLong();
+
+            deadline = block.timestamp + durationInDays * 1 days;
+        } else {
+            if (durationInDays != 0) revert OpenEndedCampaignMustNotHaveDuration();
+        }
+
         uint256 campaignId = nextCampaignId;
         address creator = msg.sender;
-        uint256 deadline = block.timestamp + durationInDays * 1 days;
+
         campaigns[campaignId] = Campaign({
             creator: creator,
+            fundingMode: fundingMode,
             title: title,
             description: description,
             goal: goal,
@@ -149,9 +185,35 @@ contract Crowdfunding is ReentrancyGuardTransient {
             fundsWithdrawn: false,
             cancelled: false
         });
+
         nextCampaignId += 1;
 
         emit CampaignCreated(campaignId, creator, goal, deadline);
+    }
+
+    function updateCampaignDeadline(uint256 campaignId, uint256 durationInDays) public {
+        Campaign storage campaign = campaigns[campaignId];
+
+        if (campaign.creator == address(0)) revert CampaignDoesNotExist();
+        if (msg.sender != campaign.creator) revert OnlyCreatorCanUpdateDeadline();
+        if (campaign.fundingMode != FundingMode.FixedDeadline) {
+            revert OnlyFixedDeadlineCampaignCanUpdateDeadline();
+        }
+        if (campaign.cancelled) revert CampaignIsCancelled();
+        if (campaign.totalRaised != 0) revert DeadlineCannotChangeAfterFirstDonation();
+        if (durationInDays == 0) revert DurationMustBeGreaterThanZero();
+        if (durationInDays > MAX_DURATION_DAYS) revert DurationTooLong();
+
+        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp >= campaign.deadline) revert CampaignHasEnded();
+
+        uint256 previousDeadline = campaign.deadline;
+        uint256 newDeadline = block.timestamp + durationInDays * 1 days;
+
+        campaign.deadline = newDeadline;
+
+        emit CampaignDeadlineUpdated(campaignId, previousDeadline, newDeadline);
     }
 
     function cancelCampaign(uint256 campaignId) public {
@@ -160,10 +222,13 @@ contract Crowdfunding is ReentrancyGuardTransient {
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
         if (msg.sender != campaign.creator) revert OnlyCreatorCanCancel();
         if (campaign.cancelled) revert CampaignAlreadyCancelled();
+        if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
 
-        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
+        // Only fixed-deadline campaigns can end because of time.
         // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp >= campaign.deadline) revert CampaignHasEnded();
+        if (campaign.fundingMode == FundingMode.FixedDeadline && block.timestamp >= campaign.deadline) {
+            revert CampaignHasEnded();
+        }
 
         campaign.cancelled = true;
 
@@ -176,9 +241,13 @@ contract Crowdfunding is ReentrancyGuardTransient {
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
         if (campaign.cancelled) revert CampaignIsCancelled();
         if (msg.value == 0) revert DonationMustBeGreaterThanZero();
-        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
+        if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
+
+        // Only fixed-deadline campaigns can end because of time.
         // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp >= campaign.deadline) revert CampaignHasEnded();
+        if (campaign.fundingMode == FundingMode.FixedDeadline && block.timestamp >= campaign.deadline) {
+            revert CampaignHasEnded();
+        }
 
         campaign.totalRaised += msg.value;
         contributions[campaignId][msg.sender] += msg.value;
@@ -192,9 +261,6 @@ contract Crowdfunding is ReentrancyGuardTransient {
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
         if (msg.sender != campaign.creator) revert OnlyCreatorCanWithdraw();
         if (campaign.cancelled) revert CampaignIsCancelled();
-        // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
-        // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
         if (campaign.totalRaised < campaign.goal) revert GoalWasNotReached();
         if (campaign.fundsWithdrawn) revert FundsAlreadyWithdrawn();
 
@@ -213,15 +279,17 @@ contract Crowdfunding is ReentrancyGuardTransient {
         uint256 contribution = contributions[campaignId][msg.sender];
 
         if (campaign.creator == address(0)) revert CampaignDoesNotExist();
-        if (!campaign.cancelled) {
+        if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
+
+        if (!campaign.cancelled && campaign.fundingMode == FundingMode.FixedDeadline) {
             // Campaigns use day-scale deadlines, so small validator timestamp drift is accepted.
             // forge-lint: disable-next-line(block-timestamp)
             if (block.timestamp < campaign.deadline) revert CampaignIsStillActive();
-            if (campaign.totalRaised >= campaign.goal) revert GoalWasReached();
         }
         if (contribution == 0) revert NoContributionToRefund();
 
         contributions[campaignId][msg.sender] = 0;
+        campaign.totalRaised -= contribution;
 
         emit RefundClaimed(campaignId, msg.sender, contribution);
 

@@ -36,7 +36,7 @@ contract CrowdfundingTransferFailuresTest is Test {
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
 
         vm.warp(deadline);
 
@@ -44,7 +44,7 @@ contract CrowdfundingTransferFailuresTest is Test {
 
         rejectingReceiver.withdrawFunds(0);
 
-        (,,,,, uint256 totalRaised, bool fundsWithdrawn,) = crowdfunding.campaigns(0);
+        (,,,,,, uint256 totalRaised, bool fundsWithdrawn,) = crowdfunding.campaigns(0);
 
         assertEq(totalRaised, goal);
         assertFalse(fundsWithdrawn);
@@ -55,12 +55,14 @@ contract CrowdfundingTransferFailuresTest is Test {
         uint256 goal = 2 ether;
         uint256 donation = 1 ether;
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(address(this), donation);
         rejectingReceiver.donate{value: donation}(0);
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
 
         vm.warp(deadline);
 

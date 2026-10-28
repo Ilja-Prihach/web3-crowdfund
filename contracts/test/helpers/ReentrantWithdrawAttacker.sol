@@ -18,7 +18,11 @@ contract ReentrantWithdrawAttacker {
         campaignId = crowdfunding.nextCampaignId();
 
         crowdfunding.createCampaign(
-            "Reentrant creator", "Campaign created by an attacker contract", goal, durationInDays
+            "Reentrant creator",
+            "Campaign created by an attacker contract",
+            goal,
+            Crowdfunding.FundingMode.FixedDeadline,
+            durationInDays
         );
     }
 

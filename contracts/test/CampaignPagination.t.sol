@@ -10,9 +10,9 @@ contract CampaignPaginationTest is Test {
     function setUp() public {
         crowdfunding = new Crowdfunding();
 
-        crowdfunding.createCampaign("Campaign 0", "Description 0", 1 ether, 7);
-        crowdfunding.createCampaign("Campaign 1", "Description 1", 2 ether, 14);
-        crowdfunding.createCampaign("Campaign 2", "Description 2", 3 ether, 21);
+        crowdfunding.createCampaign("Campaign 0", "Description 0", 1 ether, Crowdfunding.FundingMode.FixedDeadline, 7);
+        crowdfunding.createCampaign("Campaign 1", "Description 1", 2 ether, Crowdfunding.FundingMode.FixedDeadline, 14);
+        crowdfunding.createCampaign("Campaign 2", "Description 2", 3 ether, Crowdfunding.FundingMode.FixedDeadline, 21);
 
         crowdfunding.cancelCampaign(1);
     }
