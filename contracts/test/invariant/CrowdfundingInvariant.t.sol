@@ -14,7 +14,11 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
         crowdfunding = new Crowdfunding();
 
         crowdfunding.createCampaign(
-            "Invariant Campaign", "Campaign used for invariant testing", type(uint128).max, 36_500
+            "Invariant Campaign",
+            "Campaign used for invariant testing",
+            type(uint128).max,
+            Crowdfunding.FundingMode.FixedDeadline,
+            365
         );
 
         handler = new CampaignHandler(crowdfunding, address(this));
@@ -29,13 +33,13 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
     }
 
     function invariantBalanceMatchesGhostAccounting() public view {
-        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
+        (,,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         uint256 totalDonated = handler.ghostTotalDonated();
         uint256 totalRefunded = handler.ghostTotalRefunded();
 
-        assertEq(totalRaised, totalDonated);
-        assertEq(address(crowdfunding).balance, totalDonated - totalRefunded);
+        assertEq(totalRaised, totalDonated - totalRefunded);
+        assertEq(address(crowdfunding).balance, totalRaised);
     }
 
     function invariantContributionsMatchGhostAccounting() public view {
@@ -52,15 +56,14 @@ contract CrowdfundingInvariantTest is StdInvariant, Test {
             contributionSum += storedContribution;
         }
 
-        (,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
-        uint256 totalRefunded = handler.ghostTotalRefunded();
+        (,,,,,, uint256 totalRaised,,) = crowdfunding.campaigns(0);
 
         assertEq(address(crowdfunding).balance, contributionSum);
-        assertEq(contributionSum + totalRefunded, totalRaised);
+        assertEq(contributionSum, totalRaised);
     }
 
     function invariantCancellationMatchesGhostState() public view {
-        (,,,,,,, bool cancelled) = crowdfunding.campaigns(0);
+        (,,,,,,,, bool cancelled) = crowdfunding.campaigns(0);
 
         assertEq(cancelled, handler.ghostCancelled());
     }

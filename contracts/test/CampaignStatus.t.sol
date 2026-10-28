@@ -17,23 +17,27 @@ contract CampaignStatusTest is Test {
         crowdfunding.getCampaignStatus(0);
     }
 
-    function testStatusIsActiveBeforeDeadline() public {
+    function testStatusIsSuccessfulBeforeDeadlineWhenGoalReached() public {
         uint256 goal = 1 ether;
         address donor = makeAddr("donor");
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Active));
+        assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Successful));
     }
 
     function testStatusIsFailedAtDeadlineWhenGoalNotReached() public {
-        crowdfunding.createCampaign("Test Campaign", "Test Description", 1 ether, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", 1 ether, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Failed));
@@ -43,13 +47,15 @@ contract CampaignStatusTest is Test {
         uint256 goal = 1 ether;
         address donor = makeAddr("donor");
 
-        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         assertEq(uint256(crowdfunding.getCampaignStatus(0)), uint256(Crowdfunding.CampaignStatus.Successful));
@@ -61,13 +67,15 @@ contract CampaignStatusTest is Test {
         address donor = makeAddr("donor");
 
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Campaign", "Test Description", goal, 7);
+        crowdfunding.createCampaign(
+            "Test Campaign", "Test Description", goal, Crowdfunding.FundingMode.FixedDeadline, 7
+        );
 
         vm.deal(donor, goal);
         vm.prank(donor);
         crowdfunding.donate{value: goal}(0);
 
-        (,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
+        (,,,,, uint256 deadline,,,) = crowdfunding.campaigns(0);
         vm.warp(deadline);
 
         vm.prank(creator);
