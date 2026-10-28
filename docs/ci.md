@@ -1,16 +1,25 @@
 # Непрерывная интеграция (CI)
 
-Проверки контрактов выполняются автоматически в GitHub Actions. Конфигурация находится в `.github/workflows/contracts.yml`.
+Проверки контрактов и frontend выполняются автоматически в GitHub Actions. Конфигурации находятся в `.github/workflows/contracts.yml` и `.github/workflows/frontend.yml`.
 
 ## Когда запускается
 
-Workflow `Contracts CI` запускается при каждом pull request в `main` и при каждом push в `main`.
+Workflows `Contracts CI` и `Frontend CI` запускаются при каждом pull request в `main` и при каждом push в `main`.
 
-Фильтр по путям (`paths`) намеренно не используется. Проверки `Format, build, test` и `Slither analysis` обязательны для слияния в `main`, а workflow, пропущенный фильтром, не сообщает статус. Из-за этого pull request без изменений в `contracts/` (например, только документация) нельзя было бы слить. Полный прогон бесплатен для публичного репозитория.
+Фильтр по путям (`paths`) намеренно не используется. Обязательный workflow, пропущенный фильтром, не сообщает статус, из-за чего pull request с изменениями только другой подсистемы нельзя было бы слить. Полный прогон бесплатен для публичного репозитория.
 
 ## Что проверяется
 
-Jobs `Format, build, test` и `Slither analysis` выполняются параллельно на `ubuntu-latest`.
+Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` выполняются независимо на `ubuntu-latest`.
+
+`Lint, typecheck, build` работает в каталоге `frontend/`:
+
+1. Загружает репозиторий.
+2. Устанавливает версию Node.js из `frontend/.nvmrc` и включает npm cache по lock-файлу.
+3. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
+4. `npm run lint` — проверяет исходники ESLint без допустимых предупреждений.
+5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
+6. `npm run build` — собирает production-версию Next.js.
 
 `Format, build, test` работает в каталоге `contracts/`:
 
@@ -28,7 +37,7 @@ Jobs `Format, build, test` и `Slither analysis` выполняются пара
 ## Защита ветки `main`
 
 - изменения попадают в `main` только через pull request;
-- для слияния обязательны успешные проверки `Format, build, test` и `Slither analysis`;
+- перед слиянием должны успешно пройти `Format, build, test`, `Slither analysis` и `Lint, typecheck, build`; новый frontend check добавляется в required checks после первого успешного запуска в GitHub;
 - перед слиянием ветка должна быть обновлена до актуального `main`, чтобы CI проверял именно тот код, который попадёт в `main`;
 - одобрение ревьюера не требуется, так как проект ведёт один разработчик;
 - правила распространяются и на администраторов репозитория.
@@ -38,6 +47,15 @@ Jobs `Format, build, test` и `Slither analysis` выполняются пара
 Автоматический деплой контрактов не настроен намеренно. Он потребовал бы хранить приватный ключ в секретах CI, а проект не допускает приватных ключей вне кошелька разработчика. Контракты развёртываются вручную через `forge script`.
 
 ## Локальная проверка перед push
+
+Из каталога `frontend/`:
+
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm run build
+```
 
 Из каталога `contracts/`:
 
