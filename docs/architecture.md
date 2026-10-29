@@ -9,7 +9,7 @@ Frontend никогда не получает и не хранит приват�
 
 ## Frontend shell и дизайн-система
 
-Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`.
+Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`. `AppHeader` остаётся серверным компонентом; единственная клиентская часть shell — `MobileMenu`, который до 960 px заменяет навигацию кнопкой-бургером с выпадающей панелью и закрывается по Escape или выбору пункта.
 
 Глобальный слой содержит reset, семантические CSS custom properties, базовую типографику, focus-правила и поддержку `prefers-reduced-motion`. Компонентные стили изолированы через SCSS Modules. Общие UI-примитивы `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `frontend/src/shared/ui`, а крупные части shell — в `frontend/src/widgets`.
 
