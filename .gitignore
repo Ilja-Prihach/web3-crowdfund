@@ -20,3 +20,6 @@ dist/
 # OS and editor files
 .DS_Store
 .idea/
+
+# Local design mockups and renders (reference only, not shipped)
+/design/
