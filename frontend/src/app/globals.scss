@@ -1,20 +1,91 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@use "../shared/styles/reset";
+@use "../shared/styles/typography";
+
+:root {
+  --color-paper: #f3efe4;
+  --color-surface: #fffdf7;
+  --color-surface-muted: #e9e4d8;
+  --color-text: #17201b;
+  --color-text-muted: #56625b;
+  --color-forest: #174c3c;
+  --color-forest-strong: #0f392d;
+  --color-cinnabar: #e45b3f;
+  --color-cinnabar-muted: #f4d4ca;
+  --color-mint: #a8c7b8;
+  --color-border: #c9c2b3;
+  --color-danger: #9d3b2a;
+  --color-danger-surface: #fae8e2;
+  --color-focus: #e45b3f;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-round: 999px;
+
+  --font-size-small: 0.8125rem;
+  --font-size-label: 0.875rem;
+  --font-size-body: 1rem;
+  --font-size-lead: clamp(1.125rem, 2vw, 1.375rem);
+  --font-size-title: clamp(2.75rem, 8vw, 6.75rem);
+  --font-size-heading: clamp(2rem, 4vw, 3.75rem);
+
+  --border-width: 1px;
+  --focus-width: 3px;
+  --transition-fast: 160ms;
+  --page-gutter: clamp(1rem, 4vw, 3rem);
 }
 
-html {
-  color-scheme: light;
-}
+@include reset.apply;
+@include typography.apply;
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
 }
 
-main {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
+body > div:not([hidden]) {
+  min-width: 0;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.skipLink {
+  position: fixed;
+  z-index: 100;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-text);
+  border-radius: var(--radius-sm);
+  color: var(--color-surface);
+  background: var(--color-text);
+  font-weight: 700;
+  transform: translateY(-200%);
+  transition: transform var(--transition-fast) ease;
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .skipLink {
+    transition: none;
+  }
 }

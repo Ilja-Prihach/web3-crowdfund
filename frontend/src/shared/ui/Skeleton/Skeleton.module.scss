@@ -1,0 +1,59 @@
+@use "../../styles/mixins";
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 25%,
+      rgb(255 253 247 / 70%) 45%,
+      transparent 65%
+    );
+    content: "";
+    transform: translateX(-100%);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+.line {
+  width: 100%;
+  height: 0.875rem;
+}
+
+.title {
+  width: min(75%, 28rem);
+  height: 2rem;
+}
+
+.control {
+  width: 100%;
+  height: 3.25rem;
+}
+
+.panel {
+  width: 100%;
+  min-height: 12rem;
+}
+
+.visuallyHidden {
+  @include mixins.visually-hidden;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    content: none;
+  }
+}
