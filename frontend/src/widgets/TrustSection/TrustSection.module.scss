@@ -7,90 +7,198 @@
   padding: var(--space-9) var(--page-gutter) 0;
 }
 
-.cards {
+.layout {
   display: grid;
   gap: var(--space-5);
 }
 
 .guarantees,
 .limitations {
-  display: grid;
-  align-content: start;
-  gap: 1.375rem;
-  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
 }
 
-.guarantees {
-  background: var(--color-mint-tint);
-}
+.badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  min-height: 2rem;
+  padding-inline: 0.875rem;
+  border-radius: var(--radius-round);
+  color: var(--color-surface);
+  font-size: var(--font-size-small);
+  font-weight: 800;
 
-.limitations {
-  background: var(--color-cinnabar-tint);
+  .guarantees & {
+    background: var(--color-forest);
+  }
+
+  .limitations & {
+    background: var(--color-cinnabar-strong);
+  }
 }
 
 .cardTitle {
-  font-size: 1.6rem;
+  font-size: var(--font-size-subheading);
 }
 
 .list {
   display: grid;
-  gap: 0.875rem;
+  gap: 1.375rem;
   color: var(--color-text-soft);
   font-weight: 600;
+  line-height: 1.4;
   list-style: none;
 
   li {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.875rem;
   }
+}
 
-  li::before {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 1.625rem;
-    height: 1.625rem;
-    margin-top: 1px;
-    border-radius: var(--radius-round);
-    font-size: 0.78rem;
-    font-weight: 800;
+.iconTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+
+  .guarantees & {
+    color: var(--color-mint);
+    background: var(--color-forest);
+  }
+
+  .limitations & {
+    color: #f08a6f;
+    background: var(--color-text);
   }
 }
 
-.guarantees .list li::before {
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.note {
+  margin-top: auto;
+  padding-top: 1.125rem;
+  border-top: var(--border-width) solid var(--color-border-soft);
+  font-size: var(--font-size-label);
+  font-weight: 700;
+
+  .guarantees & {
+    color: var(--color-forest);
+  }
+
+  .limitations & {
+    color: var(--color-danger);
+  }
+}
+
+.vault {
+  position: relative;
+  order: -1;
+  min-height: 27.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
   color: var(--color-surface);
-  background: var(--color-forest);
-  content: "✓" / "";
+  background: #0e1512;
 }
 
-.limitations .list li::before {
-  color: var(--color-danger);
-  background: var(--color-surface);
-  content: "✕" / "";
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.verified {
+.vaultTag {
+  position: absolute;
+  top: 1.125rem;
+  left: 1.125rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.875rem;
+  padding-inline: 0.75rem;
+  border: var(--border-width) solid rgb(255 253 247 / 16%);
+  border-radius: var(--radius-round);
+  color: var(--color-mint);
+  background: rgb(255 253 247 / 10%);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.vaultFoot {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-4) 1.125rem;
+  gap: var(--space-3);
+  padding: var(--space-3) 0.875rem;
+  border: var(--border-width) solid rgb(255 253 247 / 10%);
   border-radius: var(--radius-md);
-  background: rgb(255 253 247 / 70%);
-  font-size: 0.9rem;
+  background: rgb(14 21 18 / 72%);
+
+  strong {
+    display: block;
+    font-family: var(--font-editorial), serif;
+    font-size: 1.05rem;
+  }
+
+  span {
+    color: rgb(255 253 247 / 62%);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.78rem;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--color-mint);
+    font-size: var(--font-size-label);
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  a span {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+  }
 }
 
 @include mixins.from-medium {
-  .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: stretch;
   }
 
   .guarantees,
   .limitations {
-    padding: 2.5rem;
-    border-radius: var(--radius-xl);
+    padding: 1.875rem;
+    border-radius: 1.75rem;
+  }
+
+  .vault {
+    order: 0;
+    min-height: 31rem;
+    border-radius: 1.75rem;
   }
 }
