@@ -11,6 +11,7 @@
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
+  text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -74,6 +75,12 @@
 
 .regular {
   min-height: 3rem;
+}
+
+.large {
+  min-height: 3.375rem;
+  padding-inline: 1.625rem;
+  font-size: 1rem;
 }
 
 .fullWidth {

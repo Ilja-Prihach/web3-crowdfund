@@ -1,71 +1,116 @@
-import Image from "next/image";
+import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
-import heroImage from "./assets/hero.webp";
 import styles from "./HeroSection.module.scss";
 
 const contractUrl =
   "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
+
+const proofPoints = ["Без посредника", "Возврат по правилам", "Контракт верифицирован"];
+
+const contractRules = [
+  { term: "Цель", value: "Сумма в ETH от автора" },
+  { term: "Срок", value: "1–365 дней или без срока" },
+  { term: "Возврат", value: "По правилам режима" },
+];
+
+const contractFacts = [
+  { term: "Сеть", value: "Sepolia" },
+  { term: "Адрес", value: "0x6890…077A" },
+  { term: "Код", value: "Верифицирован" },
+];
 
 export function HeroSection() {
   return (
     <section aria-labelledby="hero-title" className={styles.hero}>
       <div className={styles.inner}>
         <div className={styles.content}>
-          <p className={styles.kicker}>OpenFund · Ethereum Sepolia</p>
+          <p className={styles.eyebrow}>Краудфандинг в Ethereum · прототип в Sepolia</p>
           <h1 className={styles.title} id="hero-title">
-            Правила сбора видны до перевода
+            Сборы, где правила <em>исполняет код</em>
           </h1>
           <p className={styles.lead}>
-            Независимые проекты собирают ETH по условиям, записанным в контракте: к
-            установленному сроку или без искусственного дедлайна.
+            Поддерживайте проекты в ETH напрямую через смарт-контракт. Цель, срок и
+            условия возврата видны до перевода — и их нельзя переписать задним числом.
           </p>
 
           <div className={styles.actions}>
-            <a className={styles.primaryAction} href="#funding-modes">
-              Разобраться в режимах
-            </a>
-            <a
-              aria-label="Открыть контракт V2 в Etherscan — откроется в новой вкладке"
-              className={styles.secondaryAction}
+            <ButtonLink href="#how-it-works" size="large">
+              Как это работает
+            </ButtonLink>
+            <ButtonLink
+              aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"
               href={contractUrl}
               rel="noreferrer"
+              size="large"
               target="_blank"
+              variant="secondary"
             >
               Проверить контракт <span aria-hidden="true">↗</span>
-            </a>
+            </ButtonLink>
           </div>
+
+          <ul className={styles.proof}>
+            {proofPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
         </div>
 
-        <figure className={styles.visual}>
-          <div className={styles.imageFrame}>
-            <Image
-              alt="Распределённые вычислительные узлы, соединённые линиями транзакций и слоями публичного реестра"
-              className={styles.image}
-              placeholder="blur"
-              preload
-              sizes="(max-width: 959px) calc(100vw - 2rem), (max-width: 1440px) 56vw, 780px"
-              src={heroImage}
-            />
-          </div>
-          <figcaption className={styles.caption}>
-            Редакционная иллюстрация · не изображает реальную кампанию
-          </figcaption>
-        </figure>
+        <figure aria-label="Правила смарт-контракта OpenFund" className={styles.stage}>
+          <div className={styles.rulesCard}>
+            <div aria-hidden="true" className={styles.cover}>
+              <svg preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
+                <circle cx="320" cy="40" fill="rgb(168 199 184 / 18%)" r="110" />
+                <circle cx="320" cy="40" fill="rgb(168 199 184 / 22%)" r="60" />
+                <path d="M0 190 Q100 140 200 175 T400 150 V225 H0Z" fill="rgb(255 253 247 / 8%)" />
+                <rect
+                  fill="#e45b3f"
+                  height="34"
+                  rx="5"
+                  transform="rotate(45 61 87)"
+                  width="34"
+                  x="44"
+                  y="70"
+                />
+              </svg>
+              <span className={styles.coverChip}>Условия до первого вклада</span>
+            </div>
 
-        <dl className={styles.facts}>
-          <div className={styles.fact}>
-            <dt>Режимы</dt>
-            <dd>К сроку / открытая цель</dd>
+            <div className={styles.rulesBody}>
+              <p className={styles.rulesTitle}>Правила записаны в контракт до первого перевода</p>
+              <dl className={styles.rules}>
+                {contractRules.map((rule) => (
+                  <div key={rule.term}>
+                    <dt>{rule.term}</dt>
+                    <dd>{rule.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
-          <div className={styles.fact}>
-            <dt>Расчёты</dt>
-            <dd>Только ETH</dd>
+
+          <p className={styles.toast}>
+            <span aria-hidden="true" className={styles.toastIcon}>
+              ✓
+            </span>
+            <span>
+              <strong>ETH идут в контракт</strong>
+              <span className={styles.toastNote}>а не через сервер OpenFund</span>
+            </span>
+          </p>
+
+          <div className={styles.contractCard}>
+            <p className={styles.contractLabel}>◆ Смарт-контракт V2</p>
+            <dl className={styles.contractFacts}>
+              {contractFacts.map((fact) => (
+                <div key={fact.term}>
+                  <dt>{fact.term}</dt>
+                  <dd>{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-          <div className={styles.fact}>
-            <dt>Источник истины</dt>
-            <dd>Контракт V2</dd>
-          </div>
-        </dl>
+        </figure>
       </div>
     </section>
   );
