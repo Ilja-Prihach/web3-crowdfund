@@ -1,3 +1,4 @@
+@use "../shared/styles/mixins";
 @use "../shared/styles/reset";
 @use "../shared/styles/typography";
 
@@ -21,6 +22,7 @@
   --color-amber-text: #6b470a;
   --color-border-soft: #ddd6c6;
   --color-border: #c9c2b3;
+  --color-live: #3fa66f;
   --color-danger: #9d3b2a;
   --color-danger-surface: #fae8e2;
   --color-focus: #e45b3f;
@@ -63,6 +65,16 @@
 
 @include reset.apply;
 @include typography.apply;
+
+html {
+  scroll-padding-top: var(--space-4);
+}
+
+@include mixins.from-medium {
+  html {
+    scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  }
+}
 
 body {
   margin: 0;

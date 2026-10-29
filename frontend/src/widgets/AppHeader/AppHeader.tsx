@@ -15,8 +15,9 @@ export function AppHeader() {
         </Link>
 
         <nav aria-label="Основная навигация" className={styles.navigation}>
+          <Link href="/#how-it-works">Как работает</Link>
           <Link href="/#funding-modes">Режимы</Link>
-          <Link href="/#trust">О доверии</Link>
+          <Link href="/#trust">Безопасность</Link>
           <a
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
             href={contractUrl}
