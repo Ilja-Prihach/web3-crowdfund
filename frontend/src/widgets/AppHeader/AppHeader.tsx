@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import styles from "./AppHeader.module.scss";
@@ -11,8 +12,10 @@ export function AppHeader() {
     <header className={styles.header}>
       <div className={styles.inner}>
         <Link className={styles.brand} href="/" aria-label="OpenFund — на главную">
-          <span aria-hidden="true" className={styles.brandMark} />
-          <span>OpenFund</span>
+          <BrandMark className={styles.brandMark} />
+          <span>
+            Open<em>Fund</em>
+          </span>
         </Link>
 
         <nav aria-label="Основная навигация" className={styles.navigation}>

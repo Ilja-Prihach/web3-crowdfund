@@ -34,21 +34,15 @@
 }
 
 .brandMark {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--radius-sm);
-  background: var(--color-forest);
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+}
 
-  &::after {
-    width: 0.5625rem;
-    height: 0.5625rem;
-    border-radius: 1px;
-    background: var(--color-cinnabar);
-    transform: rotate(45deg);
-    content: "";
-  }
+.brand em {
+  color: var(--color-forest);
+  font-style: italic;
+  font-weight: 400;
 }
 
 .navigation {

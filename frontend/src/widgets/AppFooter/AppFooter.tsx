@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
+
 import styles from "./AppFooter.module.scss";
 
 const contractUrl =
@@ -13,8 +15,10 @@ export function AppFooter() {
         <div className={styles.top}>
           <div className={styles.intro}>
             <Link className={styles.brand} href="/" aria-label="OpenFund — на главную">
-              <span aria-hidden="true" className={styles.brandMark} />
-              <span>OpenFund</span>
+              <BrandMark className={styles.brandMark} tone="dark" />
+              <span>
+                Open<em>Fund</em>
+              </span>
             </Link>
             <p>
               Учебная on-chain-платформа для прозрачного финансирования независимых
