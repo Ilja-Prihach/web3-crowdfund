@@ -2,7 +2,7 @@ import styles from "./FundingModesSection.module.scss";
 
 // Code-built vector scenes that give each funding mode its own palette.
 
-// FixedDeadline: a countdown dial next to the deadline calendar page.
+// FixedDeadline: a funding progress ring next to the deadline calendar page.
 export function FixedDeadlineArt() {
   return (
     <svg
@@ -182,7 +182,7 @@ export function FixedDeadlineArt() {
         fontWeight="700"
         textAnchor="middle"
       >
-        срока прошло
+        собрано
       </text>
       <g transform="rotate(7 314 100)" filter="url(#fx-shadow)">
         <rect x="268" y="46" width="92" height="108" rx="14" fill="#fffdf7" />
