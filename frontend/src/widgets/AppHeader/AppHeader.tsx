@@ -1,9 +1,10 @@
 import Link from "next/link";
 
-import styles from "./AppHeader.module.scss";
+import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
-const contractUrl =
-  "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
+import styles from "./AppHeader.module.scss";
+import { MobileMenu } from "./MobileMenu";
+import { contractUrl, navigationLinks } from "./navigation";
 
 export function AppHeader() {
   return (
@@ -15,23 +16,30 @@ export function AppHeader() {
         </Link>
 
         <nav aria-label="Основная навигация" className={styles.navigation}>
-          <Link href="/#how-it-works">Как работает</Link>
-          <Link href="/#funding-modes">Режимы</Link>
-          <Link href="/#trust">Безопасность</Link>
-          <a
+          {navigationLinks.map((link) => (
+            <Link href={link.href} key={link.href}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className={styles.actions}>
+          <p className={styles.network} title="Тестовая сеть Ethereum">
+            <span aria-hidden="true" className={styles.networkDot} />
+            Sepolia
+          </p>
+          <ButtonLink
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
+            className={styles.contractLink}
             href={contractUrl}
             rel="noreferrer"
+            size="compact"
             target="_blank"
           >
             Контракт <span aria-hidden="true">↗</span>
-          </a>
-        </nav>
-
-        <p className={styles.network} title="Тестовая сеть Ethereum">
-          <span aria-hidden="true" className={styles.networkDot} />
-          Sepolia
-        </p>
+          </ButtonLink>
+          <MobileMenu />
+        </div>
       </div>
     </header>
   );

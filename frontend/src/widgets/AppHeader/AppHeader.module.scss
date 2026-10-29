@@ -2,26 +2,28 @@
 @use "../../shared/styles/tokens";
 
 .header {
+  position: relative;
+  z-index: 10;
   border-bottom: var(--border-width) solid var(--color-border-soft);
   background: rgb(243 239 228 / 86%);
   backdrop-filter: saturate(140%) blur(12px);
 }
 
 .inner {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
+  justify-content: space-between;
+  gap: var(--space-4);
   max-width: tokens.$content-width;
+  min-height: 4rem;
   margin: 0 auto;
-  padding: var(--space-3) var(--page-gutter) var(--space-2);
+  padding-inline: var(--page-gutter);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  width: fit-content;
   min-height: 2.75rem;
   font-family: var(--font-editorial), serif;
   font-size: 1.375rem;
@@ -50,39 +52,18 @@
 }
 
 .navigation {
+  display: none;
+}
+
+.actions {
   display: flex;
-  grid-column: 1 / -1;
-  grid-row: 2;
-  gap: var(--space-1);
-  margin-inline: calc(var(--page-gutter) * -1);
-  padding-inline: var(--page-gutter);
-  overflow-x: auto;
-  scrollbar-width: none;
-  font-size: var(--font-size-label);
-  font-weight: 600;
-
-  a {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    min-height: 2.75rem;
-    padding-inline: var(--space-4);
-    border-radius: var(--radius-round);
-    color: var(--color-text-soft);
-    text-decoration: none;
-    transition: background-color var(--transition-fast) ease;
-  }
-
-  a:hover {
-    color: var(--color-text);
-    background: var(--color-surface-muted);
-  }
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .network {
   display: inline-flex;
   align-items: center;
-  justify-self: end;
   gap: var(--space-2);
   min-height: 2.25rem;
   padding-inline: var(--space-3);
@@ -102,26 +83,48 @@
   box-shadow: 0 0 0 3px rgb(63 166 111 / 18%);
 }
 
+.actions .contractLink {
+  display: none;
+}
+
 @include mixins.from-medium {
   .header {
     position: sticky;
     top: 0;
-    z-index: 10;
   }
 
   .inner {
-    grid-template-columns: auto 1fr auto;
     min-height: var(--header-height);
-    padding-block: 0;
-    column-gap: var(--space-6);
+    gap: var(--space-6);
   }
 
   .navigation {
-    grid-column: auto;
-    grid-row: auto;
-    margin-inline: 0;
-    padding-inline: 0;
-    overflow-x: visible;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: var(--space-1);
+    font-size: var(--font-size-label);
+    font-weight: 600;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      padding-inline: var(--space-4);
+      border-radius: var(--radius-round);
+      color: var(--color-text-soft);
+      text-decoration: none;
+      transition: background-color var(--transition-fast) ease;
+    }
+
+    a:hover {
+      color: var(--color-text);
+      background: var(--color-surface-muted);
+    }
+  }
+
+  .actions .contractLink {
+    display: inline-flex;
   }
 }
 
