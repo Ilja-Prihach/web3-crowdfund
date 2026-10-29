@@ -1,70 +1,77 @@
+import { SectionHeader } from "@/shared/ui/SectionHeader/SectionHeader";
+
 import styles from "./FundingModesSection.module.scss";
+
+const modes = [
+  {
+    code: "FixedDeadline",
+    tag: "Есть срок",
+    title: "Собрать к дате",
+    summary: "Для проектов, которым нужна конкретная сумма до начала работ или события.",
+    endLabel: "Дедлайн",
+    rules: [
+      { term: "Срок", value: "1–365 дней" },
+      { term: "Успех", value: "Сразу при достижении цели" },
+      { term: "Возврат", value: "Если срок прошёл или сбор отменён" },
+    ],
+  },
+  {
+    code: "OpenEnded",
+    tag: "Без срока",
+    title: "Идти к цели без дедлайна",
+    summary: "Для долгих инициатив, где важна сумма, а искусственная дата не нужна.",
+    endLabel: "∞",
+    rules: [
+      { term: "Срок", value: "Нет" },
+      { term: "Успех", value: "Сразу при достижении цели" },
+      { term: "Возврат", value: "В любой момент до достижения цели" },
+    ],
+  },
+];
 
 export function FundingModesSection() {
   return (
-    <section aria-labelledby="funding-modes-title" className={styles.section} id="funding-modes">
+    <section aria-labelledby="funding-modes-title" id="funding-modes">
       <div className={styles.inner}>
-        <header className={styles.header}>
-          <p className={styles.index}>1 / Условия сбора</p>
-          <h2 className={styles.title} id="funding-modes-title">
-            Два режима — разные права на возврат
-          </h2>
-          <p className={styles.intro}>
-            Режим выбирается при создании кампании. Контракт применяет его правила к
-            каждому пожертвованию, возврату и выводу средств.
-          </p>
-        </header>
+        <SectionHeader
+          aside="Режим фиксируется при запуске и определяет срок и право на возврат."
+          eyebrow="Два режима"
+          title="Выберите сценарий сбора"
+          titleId="funding-modes-title"
+        />
 
         <div className={styles.modes}>
-          <article className={styles.fixedMode}>
-            <div className={styles.modeHeader}>
-              <p className={styles.modeNumber}>A</p>
-              <div>
-                <p className={styles.modeLabel}>FixedDeadline</p>
-                <h3 className={styles.modeTitle}>Сбор к сроку</h3>
+          {modes.map((mode) => (
+            <article className={styles.mode} key={mode.code}>
+              <div className={styles.top}>
+                <p className={styles.tag}>{mode.tag}</p>
+                <p className={styles.code}>{mode.code}</p>
               </div>
-            </div>
 
-            <ol className={styles.steps}>
-              <li>
-                <span>Создатель задаёт цель и срок от 1 до 365 дней.</span>
-              </li>
-              <li>
-                <span>Достижение цели сразу делает кампанию успешной.</span>
-              </li>
-              <li>
-                <span>Если срок наступил раньше, участники возвращают свои вклады.</span>
-              </li>
-            </ol>
-
-            <p className={styles.note}>
-              После первого пожертвования дедлайн изменить нельзя.
-            </p>
-          </article>
-
-          <article className={styles.openMode}>
-            <div className={styles.modeHeader}>
-              <p className={styles.modeNumber}>B</p>
-              <div>
-                <p className={styles.modeLabel}>OpenEnded</p>
-                <h3 className={styles.modeTitle}>Открытая цель</h3>
+              <div className={styles.intro}>
+                <h3 className={styles.title}>{mode.title}</h3>
+                <p className={styles.summary}>{mode.summary}</p>
               </div>
-            </div>
 
-            <ol className={styles.steps}>
-              <li>
-                <span>У кампании есть цель, но нет искусственного дедлайна.</span>
-              </li>
-              <li>
-                <span>До достижения цели участник может вернуть активный вклад.</span>
-              </li>
-              <li>
-                <span>После достижения цели возвраты и новые пожертвования закрываются.</span>
-              </li>
-            </ol>
+              <div aria-hidden="true" className={styles.timeline}>
+                <span className={styles.track} />
+                <span className={styles.fill} />
+                <span className={styles.startTick} />
+                <span className={styles.endTick} />
+                <span className={styles.startLabel}>Старт</span>
+                <span className={styles.endLabel}>{mode.endLabel}</span>
+              </div>
 
-            <p className={styles.note}>Создатель может отменить активную кампанию.</p>
-          </article>
+              <dl className={styles.rules}>
+                {mode.rules.map((rule) => (
+                  <div key={rule.term}>
+                    <dt>{rule.term}</dt>
+                    <dd>{rule.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
         </div>
       </div>
     </section>

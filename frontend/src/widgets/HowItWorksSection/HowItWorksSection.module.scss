@@ -1,0 +1,190 @@
+@use "../../shared/styles/mixins";
+@use "../../shared/styles/tokens";
+
+.inner {
+  max-width: tokens.$content-width;
+  margin: 0 auto;
+  padding: var(--space-9) var(--page-gutter) 0;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-5);
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  align-content: start;
+  gap: 1.125rem;
+  padding: 0.875rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.art {
+  display: grid;
+  place-items: center;
+  height: 11.875rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+}
+
+.text {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) 0.875rem;
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+}
+
+.number {
+  color: var(--color-cinnabar-strong);
+  font-family: var(--font-editorial), serif;
+  font-weight: 700;
+}
+
+.stepTitle {
+  font-size: 1.2rem;
+}
+
+// Step 1: schematic form
+.formArt {
+  display: grid;
+  gap: 0.5625rem;
+  width: 76%;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+
+  i {
+    display: block;
+    height: 0.5625rem;
+    border-radius: 0.3rem;
+    background: var(--color-surface-muted);
+  }
+}
+
+.lineShort {
+  width: 60%;
+}
+
+.lineTiny {
+  width: 40%;
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+
+  i {
+    height: 1.625rem;
+    border-radius: 0.45rem;
+  }
+}
+
+.formArt .segmentActive {
+  background: var(--color-forest);
+}
+
+.formArt .submit {
+  width: 50%;
+  height: 1.625rem;
+  border-radius: var(--radius-round);
+  background: var(--color-cinnabar);
+}
+
+// Step 2: wallet to contract
+.walletArt {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.wallet {
+  display: grid;
+  align-content: space-between;
+  width: 5.75rem;
+  height: 7.25rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  color: var(--color-surface);
+  background: var(--color-text);
+  box-shadow: var(--shadow-md);
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  b {
+    font-family: var(--font-editorial), serif;
+    font-size: 1.15rem;
+  }
+}
+
+.arrow {
+  color: var(--color-cinnabar);
+  font-size: 1.4rem;
+}
+
+.contract {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.125rem;
+  background: var(--color-forest);
+  box-shadow: var(--shadow-md);
+
+  &::after {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 3px;
+    background: var(--color-cinnabar);
+    transform: rotate(45deg);
+    content: "";
+  }
+}
+
+// Step 3: two outcomes
+.outcomeArt {
+  display: grid;
+  gap: 0.625rem;
+  width: 82%;
+
+  p {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  span:last-child {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+}
+
+.success {
+  box-shadow: inset 4px 0 0 var(--color-forest), var(--shadow-sm);
+}
+
+.failure {
+  box-shadow: inset 4px 0 0 var(--color-cinnabar), var(--shadow-sm);
+}
+
+@include mixins.from-medium {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

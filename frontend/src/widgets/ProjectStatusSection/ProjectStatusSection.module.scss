@@ -1,0 +1,92 @@
+@use "../../shared/styles/mixins";
+@use "../../shared/styles/tokens";
+
+.inner {
+  max-width: tokens.$content-width;
+  margin: 0 auto;
+  padding: var(--space-9) var(--page-gutter);
+}
+
+.card {
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: var(--space-6);
+  overflow: hidden;
+  padding: var(--space-7) var(--space-5);
+  border-radius: 1.75rem;
+  color: var(--color-surface);
+  background: var(--color-text);
+
+  // The single decorative glow allowed by the visual direction.
+  &::before {
+    position: absolute;
+    top: -12.5rem;
+    right: -8.75rem;
+    width: 32.5rem;
+    height: 32.5rem;
+    border-radius: var(--radius-round);
+    background: radial-gradient(circle, rgb(228 91 63 / 45%), transparent 65%);
+    content: "";
+  }
+}
+
+.copy {
+  position: relative;
+  display: grid;
+  gap: 1.125rem;
+
+  p {
+    max-width: 30rem;
+    color: rgb(255 253 247 / 72%);
+  }
+}
+
+.title {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.side {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--color-surface);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-mint);
+  }
+}
+
+.address {
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  color: rgb(255 253 247 / 62%);
+  background: rgb(255 253 247 / 6%);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+@include mixins.from-medium {
+  .card {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: var(--space-7);
+    padding: 4.5rem;
+    border-radius: 2.5rem;
+  }
+}
