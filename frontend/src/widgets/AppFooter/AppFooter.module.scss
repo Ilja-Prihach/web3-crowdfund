@@ -2,102 +2,78 @@
 @use "../../shared/styles/tokens";
 
 .footer {
-  color: rgb(255 253 247 / 72%);
-  background: var(--color-text);
+  border-top: var(--border-width) solid var(--color-border-soft);
   font-size: var(--font-size-label);
 }
 
 .inner {
   display: grid;
-  gap: var(--space-7);
+  justify-items: start;
+  gap: var(--space-3);
   max-width: tokens.$content-width;
   margin: 0 auto;
-  padding: var(--space-8) var(--page-gutter) var(--space-6);
-}
-
-.top {
-  display: grid;
-  gap: var(--space-7);
-}
-
-.intro {
-  display: grid;
-  align-content: start;
-  gap: var(--space-3);
-  max-width: 24rem;
+  padding: var(--space-5) var(--page-gutter) var(--space-6);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  width: fit-content;
   min-height: 2.75rem;
-  color: var(--color-surface);
   font-family: var(--font-editorial), serif;
-  font-size: 1.375rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
   text-decoration: none;
+
+  em {
+    color: var(--color-forest);
+    font-style: italic;
+    font-weight: 400;
+  }
 }
 
 .brandMark {
   flex: none;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
-.brand em {
-  color: var(--color-mint);
-  font-style: italic;
-  font-weight: 400;
+.notice {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
 }
 
-.disclaimer {
-  color: rgb(255 253 247 / 52%);
-}
-
-.columns {
+.links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-6) var(--space-8);
-
-  ul {
-    list-style: none;
-  }
+  gap: 0 var(--space-5);
+  font-weight: 700;
 
   a {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-1);
     min-height: 2.75rem;
+    color: var(--color-text-soft);
     text-decoration: none;
   }
 
   a:hover {
-    color: var(--color-mint);
+    color: var(--color-forest);
   }
 }
 
-.columnTitle {
-  color: var(--color-surface);
-  font-size: var(--font-size-small);
-  font-weight: 700;
-}
-
-.bottom {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-5);
-  padding-top: var(--space-5);
-  border-top: var(--border-width) solid rgb(255 253 247 / 14%);
-  color: rgb(255 253 247 / 52%);
-  font-size: var(--font-size-small);
-}
-
 @include mixins.from-medium {
-  .top {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-6);
+    padding-block: var(--space-4);
+  }
+
+  .notice {
+    justify-self: center;
   }
 }
