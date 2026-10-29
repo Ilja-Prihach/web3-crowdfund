@@ -1,5 +1,6 @@
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
+import { HeroArt } from "./HeroArt";
 import styles from "./HeroSection.module.scss";
 
 const contractUrl =
@@ -8,15 +9,9 @@ const contractUrl =
 const proofPoints = ["Без посредника", "Возврат по правилам", "Контракт верифицирован"];
 
 const contractRules = [
-  { term: "Цель", value: "Сумма в ETH от автора" },
-  { term: "Срок", value: "1–365 дней или без срока" },
-  { term: "Возврат", value: "По правилам режима" },
-];
-
-const contractFacts = [
-  { term: "Сеть", value: "Sepolia" },
-  { term: "Адрес", value: "0x6890…077A" },
-  { term: "Код", value: "Верифицирован" },
+  { term: "Цель", value: "в ETH" },
+  { term: "Срок", value: "1–365 дней или ∞" },
+  { term: "Возврат", value: "по режиму" },
 ];
 
 export function HeroSection() {
@@ -56,37 +51,10 @@ export function HeroSection() {
           </ul>
         </div>
 
-        <figure aria-label="Правила смарт-контракта OpenFund" className={styles.stage}>
-          <div className={styles.rulesCard}>
-            <div aria-hidden="true" className={styles.cover}>
-              <svg preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
-                <circle cx="320" cy="40" fill="rgb(168 199 184 / 18%)" r="110" />
-                <circle cx="320" cy="40" fill="rgb(168 199 184 / 22%)" r="60" />
-                <path d="M0 190 Q100 140 200 175 T400 150 V225 H0Z" fill="rgb(255 253 247 / 8%)" />
-                <rect
-                  fill="#e45b3f"
-                  height="34"
-                  rx="5"
-                  transform="rotate(45 61 87)"
-                  width="34"
-                  x="44"
-                  y="70"
-                />
-              </svg>
-              <span className={styles.coverChip}>Условия до первого вклада</span>
-            </div>
-
-            <div className={styles.rulesBody}>
-              <p className={styles.rulesTitle}>Правила записаны в контракт до первого перевода</p>
-              <dl className={styles.rules}>
-                {contractRules.map((rule) => (
-                  <div key={rule.term}>
-                    <dt>{rule.term}</dt>
-                    <dd>{rule.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+        <figure aria-label="Путь ETH через смарт-контракт OpenFund" className={styles.stage}>
+          <div className={styles.scene}>
+            <HeroArt />
+            <p className={styles.scenePill}>Смарт-контракт V2 · Sepolia</p>
           </div>
 
           <p className={styles.toast}>
@@ -99,13 +67,13 @@ export function HeroSection() {
             </span>
           </p>
 
-          <div className={styles.contractCard}>
-            <p className={styles.contractLabel}>◆ Смарт-контракт V2</p>
-            <dl className={styles.contractFacts}>
-              {contractFacts.map((fact) => (
-                <div key={fact.term}>
-                  <dt>{fact.term}</dt>
-                  <dd>{fact.value}</dd>
+          <div className={styles.rulesCard}>
+            <p className={styles.rulesTitle}>Правила записаны до первого перевода</p>
+            <dl className={styles.rules}>
+              {contractRules.map((rule) => (
+                <div key={rule.term}>
+                  <dt>{rule.term}</dt>
+                  <dd>{rule.value}</dd>
                 </div>
               ))}
             </dl>
