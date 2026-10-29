@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 
 import styles from "./Button.module.scss";
 
-type ButtonVariant = "primary" | "secondary" | "quiet";
+type ButtonVariant = "primary" | "accent" | "secondary" | "quiet";
 type ButtonSize = "compact" | "regular";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
