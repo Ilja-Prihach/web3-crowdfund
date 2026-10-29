@@ -15,6 +15,8 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Масштабируемая геометрия интерфейса задаётся преимущественно в `rem`; точные линии, focus outline и responsive breakpoints — в `px`. Подробные причины и правила находятся в [`DECISIONS.md#frontend-styles-are-colocated-scss-modules`](DECISIONS.md#frontend-styles-are-colocated-scss-modules).
 
+Главная страница собирается из независимых widgets `HeroSection`, `FundingModesSection` и `TrustSection`. Она объясняет режимы V2 и границу доверия без фиктивных кампаний и неподключённых действий. Единственные CTA ведут к существующим якорям страницы и верифицированному контракту в Etherscan.
+
 ## Контракт Crowdfunding
 
 Контракт `Crowdfunding` хранит кампании в `mapping`, где ключ — уникальный числовой идентификатор. Счётчик `nextCampaignId` выдаёт следующий свободный ID.

@@ -6,7 +6,7 @@
 
 Контракт V2 с режимами `FixedDeadline` и `OpenEnded` реализован, полностью проверен, влит в `main`, развёрнут и верифицирован в Ethereum Sepolia. Fixed и open-ended сценарии выполнены on-chain через `cast`.
 
-Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. PR 1 создал воспроизводимую техническую основу, а PR 2 добавил дизайн-систему, доступные UI-примитивы и адаптивный application shell. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
+Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. PR 1 создал воспроизводимую техническую основу, PR 2 добавил дизайн-систему и application shell, а PR 3 реализовал editorial-главную с объяснением режимов и границы доверия. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
 
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
@@ -36,6 +36,7 @@
 - CI проверяет formatting, build, tests, gas snapshot и Slither;
 - frontend проходит чистый `npm ci`, ESLint без предупреждений, TypeScript-проверку и production build Next.js;
 - application shell проверен в Chromium на 360, 768, 1280 и 1440 px без горизонтального переполнения; подтверждены клавиатурный порядок, видимый skip-link, touch-размеры и `prefers-reduced-motion`;
+- editorial-главная повторно проверена на 360, 768, 1280 и 1440 px; все внутренние якоря существуют, hero загружает responsive-версию, а оптимизированный WebP 1536×1024 укладывается в медиабюджет при размере около 128 KB;
 - защита `main` требует успешных CI-проверок;
 - PR #25 успешно прошёл remote CI и влит в `main` merge-коммитом `00abe0e`;
 - исходники V1 Sepolia deployment получили Sourcify `exact_match`.
@@ -51,16 +52,16 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-После merge PR 2 начать PR 3 — editorial-главная:
+После merge PR 3 начать PR 4 — Web3 foundation и кошелёк:
 
-1. реализовать Hero, Funding Modes и Trust sections;
-2. создать и сжать авторскую hero-иллюстрацию в пределах медиабюджета;
-3. использовать только подтверждённые продуктовые утверждения;
-4. фактически проверить mobile и desktop композицию.
+1. добавить `wagmi`, `viem`, TanStack Query и ABI V2;
+2. настроить providers и Sepolia config;
+3. реализовать подключение injected wallet, адрес и network badge;
+4. локализовать отключённый кошелёк, неправильную сеть, отклонение запроса и RPC-ошибку.
 
 ## Известные ограничения
 
-- frontend пока содержит preview дизайн-системы без полноценной главной, изображений и Web3-интеграции;
+- frontend пока не подключает кошелёк, не читает кампании и не отправляет Web3-транзакции;
 - backend и blockchain indexer ещё не созданы; PostgreSQL является кандидатом, но не утверждённым выбором;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
