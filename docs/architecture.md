@@ -7,6 +7,14 @@
 
 Frontend никогда не получает и не хранит приватные ключи пользователей. V2 находится в `main` и развёрнут в Sepolia по отдельному от V1 адресу, см. [`deployments.md`](deployments.md).
 
+## Frontend shell и дизайн-система
+
+Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`.
+
+Глобальный слой содержит reset, семантические CSS custom properties, базовую типографику, focus-правила и поддержку `prefers-reduced-motion`. Компонентные стили изолированы через SCSS Modules. Общие UI-примитивы `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `frontend/src/shared/ui`, а крупные части shell — в `frontend/src/widgets`.
+
+Масштабируемая геометрия интерфейса задаётся преимущественно в `rem`; точные линии, focus outline и responsive breakpoints — в `px`. Подробные причины и правила находятся в [`DECISIONS.md#frontend-styles-are-colocated-scss-modules`](DECISIONS.md#frontend-styles-are-colocated-scss-modules).
+
 ## Контракт Crowdfunding
 
 Контракт `Crowdfunding` хранит кампании в `mapping`, где ключ — уникальный числовой идентификатор. Счётчик `nextCampaignId` выдаёт следующий свободный ID.
