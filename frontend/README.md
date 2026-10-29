@@ -51,6 +51,7 @@ npm run build
 - `rem` используется для масштабируемой геометрии, `px` — для точных линий, focus и breakpoint-порогов;
 - `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `src/shared/ui`;
 - `AppHeader` и `AppFooter` находятся в `src/widgets` и подключаются корневым layout;
+- знак OpenFund — компонент `BrandMark` в `src/shared/ui` (тона `light` и `dark`), favicon — `src/app/icon.svg` с тем же рисунком;
 - шрифты Manrope и PT Serif подключаются через `next/font`;
 - анимации компонентов явно отключаются при `prefers-reduced-motion: reduce`;
 - отображаемая нумерация начинается сразу с цифры без ведущего нуля: `1`, `2`, `3`.
