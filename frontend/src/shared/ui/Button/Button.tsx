@@ -2,8 +2,27 @@ import type { ButtonHTMLAttributes } from "react";
 
 import styles from "./Button.module.scss";
 
-type ButtonVariant = "primary" | "secondary" | "quiet";
-type ButtonSize = "compact" | "regular";
+export type ButtonVariant = "primary" | "accent" | "secondary" | "quiet";
+export type ButtonSize = "compact" | "regular" | "large";
+
+type ButtonStyleOptions = {
+  className?: string;
+  fullWidth: boolean;
+  size: ButtonSize;
+  variant: ButtonVariant;
+};
+
+export function getButtonClassName({ className, fullWidth, size, variant }: ButtonStyleOptions) {
+  return [
+    styles.button,
+    styles[variant],
+    styles[size],
+    fullWidth ? styles.fullWidth : undefined,
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -23,15 +42,7 @@ export function Button({
   variant = "primary",
   ...props
 }: ButtonProps) {
-  const buttonClassName = [
-    styles.button,
-    styles[variant],
-    styles[size],
-    fullWidth ? styles.fullWidth : undefined,
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const buttonClassName = getButtonClassName({ className, fullWidth, size, variant });
 
   return (
     <button

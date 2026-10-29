@@ -1,18 +1,28 @@
+@use "../shared/styles/mixins";
 @use "../shared/styles/reset";
 @use "../shared/styles/typography";
 
 :root {
   --color-paper: #f3efe4;
   --color-surface: #fffdf7;
-  --color-surface-muted: #e9e4d8;
+  --color-surface-muted: #ebe6d8;
   --color-text: #17201b;
+  --color-text-soft: #3b4640;
   --color-text-muted: #56625b;
   --color-forest: #174c3c;
   --color-forest-strong: #0f392d;
+  --color-forest-tint: #e3ece5;
   --color-cinnabar: #e45b3f;
-  --color-cinnabar-muted: #f4d4ca;
+  --color-cinnabar-strong: #c94a31;
+  --color-cinnabar-tint: #fbe3dc;
   --color-mint: #a8c7b8;
+  --color-mint-tint: #dceae2;
+  --color-amber: #c98a1b;
+  --color-amber-tint: #f7ead0;
+  --color-amber-text: #6b470a;
+  --color-border-soft: #ddd6c6;
   --color-border: #c9c2b3;
+  --color-live: #3fa66f;
   --color-danger: #9d3b2a;
   --color-danger-surface: #fae8e2;
   --color-focus: #e45b3f;
@@ -28,25 +38,43 @@
   --space-9: 6rem;
   --space-10: 8rem;
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.375rem;
+  --radius-xl: 2rem;
   --radius-round: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(23 32 27 / 6%), 0 1px 1px rgb(23 32 27 / 4%);
+  --shadow-md: 0 1px 2px rgb(23 32 27 / 5%), 0 8px 24px -8px rgb(23 32 27 / 14%);
+  --shadow-lg: 0 2px 4px rgb(23 32 27 / 5%), 0 24px 60px -20px rgb(23 32 27 / 28%);
 
   --font-size-small: 0.8125rem;
   --font-size-label: 0.875rem;
-  --font-size-body: 1rem;
+  --font-size-body: 1.0625rem;
   --font-size-lead: clamp(1.125rem, 2vw, 1.375rem);
-  --font-size-title: clamp(2.75rem, 8vw, 6.75rem);
-  --font-size-heading: clamp(2rem, 4vw, 3.75rem);
+  --font-size-title: clamp(2.6rem, 5.6vw, 4.6rem);
+  --font-size-heading: clamp(2rem, 3.6vw, 3rem);
+  --font-size-subheading: 1.5rem;
 
   --border-width: 1px;
   --focus-width: 3px;
   --transition-fast: 160ms;
   --page-gutter: clamp(1rem, 4vw, 3rem);
+  --header-height: 4.5rem;
 }
 
 @include reset.apply;
 @include typography.apply;
+
+html {
+  scroll-padding-top: var(--space-4);
+}
+
+@include mixins.from-medium {
+  html {
+    scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  }
+}
 
 body {
   margin: 0;

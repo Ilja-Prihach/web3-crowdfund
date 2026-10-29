@@ -1,0 +1,39 @@
+@use "../../styles/mixins";
+
+.header {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+
+.heading {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 47.5rem;
+}
+
+.eyebrow {
+  @include mixins.eyebrow;
+}
+
+.title {
+  font-size: var(--font-size-heading);
+}
+
+.aside {
+  max-width: 24rem;
+  color: var(--color-text-muted);
+}
+
+@include mixins.from-medium {
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  .aside {
+    flex: none;
+  }
+}

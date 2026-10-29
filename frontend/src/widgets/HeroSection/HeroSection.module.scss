@@ -1,0 +1,251 @@
+@use "../../shared/styles/mixins";
+@use "../../shared/styles/tokens";
+
+.hero {
+  overflow: hidden;
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-7);
+  max-width: tokens.$content-width;
+  margin: 0 auto;
+  padding: var(--space-7) var(--page-gutter) var(--space-8);
+}
+
+.content {
+  display: grid;
+  align-content: center;
+  gap: var(--space-5);
+}
+
+.eyebrow {
+  @include mixins.eyebrow;
+}
+
+.title {
+  font-size: var(--font-size-title);
+  letter-spacing: -0.035em;
+
+  em {
+    color: var(--color-forest);
+    font-style: italic;
+    font-weight: 400;
+  }
+}
+
+.lead {
+  max-width: 36rem;
+  color: var(--color-text-soft);
+  font-size: var(--font-size-lead);
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  color: var(--color-text-soft);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  li::before {
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-round);
+    color: var(--color-forest);
+    background: var(--color-mint-tint);
+    font-size: 0.7rem;
+    font-weight: 800;
+    content: "✓" / "";
+  }
+}
+
+.stage {
+  position: relative;
+  margin: 0;
+}
+
+.scene {
+  position: relative;
+  aspect-ratio: 560 / 540;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: #0c1612;
+  box-shadow: var(--shadow-lg);
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-interface), sans-serif;
+}
+
+.serifText {
+  font-family: var(--font-editorial), serif;
+}
+
+.scenePill {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  padding-inline: 0.8rem;
+  border: var(--border-width) solid rgb(255 253 247 / 16%);
+  border-radius: var(--radius-round);
+  color: var(--color-mint);
+  background: rgb(255 253 247 / 10%);
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  &::before {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: var(--radius-round);
+    background: #6fdc9e;
+    box-shadow: 0 0 0 3px rgb(111 220 158 / 20%);
+    content: "";
+  }
+}
+
+.toast {
+  display: none;
+}
+
+.toastIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: var(--radius-round);
+  color: var(--color-surface);
+  background: var(--color-forest);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.toastNote {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.rulesCard {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  width: min(80%, 16.375rem);
+  margin: -4rem 0 0 0.875rem;
+  padding: 0.875rem;
+  border-radius: 1.125rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.rulesTitle {
+  font-family: var(--font-editorial), serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rules {
+  display: grid;
+  border-radius: 0.75rem;
+  background: var(--color-paper);
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.5625rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  div + div {
+    border-top: var(--border-width) solid var(--color-border-soft);
+  }
+
+  dt {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  dd {
+    font-weight: 700;
+  }
+}
+
+@include mixins.from-medium {
+  .inner {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-8);
+    padding-block: 4.5rem 6rem;
+  }
+
+  .stage {
+    margin-top: 1.625rem;
+  }
+
+  .scene {
+    margin: 0 -1.25rem 0 2.25rem;
+    border-radius: 2.25rem;
+  }
+
+  .toast {
+    position: absolute;
+    z-index: 1;
+    top: -1.625rem;
+    right: 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 14.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 1.125rem;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--font-size-label);
+    line-height: 1.35;
+
+    strong {
+      display: block;
+    }
+  }
+
+  .rulesCard {
+    width: 16.375rem;
+    padding: 1.125rem;
+  }
+}
+
+@include mixins.from-large {
+  .rulesCard {
+    position: absolute;
+    bottom: -1.75rem;
+    left: 0;
+    margin: 0;
+  }
+}

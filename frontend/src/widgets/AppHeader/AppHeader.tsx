@@ -1,35 +1,48 @@
 import Link from "next/link";
 
-import styles from "./AppHeader.module.scss";
+import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
+import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
-const contractUrl =
-  "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
+import styles from "./AppHeader.module.scss";
+import { MobileMenu } from "./MobileMenu";
+import { contractUrl, navigationLinks } from "./navigation";
 
 export function AppHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
         <Link className={styles.brand} href="/" aria-label="OpenFund — на главную">
-          <span aria-hidden="true" className={styles.brandMark} />
-          <span>OpenFund</span>
+          <BrandMark className={styles.brandMark} />
+          <span>
+            Open<em>Fund</em>
+          </span>
         </Link>
 
         <nav aria-label="Основная навигация" className={styles.navigation}>
-          <Link href="/">Обзор</Link>
-          <a
+          {navigationLinks.map((link) => (
+            <Link href={link.href} key={link.href}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className={styles.actions}>
+          <p className={styles.network} title="Тестовая сеть Ethereum">
+            <span aria-hidden="true" className={styles.networkDot} />
+            Sepolia
+          </p>
+          <ButtonLink
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
+            className={styles.contractLink}
             href={contractUrl}
             rel="noreferrer"
+            size="compact"
             target="_blank"
           >
             Контракт <span aria-hidden="true">↗</span>
-          </a>
-        </nav>
-
-        <p className={styles.network} title="Тестовая сеть Ethereum">
-          <span aria-hidden="true" className={styles.networkDot} />
-          Sepolia
-        </p>
+          </ButtonLink>
+          <MobileMenu />
+        </div>
       </div>
     </header>
   );

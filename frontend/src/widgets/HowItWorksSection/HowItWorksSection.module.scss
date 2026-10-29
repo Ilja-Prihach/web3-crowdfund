@@ -1,0 +1,71 @@
+@use "../../shared/styles/mixins";
+@use "../../shared/styles/tokens";
+
+.inner {
+  max-width: tokens.$content-width;
+  margin: 0 auto;
+  padding: var(--space-9) var(--page-gutter) 0;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-5);
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  align-content: start;
+  gap: 1.125rem;
+  padding: 0.875rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.art {
+  position: relative;
+  aspect-ratio: 5 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #0e1512;
+}
+
+.stepArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-interface), sans-serif;
+}
+
+.serifText {
+  font-family: var(--font-editorial), serif;
+}
+
+.text {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) 0.875rem;
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+}
+
+.number {
+  color: var(--color-cinnabar-strong);
+  font-family: var(--font-editorial), serif;
+  font-weight: 700;
+}
+
+.stepTitle {
+  font-size: 1.2rem;
+}
+
+@include mixins.from-medium {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -9,11 +9,13 @@ Frontend никогда не получает и не хранит приват�
 
 ## Frontend shell и дизайн-система
 
-Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`.
+Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`. `AppHeader` остаётся серверным компонентом; единственная клиентская часть shell — `MobileMenu`, который до 960 px заменяет навигацию кнопкой-бургером с выпадающей панелью и закрывается по Escape или выбору пункта.
 
 Глобальный слой содержит reset, семантические CSS custom properties, базовую типографику, focus-правила и поддержку `prefers-reduced-motion`. Компонентные стили изолированы через SCSS Modules. Общие UI-примитивы `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `frontend/src/shared/ui`, а крупные части shell — в `frontend/src/widgets`.
 
 Масштабируемая геометрия интерфейса задаётся преимущественно в `rem`; точные линии, focus outline и responsive breakpoints — в `px`. Подробные причины и правила находятся в [`DECISIONS.md#frontend-styles-are-colocated-scss-modules`](DECISIONS.md#frontend-styles-are-colocated-scss-modules).
+
+Главная страница собирается из независимых widgets `HeroSection`, `HowItWorksSection`, `FundingModesSection`, `TrustSection` и `ProjectStatusSection`. Они следуют карточному направлению из [`DECISIONS.md#frontend-uses-card-surfaces`](DECISIONS.md#frontend-uses-card-surfaces): заголовки секций строит общий `SectionHeader`, а CTA-ссылки — `ButtonLink`, разделяющий классы с `Button`. Иллюстрации — серверные SVG-компоненты рядом с секциями, см. [`DECISIONS.md#frontend-illustrations-are-code-built-scenes`](DECISIONS.md#frontend-illustrations-are-code-built-scenes). Страница последовательно объясняет назначение продукта, движение ETH через контракт, режимы V2, границу доверия и текущую готовность интерфейса без фиктивных кампаний и неподключённых действий. CTA ведут только к существующим якорям, исходному коду и верифицированному контракту в Etherscan.
 
 ## Контракт Crowdfunding
 

@@ -1,6 +1,6 @@
 # Frontend
 
-Статус: техническая основа, дизайн-система и application shell реализованы. Editorial-главная и Web3-интеграция добавляются последовательностью небольших PR согласно [`docs/plans/frontend-mvp.md`](../docs/plans/frontend-mvp.md).
+Статус: техническая основа, дизайн-система, application shell и editorial-главная реализованы. Web3-интеграция добавляется последовательностью небольших PR согласно [`docs/plans/frontend-mvp.md`](../docs/plans/frontend-mvp.md).
 
 ## Принятый стек
 
@@ -51,7 +51,17 @@ npm run build
 - `rem` используется для масштабируемой геометрии, `px` — для точных линий, focus и breakpoint-порогов;
 - `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `src/shared/ui`;
 - `AppHeader` и `AppFooter` находятся в `src/widgets` и подключаются корневым layout;
+- знак OpenFund — компонент `BrandMark` в `src/shared/ui` (тона `light` и `dark`), favicon — `src/app/icon.svg` с тем же рисунком;
 - шрифты Manrope и PT Serif подключаются через `next/font`;
-- анимации компонентов явно отключаются при `prefers-reduced-motion: reduce`.
+- анимации компонентов явно отключаются при `prefers-reduced-motion: reduce`;
+- отображаемая нумерация начинается сразу с цифры без ведущего нуля: `1`, `2`, `3`.
 
-Текущая главная намеренно является техническим preview дизайн-системы. Полноценная editorial-композиция и оптимизированное изображение появятся в PR 3.
+## Изображения
+
+Несжатые генерации не коммитятся. Для воспроизводимой конвертации используется:
+
+```sh
+npm run optimize:images -- <input> <output> [max-width] [quality]
+```
+
+Иллюстрации главной — векторные SVG-сцены в компонентах `HeroArt`, `HowItWorksArt`, `FundingModesArt` и `TrustVaultArt` рядом с секциями. Растровые ассеты не нужны, а фиктивные кампании не изображаются. Скрипт оптимизации сохраняется для будущих растровых материалов.

@@ -2,85 +2,78 @@
 @use "../../shared/styles/tokens";
 
 .footer {
-  border-top: var(--border-width) solid var(--color-text);
-  color: var(--color-surface);
-  background: var(--color-text);
+  border-top: var(--border-width) solid var(--color-border-soft);
+  font-size: var(--font-size-label);
 }
 
 .inner {
   display: grid;
-  gap: var(--space-7);
+  justify-items: start;
+  gap: var(--space-3);
   max-width: tokens.$content-width;
   margin: 0 auto;
-  padding: var(--space-8) var(--page-gutter) var(--space-6);
-}
-
-.intro,
-.disclaimer {
-  display: grid;
-  align-content: start;
-  gap: var(--space-3);
+  padding: var(--space-5) var(--page-gutter) var(--space-6);
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
   font-family: var(--font-editorial), serif;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+
+  em {
+    color: var(--color-forest);
+    font-style: italic;
+    font-weight: 400;
+  }
 }
 
-.description,
-.disclaimer {
-  max-width: 34rem;
-  color: rgb(255 253 247 / 72%);
+.brandMark {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
-.label {
-  color: var(--color-mint);
+.notice {
+  color: var(--color-text-muted);
   font-size: var(--font-size-small);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .links {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-4) var(--space-6);
-  font-size: var(--font-size-label);
+  gap: 0 var(--space-5);
   font-weight: 700;
 
   a {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-1);
     min-height: 2.75rem;
-    text-decoration-color: rgb(255 253 247 / 50%);
-    text-underline-offset: 0.35em;
+    color: var(--color-text-soft);
+    text-decoration: none;
   }
 
   a:hover {
-    color: var(--color-mint);
+    color: var(--color-forest);
   }
-}
-
-.meta {
-  padding-top: var(--space-5);
-  border-top: var(--border-width) solid rgb(255 253 247 / 22%);
-  color: rgb(255 253 247 / 55%);
-  font-size: var(--font-size-small);
 }
 
 @include mixins.from-medium {
   .inner {
-    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-6);
+    padding-block: var(--space-4);
   }
 
-  .links {
-    grid-column: 1;
-  }
-
-  .meta {
-    grid-column: 1 / -1;
+  .notice {
+    justify-self: center;
   }
 }
