@@ -63,4 +63,4 @@ npm run build
 npm run optimize:images -- <input> <output> [max-width] [quality]
 ```
 
-Hero-ассет и его происхождение описаны в [`src/widgets/HeroSection/assets/README.md`](src/widgets/HeroSection/assets/README.md). Изображение подключено статическим импортом через `next/image`, поэтому Next.js создаёт responsive `srcset` и blur placeholder.
+Hero собран кодом: карточка правил V2-контракта, тост о переводе ETH в контракт и плашка с фактами о deployment. Растровый ассет не нужен, а фиктивная кампания не изображается. Скрипт оптимизации сохраняется для будущих растровых материалов.

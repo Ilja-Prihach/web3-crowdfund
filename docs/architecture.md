@@ -15,7 +15,7 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Масштабируемая геометрия интерфейса задаётся преимущественно в `rem`; точные линии, focus outline и responsive breakpoints — в `px`. Подробные причины и правила находятся в [`DECISIONS.md#frontend-styles-are-colocated-scss-modules`](DECISIONS.md#frontend-styles-are-colocated-scss-modules).
 
-Главная страница собирается из независимых widgets `HeroSection`, `FundingModesSection` и `TrustSection`. Она объясняет режимы V2 и границу доверия без фиктивных кампаний и неподключённых действий. Единственные CTA ведут к существующим якорям страницы и верифицированному контракту в Etherscan.
+Главная страница собирается из независимых widgets `HeroSection`, `HowItWorksSection`, `FundingModesSection`, `TrustSection` и `ProjectStatusSection`. Они следуют карточному направлению из [`DECISIONS.md#frontend-uses-card-surfaces`](DECISIONS.md#frontend-uses-card-surfaces): заголовки секций строит общий `SectionHeader`, а CTA-ссылки — `ButtonLink`, разделяющий классы с `Button`. Страница последовательно объясняет назначение продукта, движение ETH через контракт, режимы V2, границу доверия и текущую готовность интерфейса без фиктивных кампаний и неподключённых действий. CTA ведут только к существующим якорям, исходному коду и верифицированному контракту в Etherscan.
 
 ## Контракт Crowdfunding
 

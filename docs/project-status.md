@@ -6,7 +6,7 @@
 
 Контракт V2 с режимами `FixedDeadline` и `OpenEnded` реализован, полностью проверен, влит в `main`, развёрнут и верифицирован в Ethereum Sepolia. Fixed и open-ended сценарии выполнены on-chain через `cast`.
 
-Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. PR 1 создал воспроизводимую техническую основу, PR 2 добавил дизайн-систему и application shell, а PR 3 реализовал editorial-главную с объяснением режимов и границы доверия. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
+Текущий учебный фокус — поэтапная разработка frontend на Next.js, React и TypeScript. PR 1 создал воспроизводимую техническую основу, PR 2 добавил дизайн-систему и application shell, а PR 3 перевёл главную на карточное направление по локальным мокапам: hero с карточкой правил контракта, шаги, режимы, границу доверия и финальный CTA. Архитектура и очередь небольших PR зафиксированы в [`plans/frontend-mvp.md`](plans/frontend-mvp.md). Backend остаётся отложенным этапом.
 
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
@@ -36,7 +36,7 @@
 - CI проверяет formatting, build, tests, gas snapshot и Slither;
 - frontend проходит чистый `npm ci`, ESLint без предупреждений, TypeScript-проверку и production build Next.js;
 - application shell проверен в Chromium на 360, 768, 1280 и 1440 px без горизонтального переполнения; подтверждены клавиатурный порядок, видимый skip-link, touch-размеры и `prefers-reduced-motion`;
-- editorial-главная повторно проверена на 360, 768, 1280 и 1440 px; все внутренние якоря существуют, hero загружает responsive-версию, а оптимизированный WebP 1536×1024 укладывается в медиабюджет при размере около 128 KB;
+- карточная главная проверена в Chromium на 360, 390, 768, 1024, 1280 и 1440 px: горизонтального переполнения нет, все внутренние якоря существуют, hero собран кодом без растровой загрузки, а desktop и mobile сверены с рендером `home`;
 - защита `main` требует успешных CI-проверок;
 - PR #25 успешно прошёл remote CI и влит в `main` merge-коммитом `00abe0e`;
 - исходники V1 Sepolia deployment получили Sourcify `exact_match`.
