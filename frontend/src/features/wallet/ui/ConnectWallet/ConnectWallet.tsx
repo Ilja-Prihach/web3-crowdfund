@@ -4,10 +4,10 @@ import Image from "next/image";
 import { useRef } from "react";
 import { useConnect, useConnection, useConnectors } from "wagmi";
 
-import { shortenAddress } from "@/shared/lib/address";
 import { Button } from "@/shared/ui/Button/Button";
 
 import { getWalletErrorMessage } from "../../lib/walletErrors";
+import { WalletMenu } from "../WalletMenu/WalletMenu";
 import styles from "./ConnectWallet.module.scss";
 
 export function ConnectWallet() {
@@ -20,8 +20,9 @@ export function ConnectWallet() {
   const discovered = connectors.filter((connector) => connector.id !== "injected");
   const walletOptions = discovered.length > 0 ? discovered : connectors;
 
-  if (connection.status === "connected") {
-    return <p className={styles.address}>{shortenAddress(connection.address)}</p>;
+  // Адрес известен и при «connected», и при «reconnecting» (сессия из cookie): показываем меню сразу.
+  if (connection.address) {
+    return <WalletMenu />;
   }
 
   const openDialog = () => {

@@ -118,18 +118,6 @@
   }
 }
 
-.address {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding-inline: var(--space-4);
-  border: var(--border-width) solid var(--color-border-soft);
-  border-radius: var(--radius-round);
-  background: var(--color-surface);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: var(--font-size-label);
-  font-weight: 700;
-}
 
 .labelFull {
   display: none;

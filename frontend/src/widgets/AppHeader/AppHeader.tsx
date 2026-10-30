@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ConnectWallet } from "@/features/wallet/ui/ConnectWallet/ConnectWallet";
+import { NetworkBadge } from "@/features/wallet/ui/NetworkBadge/NetworkBadge";
 import { contractExplorerUrl } from "@/shared/config/web3";
 import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
@@ -29,10 +30,9 @@ export function AppHeader() {
         </nav>
 
         <div className={styles.actions}>
-          <p className={styles.network} title="Тестовая сеть Ethereum">
-            <span aria-hidden="true" className={styles.networkDot} />
-            Sepolia
-          </p>
+          <div className={styles.network}>
+            <NetworkBadge />
+          </div>
           <ButtonLink
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
             className={styles.contractLink}

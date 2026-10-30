@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { cookieToInitialState } from "wagmi";
 
+import { WrongNetworkBanner } from "@/features/wallet/ui/WrongNetworkBanner/WrongNetworkBanner";
 import { getWagmiConfig } from "@/shared/config/wagmi";
 import { AppFooter } from "@/widgets/AppFooter/AppFooter";
 import { AppHeader } from "@/widgets/AppHeader/AppHeader";
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         </a>
         <Providers initialState={initialState}>
           <AppHeader />
+          <WrongNetworkBanner />
           {children}
           <AppFooter />
         </Providers>
