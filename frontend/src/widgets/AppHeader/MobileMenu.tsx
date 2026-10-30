@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import styles from "./MobileMenu.module.scss";
-import { contractUrl, navigationLinks } from "./navigation";
+import { navigationLinks } from "./navigation";
 
 const panelId = "mobile-navigation";
 
@@ -54,7 +55,7 @@ export function MobileMenu() {
         <ButtonLink
           aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
           fullWidth
-          href={contractUrl}
+          href={contractExplorerUrl}
           onClick={close}
           rel="noreferrer"
           target="_blank"

@@ -1,11 +1,12 @@
 import Link from "next/link";
 
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import styles from "./AppHeader.module.scss";
 import { MobileMenu } from "./MobileMenu";
-import { contractUrl, navigationLinks } from "./navigation";
+import { navigationLinks } from "./navigation";
 
 export function AppHeader() {
   return (
@@ -34,7 +35,7 @@ export function AppHeader() {
           <ButtonLink
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
             className={styles.contractLink}
-            href={contractUrl}
+            href={contractExplorerUrl}
             rel="noreferrer"
             size="compact"
             target="_blank"

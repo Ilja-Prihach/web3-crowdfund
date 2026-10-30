@@ -1,11 +1,10 @@
 import Link from "next/link";
 
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 
 import styles from "./AppFooter.module.scss";
 
-const contractUrl =
-  "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
 const sourceUrl = "https://github.com/Ilja-Prihach/web3-crowdfund";
 
 export function AppFooter() {
@@ -24,7 +23,7 @@ export function AppFooter() {
         <nav aria-label="Дополнительная навигация" className={styles.links}>
           <a
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
-            href={contractUrl}
+            href={contractExplorerUrl}
             rel="noreferrer"
             target="_blank"
           >
