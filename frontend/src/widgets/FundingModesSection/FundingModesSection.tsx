@@ -1,8 +1,10 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { SectionHeader } from "@/shared/ui/SectionHeader/SectionHeader";
 
-import { FixedDeadlineArt, OpenEndedArt } from "./FundingModesArt";
+import fixedDeadlineImage from "./assets/fixed-deadline.webp";
+import openEndedImage from "./assets/open-ended.webp";
 import styles from "./FundingModesSection.module.scss";
 
 function Icon({ children }: { children: ReactNode }) {
@@ -40,7 +42,7 @@ const modes = [
     code: "FixedDeadline",
     tag: "Есть срок",
     tone: styles.fixed,
-    art: <FixedDeadlineArt />,
+    image: fixedDeadlineImage,
     title: "Собрать к дате",
     summary: "Для проектов, которым нужна конкретная сумма до начала работ или события.",
     rules: [
@@ -53,7 +55,7 @@ const modes = [
     code: "OpenEnded",
     tag: "Без срока",
     tone: styles.open,
-    art: <OpenEndedArt />,
+    image: openEndedImage,
     title: "Идти к цели без дедлайна",
     summary: "Для долгих инициатив, где важна сумма, а искусственная дата не нужна.",
     rules: [
@@ -79,7 +81,14 @@ export function FundingModesSection() {
           {modes.map((mode) => (
             <article className={`${styles.mode} ${mode.tone}`} key={mode.code}>
               <div aria-hidden="true" className={styles.head}>
-                {mode.art}
+                <Image
+                  alt=""
+                  className={styles.modeArt}
+                  fill
+                  placeholder="blur"
+                  sizes="(max-width: 959px) calc(100vw - 2rem), (max-width: 1440px) 47vw, 700px"
+                  src={mode.image}
+                />
               </div>
 
               <div className={styles.body}>
