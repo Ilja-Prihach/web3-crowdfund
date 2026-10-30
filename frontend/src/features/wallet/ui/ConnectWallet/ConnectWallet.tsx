@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/Button/Button";
 
 import { getWalletErrorMessage } from "../../lib/walletErrors";
 import { WalletMenu } from "../WalletMenu/WalletMenu";
+import walletConnectImage from "./assets/wallet-connect.webp";
 import styles from "./ConnectWallet.module.scss";
 
 export function ConnectWallet() {
@@ -39,64 +40,110 @@ export function ConnectWallet() {
         <span className={styles.labelShort}>Кошелёк</span>
       </Button>
 
-      <dialog aria-labelledby="connect-wallet-title" className={styles.dialog} ref={dialogRef}>
-        <h2 className={styles.title} id="connect-wallet-title">
-          Подключите кошелёк
-        </h2>
-        <p className={styles.lead}>
-          OpenFund не хранит ключи. Подпись транзакций всегда происходит в вашем кошельке.
-        </p>
+      <dialog
+        aria-describedby="connect-wallet-description"
+        aria-labelledby="connect-wallet-title"
+        className={styles.dialog}
+        ref={dialogRef}
+      >
+        <div className={styles.layout}>
+          <div aria-hidden="true" className={styles.visual}>
+            <Image
+              alt=""
+              className={styles.visualImage}
+              fill
+              placeholder="blur"
+              sizes="(max-width: 639px) calc(100vw - 16px), 336px"
+              src={walletConnectImage}
+            />
+            <div className={styles.visualShade} />
+            <div className={styles.visualCopy}>
+              <span className={styles.networkBadge}>Sepolia · тестовая сеть</span>
+              <p className={styles.visualTitle}>Ключи остаются у вас</p>
+              <p className={styles.visualText}>
+                OpenFund получает только публичный адрес. Подключение не переводит ETH.
+              </p>
+            </div>
+          </div>
 
-        <ul className={styles.wallets}>
-          {walletOptions.map((connector) => {
-            // Сравниваем сам объект: в mutate мы передали именно этот коннектор.
-            const isWaiting = connect.isPending && connect.variables?.connector === connector;
+          <div className={styles.content}>
+            <h2 className={styles.title} id="connect-wallet-title">
+              Подключите кошелёк
+            </h2>
+            <p className={styles.lead} id="connect-wallet-description">
+              Выберите расширение браузера. Подключение не отправляет транзакцию.
+            </p>
 
-            return (
-              <li key={connector.uid}>
-                <button
-                  className={styles.wallet}
-                  disabled={connect.isPending}
-                  onClick={() => connect.mutate({ connector }, { onSuccess: closeDialog })}
-                  type="button"
-                >
-                  {connector.icon ? (
-                    <Image
-                      alt=""
-                      className={styles.walletIcon}
-                      height={36}
-                      src={connector.icon}
-                      unoptimized
-                      width={36}
-                    />
-                  ) : (
-                    <span aria-hidden="true" className={styles.walletIcon} />
-                  )}
-                  <span>{connector.id === "injected" ? "Браузерный кошелёк" : connector.name}</span>
-                  {isWaiting ? (
-                    <span className={styles.walletState}>Подтвердите в кошельке…</span>
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+            <ul className={styles.wallets}>
+              {walletOptions.map((connector) => {
+                // Сравниваем сам объект: в mutate мы передали именно этот коннектор.
+                const isWaiting = connect.isPending && connect.variables?.connector === connector;
 
-        {connect.error ? (
-          <p className={styles.error} role="alert">
-            {getWalletErrorMessage(connect.error)}
-          </p>
-        ) : null}
+                return (
+                  <li key={connector.uid}>
+                    <button
+                      aria-busy={isWaiting || undefined}
+                      className={styles.wallet}
+                      disabled={connect.isPending}
+                      onClick={() => connect.mutate({ connector }, { onSuccess: closeDialog })}
+                      type="button"
+                    >
+                      {connector.icon ? (
+                        <Image
+                          alt=""
+                          className={styles.walletIcon}
+                          height={40}
+                          src={connector.icon}
+                          unoptimized
+                          width={40}
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className={`${styles.walletIcon} ${styles.walletIconFallback}`}
+                        />
+                      )}
+                      <span className={styles.walletName}>
+                        {connector.id === "injected" ? "Браузерный кошелёк" : connector.name}
+                      </span>
+                      {isWaiting ? (
+                        <span className={styles.walletState}>
+                          <span aria-hidden="true" className={styles.spinner} />
+                          Подтвердите подключение
+                        </span>
+                      ) : (
+                        <span aria-hidden="true" className={styles.walletArrow}>
+                          →
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
 
-        <p className={styles.hint}>
-          Нет кошелька?{" "}
-          <a href="https://metamask.io/download/" rel="noreferrer" target="_blank">
-            Установить MetaMask <span aria-hidden="true">↗</span>
-          </a>
-        </p>
+            {connect.error ? (
+              <p className={styles.error} role="alert">
+                {getWalletErrorMessage(connect.error)}
+              </p>
+            ) : null}
+
+            <p className={styles.hint}>
+              Нет кошелька?{" "}
+              <a href="https://metamask.io/download/" rel="noreferrer" target="_blank">
+                Установить MetaMask <span aria-hidden="true">↗</span>
+              </a>
+            </p>
+          </div>
+        </div>
 
         {/* Крестик последний в разметке: фокус при открытии сразу попадает на первый кошелёк. */}
-        <button aria-label="Закрыть" className={styles.close} onClick={closeDialog} type="button">
+        <button
+          aria-label="Закрыть окно подключения кошелька"
+          className={styles.close}
+          onClick={closeDialog}
+          type="button"
+        >
           ×
         </button>
       </dialog>
