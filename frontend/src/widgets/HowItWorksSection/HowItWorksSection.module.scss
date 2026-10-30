@@ -34,13 +34,10 @@
 .stepArt {
   position: absolute;
   inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  font-family: var(--font-interface), sans-serif;
-}
-
-.serifText {
-  font-family: var(--font-editorial), serif;
+  object-fit: cover;
 }
 
 .text {

@@ -1,6 +1,8 @@
+import Image from "next/image";
+
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
-import { HeroArt } from "./HeroArt";
+import heroArt from "./assets/hero-art.webp";
 import styles from "./HeroSection.module.scss";
 
 const contractUrl =
@@ -53,7 +55,15 @@ export function HeroSection() {
 
         <figure aria-label="Путь ETH через смарт-контракт OpenFund" className={styles.stage}>
           <div className={styles.scene}>
-            <HeroArt />
+            <Image
+              alt=""
+              className={styles.art}
+              fill
+              placeholder="blur"
+              preload
+              sizes="(max-width: 959px) calc(100vw - 2rem), (max-width: 1440px) 46vw, 700px"
+              src={heroArt}
+            />
             <p className={styles.scenePill}>Смарт-контракт V2 · Sepolia</p>
           </div>
 

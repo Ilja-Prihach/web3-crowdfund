@@ -1,9 +1,10 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { SectionHeader } from "@/shared/ui/SectionHeader/SectionHeader";
 
+import trustVaultImage from "./assets/trust-vault.webp";
 import styles from "./TrustSection.module.scss";
-import { TrustVaultArt } from "./TrustVaultArt";
 
 const contractUrl =
   "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
@@ -120,7 +121,14 @@ export function TrustSection() {
           </article>
 
           <div className={styles.vault}>
-            <TrustVaultArt />
+            <Image
+              alt=""
+              className={styles.art}
+              fill
+              placeholder="blur"
+              sizes="(max-width: 959px) calc(100vw - 2rem), (max-width: 1440px) 32vw, 480px"
+              src={trustVaultImage}
+            />
             <p className={styles.vaultTag}>◆ Смарт-контракт V2</p>
             <div className={styles.vaultFoot}>
               <p>

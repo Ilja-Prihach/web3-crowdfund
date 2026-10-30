@@ -1,25 +1,27 @@
-import type { ReactNode } from "react";
+import Image from "next/image";
 
 import { SectionHeader } from "@/shared/ui/SectionHeader/SectionHeader";
 
-import { OutcomeArt, RulesArt, TransferArt } from "./HowItWorksArt";
+import outcomeImage from "./assets/outcome.webp";
+import rulesImage from "./assets/rules.webp";
+import transferImage from "./assets/transfer.webp";
 import styles from "./HowItWorksSection.module.scss";
 
-const steps: { title: string; text: string; art: ReactNode }[] = [
+const steps = [
   {
     title: "Автор задаёт правила",
     text: "Цель в ETH, режим и срок записываются в контракт при создании сбора.",
-    art: <RulesArt />,
+    image: rulesImage,
   },
   {
     title: "Участник переводит ETH",
     text: "Вклад уходит из кошелька прямо в контракт. Сумма и адрес публичны.",
-    art: <TransferArt />,
+    image: transferImage,
   },
   {
     title: "Контракт определяет исход",
     text: "Успех — автор выводит средства. Провал или отмена — участники забирают вклады.",
-    art: <OutcomeArt />,
+    image: outcomeImage,
   },
 ];
 
@@ -38,7 +40,14 @@ export function HowItWorksSection() {
           {steps.map((step, index) => (
             <li className={styles.step} key={step.title}>
               <div aria-hidden="true" className={styles.art}>
-                {step.art}
+                <Image
+                  alt=""
+                  className={styles.stepArt}
+                  fill
+                  placeholder="blur"
+                  sizes="(max-width: 959px) calc(100vw - 3.75rem), (max-width: 1440px) 30vw, 430px"
+                  src={step.image}
+                />
               </div>
               <div className={styles.text}>
                 <span className={styles.number}>{index + 1}</span>
