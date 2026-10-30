@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ConnectWallet } from "@/features/wallet/ui/ConnectWallet/ConnectWallet";
 import { contractExplorerUrl } from "@/shared/config/web3";
 import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
@@ -39,9 +40,11 @@ export function AppHeader() {
             rel="noreferrer"
             size="compact"
             target="_blank"
+            variant="secondary"
           >
             Контракт <span aria-hidden="true">↗</span>
           </ButtonLink>
+          <ConnectWallet />
           <MobileMenu />
         </div>
       </div>
