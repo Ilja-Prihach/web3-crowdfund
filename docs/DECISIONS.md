@@ -25,6 +25,8 @@
 | [frontend-uses-card-surfaces](#frontend-uses-card-surfaces) | UI строится из карточек по локальным мокапам, а не из линеек и колонок |
 | [frontend-illustrations-are-code-built-scenes](#frontend-illustrations-are-code-built-scenes) | Заменено: исходные сцены были векторными React-компонентами |
 | [frontend-illustrations-use-raster-exports](#frontend-illustrations-use-raster-exports) | Утверждённые сцены поставляются как оптимизированные WebP через `next/image` |
+| [frontend-wallet-state-hydrates-from-cookie](#frontend-wallet-state-hydrates-from-cookie) | Подключение кошелька восстанавливается из cookie на сервере ценой динамического рендера |
+| [frontend-unit-tests-use-node-test](#frontend-unit-tests-use-node-test) | Чистые функции frontend тестируются встроенным `node:test` без Jest и Vitest |
 
 ## Действующие решения
 
@@ -169,7 +171,7 @@ Next.js App Router отвечает за маршруты, layouts, metadata и 
 
 ### frontend-reads-sepolia-directly
 
-**Статус:** принято для Frontend MVP, реализация запланирована.
+**Статус:** действует во Frontend MVP. Providers, конфиг Sepolia и подключение injected-кошелька реализованы в PR 4; чтение кампаний запланировано в PR 5.
 
 Frontend MVP использует wagmi, viem и TanStack Query для прямого чтения V2-контракта в Ethereum Sepolia и отправки транзакций через injected browser wallet. Backend, собственная финансовая база и WalletConnect не добавляются на этом этапе.
 
@@ -228,3 +230,25 @@ Hero ограничен 1600 px по длинной стороне и целев
 Причина: после утверждения статичных сцен редактируемость вектора внутри React перестала оправдывать объём исходников и SVG-разметки документа. Растровый экспорт сохраняет проверенный внешний вид, уменьшает DOM и отделяет декоративные материалы от компонентной логики. Компромисс — дополнительные запросы изображений и потеря бесконечного масштабирования; двойное разрешение и `next/image` сохраняют чёткость на целевых экранах.
 
 Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`plans/frontend-mvp.md#изображения-и-медиабюджет`](plans/frontend-mvp.md#изображения-и-медиабюджет).
+
+### frontend-wallet-state-hydrates-from-cookie
+
+**Статус:** действует во Frontend MVP, принято 30 октября 2026 года.
+
+Wagmi хранит состояние подключения в cookie (`ssr: true`, `cookieStorage`). Корневой layout читает cookie запроса через `cookieToInitialState` и передаёт его в `WagmiProvider` как `initialState`.
+
+Причина: без cookie сервер не знает о прошлом подключении и всегда рендерит кнопку «Подключить кошелёк», а браузер через мгновение заменяет её адресом. Это заметное мигание и расхождение разметки при гидрации. Альтернатива — сохранить статические страницы и терпеть мигание — отвергнута, потому что шапка с кошельком видна на каждой странице, а каталог из PR 5 всё равно станет живым.
+
+Следствие: вызов `headers()` делает маршруты динамическими (`ƒ` вместо `○` в выводе `next build`). Конфиг wagmi создаётся функцией `getWagmiConfig()` — отдельный экземпляр на каждый серверный запрос и один на вкладку браузера, чтобы состояние разных посетителей не смешивалось. Восстановленная сессия приходит в статусе `reconnecting`, поэтому UI считает кошелёк подключённым по наличию адреса, а не по `status === "connected"`.
+
+Связано: [`architecture.md#web3-слой-frontend`](architecture.md#web3-слой-frontend), [`gotchas.md#wagmi-restored-session-is-reconnecting`](gotchas.md#wagmi-restored-session-is-reconnecting).
+
+### frontend-unit-tests-use-node-test
+
+**Статус:** действует во Frontend MVP, принято 30 октября 2026 года.
+
+Чистые функции frontend (перевод ошибок кошелька, форматирование адреса) тестируются встроенным раннером `node:test`. Node.js 24 выполняет `.ts`-файлы напрямую через type stripping, поэтому тесты запускаются командой `npm test` без сборки и новых зависимостей. Тестовые файлы импортируют модули с явным расширением `.ts`, для чего в `tsconfig.json` включён `allowImportingTsExtensions` (допустимо при `noEmit`).
+
+Причина: проверяемая логика сознательно вынесена из React-компонентов в чистые функции; для них Jest или Vitest добавили бы конфигурацию и зависимости без пользы. Следствие: компоненты и сценарии с кошельком проверяются в браузере, а не unit-тестами. Если понадобятся тесты React-компонентов, выбор test runner пересматривается отдельным решением.
+
+Связано: [`ci.md`](ci.md), [`../frontend/README.md`](../frontend/README.md).

@@ -12,6 +12,8 @@
 | [forge-format-must-skip-dependencies](#forge-format-must-skip-dependencies) | Formatter всего дерева проверяет vendored libraries |
 | [mapping-is-not-iterable](#mapping-is-not-iterable) | Получить список ключей `mapping` напрямую нельзя |
 | [frontend-major-versions-must-match-tooling](#frontend-major-versions-must-match-tooling) | Новейшие major-версии TypeScript и ESLint могут опережать поддержку Next.js tooling |
+| [wagmi-restored-session-is-reconnecting](#wagmi-restored-session-is-reconnecting) | Сессия из cookie приходит в статусе `reconnecting`, а не `connected` |
+| [git-add-directory-captures-parallel-edits](#git-add-directory-captures-parallel-edits) | `git add` целой папки забирает чужие незакоммиченные правки |
 
 ## Карточки
 
@@ -84,3 +86,19 @@ forge fmt --check src test script
 **Причина.** Компилятор TypeScript, ESLint core и плагины Next.js выпускаются независимо. Максимально новая версия каждого пакета не гарантирует совместимость всего набора.
 
 **Правило.** Используйте точные версии из `frontend/package.json` и устанавливайте их через `npm ci`. Major-обновления TypeScript и ESLint выполняйте отдельным PR только после проверки peer ranges, `npm run lint`, `npm run typecheck` и `npm run build`; не подавляйте конфликт через `--force`.
+
+### wagmi-restored-session-is-reconnecting
+
+**Симптом.** Кошелёк был подключён, cookie wagmi на месте, но после перезагрузки страницы сервер рендерит кнопку «Подключить кошелёк», а адрес появляется только через одну-две секунды.
+
+**Причина.** Состояние из `cookieToInitialState` восстанавливается со статусом `reconnecting`: адрес уже известен, но wagmi ещё ждёт от кошелька подтверждения разрешения. Код, проверявший `connection.status === "connected"`, считал такую сессию отключённой и на сервере, и в браузере.
+
+**Правило.** Показывать кошелёк по наличию адреса (`connection.address`), а не по статусу `connected`. Проверка: подключить кошелёк, перезагрузить страницу и убедиться, что HTML ответа сервера уже содержит меню адреса (`aria-controls="wallet-menu"`).
+
+### git-add-directory-captures-parallel-edits
+
+**Симптом.** Коммит с описанием одной задачи содержит чужие изменения: при работе агента в PR 4 в коммит меню кошелька попал параллельный редизайн окна подключения вместе с новым изображением.
+
+**Причина.** `git add <папка>` индексирует все изменённые и новые файлы в ней, включая правки, которые в это время вносил другой участник.
+
+**Правило.** Добавлять в индекс файлы по именам и смотреть `git diff --cached --stat` перед коммитом. Если лишнее уже попало в незапушенный коммит, его разделяют через `git reset --soft` и сверяют итоговое дерево с исходным через `git diff`.
