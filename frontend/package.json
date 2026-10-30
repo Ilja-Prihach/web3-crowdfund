@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"src/**/*.test.ts\"",
     "optimize:images": "node scripts/optimize-images.mjs",
     "abi:export": "node scripts/export-abi.mjs"
   },
