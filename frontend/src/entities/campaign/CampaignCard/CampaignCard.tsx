@@ -6,7 +6,7 @@ import { CampaignArtwork } from "../CampaignArtwork/CampaignArtwork";
 import { CampaignProgress } from "../CampaignProgress/CampaignProgress";
 import { CampaignStatus } from "../CampaignStatus/CampaignStatus";
 import { formatTimeLeft } from "../lib/deadline";
-import type { Campaign } from "../model/campaign";
+import { fundingModeLabels, type Campaign } from "../model/campaign";
 import styles from "./CampaignCard.module.scss";
 
 type CampaignCardProps = {
@@ -25,7 +25,7 @@ function getTermLabel({ deadline, fundingMode, status }: Campaign, nowSeconds: n
 function getFundsNote({ id, status, totalRaised }: Campaign) {
   if (status === "successful") return { text: "Ждёт вывода", isAlert: false };
   if ((status === "failed" || status === "cancelled") && totalRaised > 0n) {
-    return { text: "Доступен возврат", isAlert: true };
+    return { text: "Можно вернуть вклад", isAlert: true };
   }
   return { text: `Кампания №${id}`, isAlert: false };
 }
@@ -37,12 +37,13 @@ export function CampaignCard({ campaign, nowSeconds }: CampaignCardProps) {
 
   return (
     <article className={styles.card}>
-      <CampaignArtwork id={campaign.id} muted={isClosedWithoutSuccess}>
+      <CampaignArtwork fundingMode={campaign.fundingMode} id={campaign.id} muted={isClosedWithoutSuccess}>
         <CampaignStatus className={styles.status} status={campaign.status} />
         {termLabel ? <span className={styles.term}>{termLabel}</span> : null}
       </CampaignArtwork>
 
       <div className={styles.body}>
+        <p className={styles.mode}>{fundingModeLabels[campaign.fundingMode]}</p>
         <h3 className={styles.title}>{campaign.title}</h3>
         <p className={styles.description}>{campaign.description}</p>
 

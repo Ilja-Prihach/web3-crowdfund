@@ -1,7 +1,21 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { toCampaign, toCampaignStatus, toFundingMode } from "./campaign.ts";
+import {
+  campaignStatusLabels,
+  fundingModeLabels,
+  toCampaign,
+  toCampaignStatus,
+  toFundingMode,
+} from "./campaign.ts";
+
+describe("campaign labels", () => {
+  it("использует понятные продуктовые названия статуса и режима", () => {
+    assert.equal(campaignStatusLabels.failed, "Срок истёк");
+    assert.equal(fundingModeLabels.fixedDeadline, "Сбор к сроку");
+    assert.equal(fundingModeLabels.openEnded, "Открытая цель");
+  });
+});
 
 describe("toCampaignStatus", () => {
   it("переводит индексы enum CampaignStatus в ключи по порядку Solidity", () => {

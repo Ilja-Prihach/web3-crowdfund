@@ -21,15 +21,15 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Все" },
   { value: "active", label: "Активные" },
   { value: "successful", label: "Успешные" },
-  { value: "failed", label: "Провалены" },
+  { value: "failed", label: "Срок истёк" },
   { value: "withdrawn", label: "Выведены" },
   { value: "cancelled", label: "Отменены" },
 ];
 
 const modeFilters: { value: ModeFilter; label: string }[] = [
   { value: "all", label: "Любой режим" },
-  { value: "fixedDeadline", label: "Есть срок" },
-  { value: "openEnded", label: "Без срока" },
+  { value: "fixedDeadline", label: "Сбор к сроку" },
+  { value: "openEnded", label: "Открытая цель" },
 ];
 
 export function CampaignCatalog() {
@@ -71,15 +71,20 @@ export function CampaignCatalog() {
   return (
     <section aria-labelledby="catalog-title" className={styles.catalog} ref={sectionRef}>
       <header className={styles.head}>
+        <span className={styles.eyebrow}>On-chain каталог</span>
         <h1 className={styles.title} id="catalog-title">
           Кампании
         </h1>
         <p className={styles.lead}>
+          Реальные кампании из контракта OpenFund V2. Названия, условия и суммы читаются напрямую из Ethereum
+          Sepolia.
+        </p>
+        <p className={styles.summary}>
           {total === undefined
             ? catalog.isError
               ? "Контракт V2 в Ethereum Sepolia"
               : "Читаем контракт V2 в Sepolia…"
-            : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · данные напрямую из Sepolia`}
+            : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2`}
         </p>
       </header>
 

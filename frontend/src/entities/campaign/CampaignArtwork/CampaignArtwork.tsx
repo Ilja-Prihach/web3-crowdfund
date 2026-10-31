@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { FundingMode } from "../model/campaign";
 import styles from "./CampaignArtwork.module.scss";
 
 // У кампаний в контракте нет изображений, поэтому обложка — абстрактный узор,
@@ -84,18 +85,30 @@ const patterns: { tone: string; art: ReactNode }[] = [
 ];
 
 type CampaignArtworkProps = {
+  fundingMode: FundingMode;
   id: bigint;
   muted?: boolean;
   children?: ReactNode;
 };
 
-export function CampaignArtwork({ children, id, muted = false }: CampaignArtworkProps) {
+export function CampaignArtwork({ children, fundingMode, id, muted = false }: CampaignArtworkProps) {
   const pattern = patterns[Number(id % BigInt(patterns.length))];
 
   return (
     <div className={styles.artwork}>
       <div className={[styles.canvas, pattern.tone, muted ? styles.muted : undefined].filter(Boolean).join(" ")}>
         <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
+          {fundingMode === "fixedDeadline" ? (
+            <g className={styles.fixedMotif}>
+              <circle cx="326" cy="58" r="34" />
+              <path d="M326 38v22l15 10" />
+            </g>
+          ) : (
+            <g className={styles.openMotif}>
+              <path d="M38 188 C105 118 168 214 236 142 S338 94 386 58" />
+              <circle cx="386" cy="58" r="6" />
+            </g>
+          )}
           {pattern.art}
         </svg>
       </div>

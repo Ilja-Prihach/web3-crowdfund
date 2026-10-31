@@ -12,14 +12,14 @@ export type FundingMode = (typeof fundingModes)[number];
 export const campaignStatusLabels: Record<CampaignStatus, string> = {
   active: "Активна",
   successful: "Цель достигнута",
-  failed: "Провал",
+  failed: "Срок истёк",
   withdrawn: "Средства выведены",
   cancelled: "Отменена",
 };
 
 export const fundingModeLabels: Record<FundingMode, string> = {
-  fixedDeadline: "Есть срок",
-  openEnded: "Без срока",
+  fixedDeadline: "Сбор к сроку",
+  openEnded: "Открытая цель",
 };
 
 export function toCampaignStatus(value: number): CampaignStatus {
