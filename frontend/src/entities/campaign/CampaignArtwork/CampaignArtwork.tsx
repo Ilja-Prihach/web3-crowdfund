@@ -1,10 +1,12 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import type { FundingMode } from "../model/campaign";
 import styles from "./CampaignArtwork.module.scss";
+import { getDemoCover } from "./demoCovers";
 
-// У кампаний в контракте нет изображений, поэтому обложка — абстрактный узор,
-// выбранный по ID: одна и та же кампания всегда выглядит одинаково.
+// У кампаний в контракте нет изображений: обложка — demo-иллюстрация, если она есть,
+// иначе абстрактный узор, выбранный по ID. Одна и та же кампания всегда выглядит одинаково.
 const patterns: { tone: string; art: ReactNode }[] = [
   {
     tone: styles.mint,
@@ -93,24 +95,36 @@ type CampaignArtworkProps = {
 
 export function CampaignArtwork({ children, fundingMode, id, muted = false }: CampaignArtworkProps) {
   const pattern = patterns[Number(id % BigInt(patterns.length))];
+  const cover = getDemoCover(id);
 
   return (
     <div className={styles.artwork}>
       <div className={[styles.canvas, pattern.tone, muted ? styles.muted : undefined].filter(Boolean).join(" ")}>
-        <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
-          {fundingMode === "fixedDeadline" ? (
-            <g className={styles.fixedMotif}>
-              <circle cx="326" cy="58" r="34" />
-              <path d="M326 38v22l15 10" />
-            </g>
-          ) : (
-            <g className={styles.openMotif}>
-              <path d="M38 188 C105 118 168 214 236 142 S338 94 386 58" />
-              <circle cx="386" cy="58" r="6" />
-            </g>
-          )}
-          {pattern.art}
-        </svg>
+        {cover ? (
+          <Image
+            alt=""
+            className={styles.cover}
+            fill
+            placeholder="blur"
+            sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 959px) 50vw, 460px"
+            src={cover}
+          />
+        ) : (
+          <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
+            {fundingMode === "fixedDeadline" ? (
+              <g className={styles.fixedMotif}>
+                <circle cx="326" cy="58" r="34" />
+                <path d="M326 38v22l15 10" />
+              </g>
+            ) : (
+              <g className={styles.openMotif}>
+                <path d="M38 188 C105 118 168 214 236 142 S338 94 386 58" />
+                <circle cx="386" cy="58" r="6" />
+              </g>
+            )}
+            {pattern.art}
+          </svg>
+        )}
       </div>
       {children}
     </div>

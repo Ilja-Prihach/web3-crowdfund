@@ -41,6 +41,11 @@
   }
 }
 
+.cover {
+  z-index: 2;
+  object-fit: cover;
+}
+
 .fixedMotif,
 .openMotif {
   fill: none;
