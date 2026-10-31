@@ -1,0 +1,49 @@
+.progress {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.amounts {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-variant-numeric: tabular-nums;
+
+  strong {
+    font-size: 1.125rem;
+  }
+
+  span {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-label);
+  }
+}
+
+.track {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-round);
+  background: var(--color-surface-muted);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-forest);
+  }
+}
+
+.successful span,
+.withdrawn span {
+  background: linear-gradient(90deg, var(--color-forest), var(--color-live));
+}
+
+.failed span {
+  background: var(--color-cinnabar);
+  opacity: 0.55;
+}
+
+.cancelled span {
+  background: var(--color-border);
+}

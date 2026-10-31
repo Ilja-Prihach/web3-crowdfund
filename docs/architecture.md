@@ -23,7 +23,7 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Сеть, адрес V2 и ссылка на контракт в Etherscan заданы один раз в `frontend/src/shared/config/web3.ts`; сеть берётся из `viem/chains` (`sepolia`, chain ID `11155111`). ABI хранится в `frontend/src/shared/config/crowdfundingAbi.ts` как `as const`-модуль. Его генерирует `npm run abi:export` из артефакта `forge build` (`contracts/out/` в Git не попадает), поэтому вручную файл не редактируется.
 
-`getWagmiConfig()` в `frontend/src/shared/config/wagmi.ts` создаёт конфиг wagmi: только Sepolia, HTTP-транспорт на `NEXT_PUBLIC_SEPOLIA_RPC_URL` или публичный RPC viem, коннектор `injected` с обнаружением кошельков по EIP-6963, `ssr: true` и cookie-хранилище. Клиентский `frontend/src/app/providers.tsx` оборачивает shell в `WagmiProvider` и `QueryClientProvider`. Корневой layout читает cookie запроса через `cookieToInitialState` и передаёт состояние подключения провайдеру, поэтому сервер сразу рендерит адрес подключённого кошелька; из-за чтения `headers()` страницы рендерятся динамически, см. [`DECISIONS.md#frontend-wallet-state-hydrates-from-cookie`](DECISIONS.md#frontend-wallet-state-hydrates-from-cookie).
+`getWagmiConfig()` в `frontend/src/shared/config/wagmi.ts` создаёт конфиг wagmi: только Sepolia, HTTP-транспорт на `NEXT_PUBLIC_SEPOLIA_RPC_URL` или публичный узел `ethereum-sepolia-rpc.publicnode.com`, коннектор `injected` с обнаружением кошельков по EIP-6963, `ssr: true` и cookie-хранилище. Клиентский `frontend/src/app/providers.tsx` оборачивает shell в `WagmiProvider` и `QueryClientProvider`. Корневой layout читает cookie запроса через `cookieToInitialState` и передаёт состояние подключения провайдеру, поэтому сервер сразу рендерит адрес подключённого кошелька; из-за чтения `headers()` страницы рендерятся динамически, см. [`DECISIONS.md#frontend-wallet-state-hydrates-from-cookie`](DECISIONS.md#frontend-wallet-state-hydrates-from-cookie).
 
 Кошелёк живёт в `frontend/src/features/wallet`:
 
@@ -36,6 +36,23 @@ Frontend использует Next.js App Router. Корневой layout под
 - `lib/walletName` — человекочитаемое имя коннектора, общее для окна и меню.
 
 Подключённым считается кошелёк с известным адресом: и в статусе `connected`, и в статусе `reconnecting`, в котором wagmi восстанавливает сессию из cookie, см. [`gotchas.md#wagmi-restored-session-is-reconnecting`](gotchas.md#wagmi-restored-session-is-reconnecting). Сокращение адреса и оттенок аватара — чистые функции в `frontend/src/shared/lib/address.ts`; регистр EIP-55 при показе не меняется.
+
+## On-chain-каталог frontend
+
+Маршрут `/campaigns` (`frontend/src/app/campaigns/page.tsx`) рендерит клиентский виджет `widgets/CampaignCatalog`. Данные читаются напрямую из V2 без кошелька, см. [`DECISIONS.md#frontend-reads-sepolia-directly`](DECISIONS.md#frontend-reads-sepolia-directly).
+
+Сущность кампании живёт в `frontend/src/entities/campaign`:
+
+- `model/useCampaignCatalog` делает два зависимых `useReadContract`: `nextCampaignId`, затем `getCampaigns(offset, limit)`. Оба запроса явно указывают `chainId` Sepolia. Второй запрос выключен (`enabled: false`), пока неизвестно окно страницы, поэтому при нуле кампаний он не отправляется. Выключенный запрос в TanStack Query v5 имеет статус `pending`, поэтому загрузка считается только для запроса, который действительно должен выполниться;
+- `model/campaign` переводит ответ контракта в модель: индексы enum `CampaignStatus` и `FundingMode` становятся строковыми ключами (`"active"`, `"openEnded"`) с подписями, тип сырого ответа выводится из ABI через `ContractFunctionReturnType`. Неизвестный индекс бросает ошибку внутри `select`, и каталог показывает состояние ошибки вместо неверного статуса. Порядок массивов обязан совпадать с порядком enum в `Crowdfunding.sol`: ABI хранит enum как `uint8`, и TypeScript расхождение не заметит;
+- `lib/pagination` вычисляет окно `offset/limit`. `getCampaigns` читает по возрастанию ID, поэтому для порядка «сначала новые» окно отсчитывается с конца, а результат разворачивается. `limit` последней страницы точный: при `limit = 20` контракт вернул бы уже показанные ID;
+- `lib/money` форматирует wei без перевода в `number`: строка из `formatEther` передаётся в `Intl.NumberFormat`, лишние знаки отбрасываются (`roundingMode: "trunc"`), а суммы меньше 0,0001 ETH показываются по значащим цифрам. Процент считается в `bigint` и округляется вниз, поэтому 100% появляется только при `totalRaised >= goal`, как в контракте;
+- `lib/deadline` переводит Unix-дедлайн в «N дней» или «N ч»; время фиксируется при открытии страницы;
+- `CampaignCard`, `CampaignStatus`, `CampaignProgress` и `CampaignArtwork` — карточка одинакового размера с бейджем статуса, меткой срока, прогрессом и автором. Обложка — demo-иллюстрация для кампаний проекта или детерминированный узор по ID, см. [`DECISIONS.md#frontend-demo-campaigns-use-off-chain-covers`](DECISIONS.md#frontend-demo-campaigns-use-off-chain-covers).
+
+Фильтры по статусу и режиму и их счётчики работают только по загруженной странице из не более чем 20 кампаний; при нескольких страницах интерфейс говорит об этом явно. Каталог различает загрузку, пустой контракт, ошибку RPC с повтором и пустой результат фильтров.
+
+Модули, которые загружают unit-тесты, импортируют соседей относительным путём с `.ts`: `node --test` не понимает псевдоним `@/`, см. [`gotchas.md#node-test-does-not-resolve-path-alias`](gotchas.md#node-test-does-not-resolve-path-alias). Для литералов `bigint` в `frontend/tsconfig.json` установлен `target: ES2020`; код для браузера собирает Next.js, а `tsc` только проверяет типы.
 
 ## Контракт Crowdfunding
 

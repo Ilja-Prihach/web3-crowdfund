@@ -30,8 +30,8 @@ export function HeroSection() {
           </p>
 
           <div className={styles.actions}>
-            <ButtonLink href="#how-it-works" size="large">
-              Как это работает
+            <ButtonLink href="/campaigns" size="large">
+              Смотреть кампании
             </ButtonLink>
             <ButtonLink
               aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"

@@ -23,11 +23,13 @@
 | [frontend-reads-sepolia-directly](#frontend-reads-sepolia-directly) | MVP читает V2 напрямую через wagmi и viem без backend |
 | [frontend-media-is-optimized-before-commit](#frontend-media-is-optimized-before-commit) | Растровые ассеты сжимаются воспроизводимо до попадания в Git |
 | [frontend-uses-card-surfaces](#frontend-uses-card-surfaces) | UI строится из карточек по локальным мокапам, а не из линеек и колонок |
+| [frontend-catalog-cards-have-equal-prominence](#frontend-catalog-cards-have-equal-prominence) | В MVP создатели не выбирают размер карточки, а крупный слот отложен до прозрачного механизма продвижения |
 | [frontend-illustrations-are-code-built-scenes](#frontend-illustrations-are-code-built-scenes) | Заменено: исходные сцены были векторными React-компонентами |
 | [frontend-illustrations-use-raster-exports](#frontend-illustrations-use-raster-exports) | Утверждённые сцены поставляются как оптимизированные WebP через `next/image` |
 | [frontend-theme-follows-system-and-persists-choice](#frontend-theme-follows-system-and-persists-choice) | Тема начинает с системной, а явный выбор хранится локально без вспышки |
 | [frontend-wallet-state-hydrates-from-cookie](#frontend-wallet-state-hydrates-from-cookie) | Подключение кошелька восстанавливается из cookie на сервере ценой динамического рендера |
 | [frontend-unit-tests-use-node-test](#frontend-unit-tests-use-node-test) | Чистые функции frontend тестируются встроенным `node:test` без Jest и Vitest |
+| [frontend-demo-campaigns-use-off-chain-covers](#frontend-demo-campaigns-use-off-chain-covers) | Demo-кампании Sepolia получают обложки из таблицы по ID, остальные — детерминированный узор |
 
 ## Действующие решения
 
@@ -172,13 +174,15 @@ Next.js App Router отвечает за маршруты, layouts, metadata и 
 
 ### frontend-reads-sepolia-directly
 
-**Статус:** действует во Frontend MVP. Providers, конфиг Sepolia и подключение injected-кошелька реализованы в PR 4; чтение кампаний запланировано в PR 5.
+**Статус:** действует во Frontend MVP. Providers, конфиг Sepolia и подключение injected-кошелька реализованы в PR 4; чтение каталога кампаний — в PR 5.
 
 Frontend MVP использует wagmi, viem и TanStack Query для прямого чтения V2-контракта в Ethereum Sepolia и отправки транзакций через injected browser wallet. Backend, собственная финансовая база и WalletConnect не добавляются на этом этапе.
 
 Контракт остаётся источником истины. Локальные фильтры работают только по загруженной странице кампаний и не изображают глобальный indexer-поиск.
 
-Причина: MVP должен дать реальный Web3-сценарий без преждевременного backend-слоя и без зависимости от WalletConnect project ID. Следствие: каталог ограничен возможностями on-chain pagination до будущего indexer.
+Чтение всегда идёт в Sepolia с явным `chainId`, поэтому каталог работает без кошелька и с кошельком в другой сети. RPC по умолчанию — публичный узел `ethereum-sepolia-rpc.publicnode.com`, заданный в `frontend/src/shared/config/web3.ts`; `NEXT_PUBLIC_SEPOLIA_RPC_URL` его заменяет. Узел по умолчанию из `viem/chains` не используется: он отвечал `429` без ключа, см. [`gotchas.md#viem-default-sepolia-rpc-is-rate-limited`](gotchas.md#viem-default-sepolia-rpc-is-rate-limited).
+
+Причина: MVP должен дать реальный Web3-сценарий без преждевременного backend-слоя и без зависимости от WalletConnect project ID. Следствие: каталог ограничен возможностями on-chain pagination до будущего indexer: доступен порядок по ID («сначала новые» и «сначала старые»), а сортировка по собранной сумме и категории ждут indexer.
 
 Связано: [`plans/frontend-mvp.md#web3-границы`](plans/frontend-mvp.md#web3-границы), [`deployments.md`](deployments.md).
 
@@ -188,7 +192,7 @@ Frontend MVP использует wagmi, viem и TanStack Query для прям�
 
 Промежуточные несжатые изображения не коммитятся. Финальные растровые ассеты конвертируются воспроизводимым скриптом через `sharp`, сохраняются преимущественно в WebP и подключаются через `next/image` с явными размерами и `sizes`.
 
-Hero ограничен 1600 px по длинной стороне и целевым весом 180 KB; сцены шагов и доверия — 960 px по ширине и 100 KB; широкие сцены режимов — 1280 px и 120 KB. Контракт не содержит campaign image, поэтому реальным кампаниям не назначаются вымышленные обложки: их визуальная графика строится детерминированно средствами CSS/SVG.
+Hero ограничен 1600 px по длинной стороне и целевым весом 180 KB; сцены шагов и доверия — 960 px по ширине и 100 KB; широкие сцены режимов — 1280 px и 120 KB. Контракт не содержит campaign image, поэтому реальным кампаниям не назначаются вымышленные обложки: их визуальная графика строится детерминированно средствами CSS/SVG. Уточнено 31 октября 2026 года: собственные demo-кампании проекта в Sepolia получают off-chain demo-обложки, см. [`frontend-demo-campaigns-use-off-chain-covers`](#frontend-demo-campaigns-use-off-chain-covers).
 
 Иллюстрации главной поставляются как оптимизированные WebP, см. [`frontend-illustrations-use-raster-exports`](#frontend-illustrations-use-raster-exports). Для конвертации сохраняется воспроизводимый `frontend/scripts/optimize-images.mjs`; `sharp` закреплён как прямая dev-зависимость.
 
@@ -207,6 +211,18 @@ Hero ограничен 1600 px по длинной стороне и целев
 Причина: карточки делают границы смысловых блоков явными, а разные композиции дают странице ритм. Мокап всех экранов заранее фиксирует единый язык и не даёт каждому PR изобретать стиль заново. Следствие: каждый визуальный PR сверяется с соответствующим рендером. Мокапы не являются спецификацией: вымышленные данные и функции, требующие indexer, в MVP не переносятся.
 
 Связано: [`plans/frontend-mvp.md#визуальное-направление`](plans/frontend-mvp.md#визуальное-направление), [`../AGENTS.md#визуальный-референс-frontend`](../AGENTS.md#визуальный-референс-frontend).
+
+### frontend-catalog-cards-have-equal-prominence
+
+**Статус:** действует во Frontend MVP, принято 31 октября 2026 года.
+
+On-chain-каталог PR 5 показывает кампании в карточках одинакового визуального веса внутри каждого breakpoint: создатель не выбирает размер, позицию или увеличенный формат. Обложка использует единое соотношение сторон, название и краткое описание ограничиваются предсказуемой высотой, а полная история раскрывается на странице кампании. Разновесная сетка локального demo-мокапа остаётся исследованием будущего крупного слота и не является спецификацией MVP.
+
+Крупная карточка может появиться позднее только как отдельный явно обозначенный механизм: например, «Продвигаемая кампания», «Выбор сообщества» или автоматическая ротация по опубликованному правилу. До реализации необходимо отдельно решить, кто и как получает место, взимается ли плата, куда она поступает, возможен ли возврат и как исключается скрытое ранжирование. Платного продвижения и редакционного фаворитизма во Frontend MVP нет.
+
+Причина: одинаковые карточки дают создателям равные условия и не создают ложного впечатления, что крупную кампанию рекомендует контракт или платформа. Детальная страница остаётся одинаково полной для каждого сбора, а будущий механизм продвижения не маскируется под обычную выдачу.
+
+Связано: [`plans/frontend-mvp.md#pr-5-on-chain-каталог`](plans/frontend-mvp.md#pr-5-on-chain-каталог), [`frontend-uses-card-surfaces`](#frontend-uses-card-surfaces).
 
 ### frontend-theme-follows-system-and-persists-choice
 
@@ -265,3 +281,17 @@ Wagmi хранит состояние подключения в cookie (`ssr: tr
 Причина: проверяемая логика сознательно вынесена из React-компонентов в чистые функции; для них Jest или Vitest добавили бы конфигурацию и зависимости без пользы. Следствие: компоненты и сценарии с кошельком проверяются в браузере, а не unit-тестами. Если понадобятся тесты React-компонентов, выбор test runner пересматривается отдельным решением.
 
 Связано: [`ci.md`](ci.md), [`../frontend/README.md`](../frontend/README.md).
+
+### frontend-demo-campaigns-use-off-chain-covers
+
+**Статус:** действует во Frontend MVP, принято 31 октября 2026 года.
+
+Контракт V2 не хранит изображений. Для demo-кампаний, которые автор проекта создал в Sepolia (ID 3–7, см. [`deployments.md`](deployments.md#демо-кампании-каталога)), frontend показывает WebP-обложки 1200×675 из таблицы `frontend/src/entities/campaign/CampaignArtwork/demoCovers.ts`, где ключ — ID кампании в текущем контракте. Все остальные кампании, включая будущие кампании других создателей, получают детерминированный CSS/SVG-узор по ID и мотив режима финансирования.
+
+Обложки — оформление, а не данные кампании: они не влияют на статус, суммы, порядок или фильтры. Таблица привязана к адресу V2 из `frontend/src/shared/config/web3.ts`; после нового deployment её нужно пересобрать, иначе обложки окажутся у чужих кампаний с теми же ID.
+
+Причина: каталог демонстрирует работодателям и соавторам реальные on-chain-данные, а одинаковые абстрактные узоры у шести кампаний плохо показывают продукт. Привязка по ID не требует изменения контракта и честно ограничена кампаниями самого проекта.
+
+Следствие: карточки с иллюстрацией заметнее карточек с узором, что частично расходится с [`frontend-catalog-cards-have-equal-prominence`](#frontend-catalog-cards-have-equal-prominence). Это допустимо только для demo-набора проекта. Изображения для кампаний любых создателей появятся вместе с off-chain-метаданными, одинаково доступными всем, а таблица по ID тогда заменяется.
+
+Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`roadmap.md#этап-5-backend-и-blockchain-indexer`](roadmap.md#этап-5-backend-и-blockchain-indexer).
