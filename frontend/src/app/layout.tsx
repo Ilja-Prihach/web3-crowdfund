@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { cookieToInitialState } from "wagmi";
 
+import { themeInitScript } from "@/features/theme/model/theme";
 import { WrongNetworkBanner } from "@/features/wallet/ui/WrongNetworkBanner/WrongNetworkBanner";
 import { getWagmiConfig } from "@/shared/config/wagmi";
 import { AppFooter } from "@/widgets/AppFooter/AppFooter";
@@ -42,7 +43,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const initialState = cookieToInitialState(getWagmiConfig(), (await headers()).get("cookie"));
 
   return (
-    <html className={`${interfaceFont.variable} ${editorialFont.variable}`} lang="ru">
+    <html
+      className={`${interfaceFont.variable} ${editorialFont.variable}`}
+      lang="ru"
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <a className="skipLink" href="#main-content">
           Перейти к содержимому

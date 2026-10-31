@@ -15,8 +15,8 @@
   overflow: hidden;
   padding: var(--space-7) var(--space-5);
   border-radius: 1.75rem;
-  color: var(--color-surface);
-  background: var(--color-text);
+  color: var(--color-on-feature);
+  background: var(--color-feature-surface);
 
   // The single decorative glow allowed by the visual direction.
   &::before {
@@ -26,7 +26,7 @@
     width: 32.5rem;
     height: 32.5rem;
     border-radius: var(--radius-round);
-    background: radial-gradient(circle, rgb(228 91 63 / 45%), transparent 65%);
+    background: radial-gradient(circle, var(--color-feature-accent), transparent 65%);
     content: "";
   }
 }
@@ -38,7 +38,7 @@
 
   p {
     max-width: 30rem;
-    color: rgb(255 253 247 / 72%);
+    color: var(--color-on-feature-muted);
   }
 }
 
@@ -64,20 +64,20 @@
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
-  color: var(--color-surface);
+  color: var(--color-on-feature);
   font-weight: 700;
   text-decoration: none;
 
   &:hover {
-    color: var(--color-mint);
+    color: var(--color-feature-link);
   }
 }
 
 .address {
   padding: 0.625rem 0.875rem;
   border-radius: 0.75rem;
-  color: rgb(255 253 247 / 62%);
-  background: rgb(255 253 247 / 6%);
+  color: var(--color-on-feature-muted);
+  background: var(--color-feature-muted-surface);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.82rem;
 }

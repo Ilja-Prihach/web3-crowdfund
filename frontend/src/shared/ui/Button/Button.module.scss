@@ -26,7 +26,7 @@
 }
 
 .primary {
-  color: var(--color-surface);
+  color: var(--color-on-solid);
   background: var(--color-forest);
   border-color: var(--color-forest);
 
@@ -37,13 +37,13 @@
 }
 
 .accent {
-  color: var(--color-surface);
+  color: var(--color-on-solid);
   background: var(--color-cinnabar-strong);
   border-color: var(--color-cinnabar-strong);
 
   &:hover:not(:disabled) {
-    background: #b23f29;
-    border-color: #b23f29;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 }
 
@@ -60,7 +60,7 @@
 .quiet {
   min-height: 2.75rem;
   padding-inline: var(--space-3);
-  color: var(--color-forest);
+  color: var(--color-link);
   background: transparent;
 
   &:hover:not(:disabled) {

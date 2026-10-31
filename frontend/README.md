@@ -64,6 +64,8 @@ cd ../frontend && npm run abi:export
 ## Дизайн-система
 
 - глобальные токены, reset, типографика и accessibility-правила находятся в `src/app/globals.scss` и `src/shared/styles`;
+- светлая и тёмная темы используют общие семантические токены; первый визит следует системной теме, а явный выбор хранится в `localStorage` под ключом `openfund-theme`;
+- theme-логика и доступный переключатель находятся в `src/features/theme`; desktop использует шапку, mobile — выпадающее меню;
 - `rem` используется для масштабируемой геометрии, `px` — для точных линий, focus и breakpoint-порогов;
 - `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `src/shared/ui`;
 - `AppHeader` и `AppFooter` находятся в `src/widgets` и подключаются корневым layout;
