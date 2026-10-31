@@ -1,12 +1,11 @@
 import Image from "next/image";
 
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import heroArt from "./assets/hero-art.webp";
 import styles from "./HeroSection.module.scss";
 
-const contractUrl =
-  "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
 
 const proofPoints = ["Без посредника", "Возврат по правилам", "Контракт верифицирован"];
 
@@ -36,7 +35,7 @@ export function HeroSection() {
             </ButtonLink>
             <ButtonLink
               aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"
-              href={contractUrl}
+              href={contractExplorerUrl}
               rel="noreferrer"
               size="large"
               target="_blank"

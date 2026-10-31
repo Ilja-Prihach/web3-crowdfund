@@ -1,6 +1,6 @@
 # Frontend
 
-Статус: техническая основа, дизайн-система, application shell и editorial-главная реализованы. Web3-интеграция добавляется последовательностью небольших PR согласно [`docs/plans/frontend-mvp.md`](../docs/plans/frontend-mvp.md).
+Статус: техническая основа, дизайн-система, application shell, главная и подключение браузерного кошелька в Sepolia реализованы. Чтение кампаний и транзакции добавляются следующими PR согласно [`docs/plans/frontend-mvp.md`](../docs/plans/frontend-mvp.md).
 
 ## Принятый стек
 
@@ -24,15 +24,20 @@ npm run dev
 
 Приложение будет доступно по адресу `http://localhost:3000`. Переменные окружения создаются локально на основе `.env.example`; файлы `.env*`, кроме примеров, не коммитятся.
 
+`NEXT_PUBLIC_SEPOLIA_RPC_URL` необязателен: пустое значение означает публичный RPC Sepolia из viem. Префикс `NEXT_PUBLIC_` вшивает значение в клиентский JavaScript, поэтому URL с приватным API-ключом сюда не кладётся.
+
+Для подключения кошелька нужен браузерный кошелёк (например, MetaMask) с включённой сетью Sepolia. Используйте отдельный учебный кошелёк без реальных средств.
+
 ## Проверки
 
 ```sh
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 
-Те же команды после чистого `npm ci` выполняет workflow `Frontend CI`. Предупреждения ESLint считаются ошибками.
+`npm test` запускает unit-тесты `src/**/*.test.ts` встроенным `node:test`; Node.js 24 выполняет TypeScript без сборки. Те же команды после чистого `npm ci` выполняет workflow `Frontend CI`. Предупреждения ESLint считаются ошибками.
 
 ## Архитектурные правила
 
@@ -44,6 +49,17 @@ npm run build
 - самостоятельный компонент хранит `ComponentName.tsx` и `ComponentName.module.scss` в одной папке;
 - локальные изображения секции лежат в её `assets/`;
 - растровые изображения оптимизируются до коммита и подключаются через `next/image`.
+
+## ABI контракта
+
+`src/shared/config/crowdfundingAbi.ts` генерируется из сборки Foundry и вручную не редактируется. После изменения контракта:
+
+```sh
+cd ../contracts && forge build
+cd ../frontend && npm run abi:export
+```
+
+Адрес V2, сеть и ссылка на Etherscan заданы в `src/shared/config/web3.ts`; в компонентах они только импортируются.
 
 ## Дизайн-система
 

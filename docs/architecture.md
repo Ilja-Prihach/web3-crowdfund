@@ -9,13 +9,31 @@ Frontend никогда не получает и не хранит приват�
 
 ## Frontend shell и дизайн-система
 
-Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`. `AppHeader` остаётся серверным компонентом; единственная клиентская часть shell — `MobileMenu`, который до 960 px заменяет навигацию кнопкой-бургером с выпадающей панелью и закрывается по Escape или выбору пункта.
+Frontend использует Next.js App Router. Корневой layout подключает локально выдаваемые через `next/font` шрифты Manrope и PT Serif, skip-link, общий `AppHeader` и `AppFooter`. Маршрутные страницы передают содержимое внутрь этого shell и сохраняют семантический `main`. `AppHeader` остаётся серверным компонентом. Клиентские части shell — `MobileMenu`, который до 960 px заменяет навигацию кнопкой-бургером с выпадающей панелью и закрывается по Escape или выбору пункта, и компоненты кошелька из Web3-слоя ниже.
 
 Глобальный слой содержит reset, семантические CSS custom properties, базовую типографику, focus-правила и поддержку `prefers-reduced-motion`. Компонентные стили изолированы через SCSS Modules. Общие UI-примитивы `Button`, `Field`, `Skeleton`, `EmptyState` и `ErrorState` находятся в `frontend/src/shared/ui`, а крупные части shell — в `frontend/src/widgets`.
 
 Масштабируемая геометрия интерфейса задаётся преимущественно в `rem`; точные линии, focus outline и responsive breakpoints — в `px`. Подробные причины и правила находятся в [`DECISIONS.md#frontend-styles-are-colocated-scss-modules`](DECISIONS.md#frontend-styles-are-colocated-scss-modules).
 
 Главная страница собирается из независимых widgets `HeroSection`, `HowItWorksSection`, `FundingModesSection`, `TrustSection` и `ProjectStatusSection`. Они следуют карточному направлению из [`DECISIONS.md#frontend-uses-card-surfaces`](DECISIONS.md#frontend-uses-card-surfaces): заголовки секций строит общий `SectionHeader`, а CTA-ссылки — `ButtonLink`, разделяющий классы с `Button`. Семь декоративных сцен лежат как оптимизированные WebP в `assets/` соответствующих widgets и подключаются через `next/image`, см. [`DECISIONS.md#frontend-illustrations-use-raster-exports`](DECISIONS.md#frontend-illustrations-use-raster-exports). Страница последовательно объясняет назначение продукта, движение ETH через контракт, режимы V2, границу доверия и текущую готовность интерфейса без фиктивных кампаний и неподключённых действий. CTA ведут только к существующим якорям, исходному коду и верифицированному контракту в Etherscan.
+
+## Web3-слой frontend
+
+Сеть, адрес V2 и ссылка на контракт в Etherscan заданы один раз в `frontend/src/shared/config/web3.ts`; сеть берётся из `viem/chains` (`sepolia`, chain ID `11155111`). ABI хранится в `frontend/src/shared/config/crowdfundingAbi.ts` как `as const`-модуль. Его генерирует `npm run abi:export` из артефакта `forge build` (`contracts/out/` в Git не попадает), поэтому вручную файл не редактируется.
+
+`getWagmiConfig()` в `frontend/src/shared/config/wagmi.ts` создаёт конфиг wagmi: только Sepolia, HTTP-транспорт на `NEXT_PUBLIC_SEPOLIA_RPC_URL` или публичный RPC viem, коннектор `injected` с обнаружением кошельков по EIP-6963, `ssr: true` и cookie-хранилище. Клиентский `frontend/src/app/providers.tsx` оборачивает shell в `WagmiProvider` и `QueryClientProvider`. Корневой layout читает cookie запроса через `cookieToInitialState` и передаёт состояние подключения провайдеру, поэтому сервер сразу рендерит адрес подключённого кошелька; из-за чтения `headers()` страницы рендерятся динамически, см. [`DECISIONS.md#frontend-wallet-state-hydrates-from-cookie`](DECISIONS.md#frontend-wallet-state-hydrates-from-cookie).
+
+Кошелёк живёт в `frontend/src/features/wallet`:
+
+- `ui/ConnectWallet` — кнопка и модальный `<dialog>` со списком браузерных кошельков; при известном адресе вместо кнопки показывает `WalletMenu`, а то же окно служит для смены кошелька: новый подключается первым, прежний отключается только после успеха, поэтому отмена смены оставляет текущий кошелёк;
+- `ui/WalletMenu` — адрес с аватаром из адреса, кошелёк, через который выполнено подключение, полный адрес, копирование, ссылка на Etherscan, смена кошелька и отключение;
+- `ui/NetworkBadge` — бейдж сети в шапке: Sepolia или «Другая сеть»;
+- `ui/WrongNetworkBanner` — полоса под шапкой с переключением на Sepolia, пока кошелёк в другой сети;
+- `model/useWalletNetwork` — единственное место, где вычисляется «кошелёк подключён» и «сеть неверная»; будущие финансовые действия блокируются по этому же хуку;
+- `lib/walletErrors` — перевод ошибок кошелька в русский текст по коду или имени во всей цепочке `cause`;
+- `lib/walletName` — человекочитаемое имя коннектора, общее для окна и меню.
+
+Подключённым считается кошелёк с известным адресом: и в статусе `connected`, и в статусе `reconnecting`, в котором wagmi восстанавливает сессию из cookie, см. [`gotchas.md#wagmi-restored-session-is-reconnecting`](gotchas.md#wagmi-restored-session-is-reconnecting). Сокращение адреса и оттенок аватара — чистые функции в `frontend/src/shared/lib/address.ts`; регистр EIP-55 при показе не меняется.
 
 ## Контракт Crowdfunding
 

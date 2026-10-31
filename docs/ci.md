@@ -19,7 +19,8 @@ Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` вы�
 3. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
 4. `npm run lint` — проверяет исходники ESLint без допустимых предупреждений.
 5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
-6. `npm run build` — собирает production-версию Next.js.
+6. `npm test` — запускает unit-тесты чистых функций встроенным `node:test`.
+7. `npm run build` — собирает production-версию Next.js.
 
 `Format, build, test` работает в каталоге `contracts/`:
 
@@ -54,6 +55,7 @@ Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` вы�
 npm ci
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 

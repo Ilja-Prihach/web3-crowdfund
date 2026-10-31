@@ -1,13 +1,12 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { SectionHeader } from "@/shared/ui/SectionHeader/SectionHeader";
 
 import trustVaultImage from "./assets/trust-vault.webp";
 import styles from "./TrustSection.module.scss";
 
-const contractUrl =
-  "https://sepolia.etherscan.io/address/0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A";
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -137,7 +136,7 @@ export function TrustSection() {
               </p>
               <a
                 aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"
-                href={contractUrl}
+                href={contractExplorerUrl}
                 rel="noreferrer"
                 target="_blank"
               >
