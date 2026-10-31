@@ -6,11 +6,17 @@ import { useConnection, useDisconnect } from "wagmi";
 import { supportedChain } from "@/shared/config/web3";
 import { addressHue, shortenAddress } from "@/shared/lib/address";
 
+import { getWalletName } from "../../lib/walletName";
+
 import styles from "./WalletMenu.module.scss";
 
 const panelId = "wallet-menu";
 
-export function WalletMenu() {
+type WalletMenuProps = {
+  onSwitchWallet: () => void;
+};
+
+export function WalletMenu({ onSwitchWallet }: WalletMenuProps) {
   const connection = useConnection();
   const disconnect = useDisconnect();
   const [isOpen, setIsOpen] = useState(false);
@@ -76,7 +82,9 @@ export function WalletMenu() {
       </button>
 
       <div className={styles.panel} hidden={!isOpen} id={panelId}>
-        <p className={styles.label}>Подключённый адрес</p>
+        <p className={styles.label}>
+          Подключён через {connection.connector ? getWalletName(connection.connector) : "кошелёк"}
+        </p>
         <p className={styles.fullAddress}>{address}</p>
         <button className={styles.item} onClick={copyAddress} type="button">
           {copyLabel}
@@ -89,6 +97,16 @@ export function WalletMenu() {
         >
           Открыть в Etherscan <span aria-hidden="true">↗</span>
         </a>
+        <button
+          className={styles.item}
+          onClick={() => {
+            setIsOpen(false);
+            onSwitchWallet();
+          }}
+          type="button"
+        >
+          Сменить кошелёк
+        </button>
         <button
           className={`${styles.item} ${styles.danger}`}
           onClick={() => {

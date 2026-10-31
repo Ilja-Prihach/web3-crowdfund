@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { useConnect, useConnection, useConnectors } from "wagmi";
+import { useConnect, useConnection, useConnectors, useDisconnect } from "wagmi";
 
 import { Button } from "@/shared/ui/Button/Button";
 
 import { getWalletErrorMessage } from "../../lib/walletErrors";
+import { getWalletName } from "../../lib/walletName";
 import { WalletMenu } from "../WalletMenu/WalletMenu";
 import walletConnectImage from "./assets/wallet-connect.webp";
 import styles from "./ConnectWallet.module.scss";
@@ -16,15 +17,14 @@ export function ConnectWallet() {
   const connection = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
+  const disconnect = useDisconnect();
+
+  // При смене кошелька текущий отключаем только после успешного подключения нового.
+  const currentConnector = connection.address ? connection.connector : undefined;
 
   // Кошельки, найденные по EIP-6963, точнее общего «injected»: общий показываем, только если других нет.
   const discovered = connectors.filter((connector) => connector.id !== "injected");
   const walletOptions = discovered.length > 0 ? discovered : connectors;
-
-  // Адрес известен и при «connected», и при «reconnecting» (сессия из cookie): показываем меню сразу.
-  if (connection.address) {
-    return <WalletMenu />;
-  }
 
   const openDialog = () => {
     connect.reset();
@@ -33,12 +33,31 @@ export function ConnectWallet() {
 
   const closeDialog = () => dialogRef.current?.close();
 
+  const selectWallet = (connector: (typeof walletOptions)[number]) => {
+    connect.mutate(
+      { connector },
+      {
+        onSuccess: () => {
+          if (currentConnector && currentConnector.uid !== connector.uid) {
+            disconnect.mutate({ connector: currentConnector });
+          }
+          closeDialog();
+        },
+      },
+    );
+  };
+
   return (
     <>
-      <Button onClick={openDialog} size="compact">
-        <span className={styles.labelFull}>Подключить кошелёк</span>
-        <span className={styles.labelShort}>Кошелёк</span>
-      </Button>
+      {/* Адрес известен и при «connected», и при «reconnecting» (сессия из cookie): показываем меню сразу. */}
+      {connection.address ? (
+        <WalletMenu onSwitchWallet={openDialog} />
+      ) : (
+        <Button onClick={openDialog} size="compact">
+          <span className={styles.labelFull}>Подключить кошелёк</span>
+          <span className={styles.labelShort}>Кошелёк</span>
+        </Button>
+      )}
 
       <dialog
         aria-describedby="connect-wallet-description"
@@ -68,24 +87,28 @@ export function ConnectWallet() {
 
           <div className={styles.content}>
             <h2 className={styles.title} id="connect-wallet-title">
-              Подключите кошелёк
+              {currentConnector ? "Сменить кошелёк" : "Подключите кошелёк"}
             </h2>
             <p className={styles.lead} id="connect-wallet-description">
-              Выберите расширение браузера. Подключение не отправляет транзакцию.
+              {currentConnector
+                ? `Сейчас подключён ${getWalletName(currentConnector)}. Он отключится, когда вы подключите другой.`
+                : "Выберите расширение браузера. Подключение не отправляет транзакцию."}
             </p>
 
             <ul className={styles.wallets}>
               {walletOptions.map((connector) => {
                 // Сравниваем сам объект: в mutate мы передали именно этот коннектор.
                 const isWaiting = connect.isPending && connect.variables?.connector === connector;
+                const isCurrent = connector.uid === currentConnector?.uid;
 
                 return (
                   <li key={connector.uid}>
                     <button
                       aria-busy={isWaiting || undefined}
+                      aria-current={isCurrent || undefined}
                       className={styles.wallet}
-                      disabled={connect.isPending}
-                      onClick={() => connect.mutate({ connector }, { onSuccess: closeDialog })}
+                      disabled={connect.isPending || isCurrent}
+                      onClick={() => selectWallet(connector)}
                       type="button"
                     >
                       {connector.icon ? (
@@ -104,13 +127,15 @@ export function ConnectWallet() {
                         />
                       )}
                       <span className={styles.walletName}>
-                        {connector.id === "injected" ? "Браузерный кошелёк" : connector.name}
+                        {getWalletName(connector)}
                       </span>
                       {isWaiting ? (
                         <span className={styles.walletState}>
                           <span aria-hidden="true" className={styles.spinner} />
                           Подтвердите подключение
                         </span>
+                      ) : isCurrent ? (
+                        <span className={styles.walletState}>Подключён</span>
                       ) : (
                         <span aria-hidden="true" className={styles.walletArrow}>
                           →

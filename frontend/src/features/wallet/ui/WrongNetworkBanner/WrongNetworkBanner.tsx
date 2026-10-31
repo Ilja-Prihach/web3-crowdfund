@@ -35,7 +35,8 @@ export function WrongNetworkBanner() {
       </div>
       {switchChain.error ? (
         <p className={styles.error} role="alert">
-          {getWalletErrorMessage(switchChain.error)}
+          {getWalletErrorMessage(switchChain.error)} Если кошелёк не переключается сам, включите
+          в нём тестовые сети и выберите Sepolia вручную.
         </p>
       ) : null}
     </div>
