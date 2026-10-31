@@ -20,7 +20,9 @@ describe("formatEth", () => {
   });
 
   it("не выдаёт крошечную сумму за ноль", () => {
-    assert.equal(formatEth(1n), "< 0,0001 ETH");
+    assert.equal(formatEth(10_000_000_000_000n), "0,00001 ETH");
+    assert.equal(formatEth(12_345_678_000_000n), "0,00001234 ETH");
+    assert.equal(formatEth(1n), "0,000000000000000001 ETH");
   });
 
   it("разделяет тысячи неразрывным пробелом", () => {
