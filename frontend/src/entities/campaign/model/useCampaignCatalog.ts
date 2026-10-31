@@ -32,6 +32,7 @@ export function useCampaignCatalog(page: number, order: CatalogOrder) {
 
   return {
     campaigns: pageWindow ? (campaigns.data ?? []) : [],
+    total: total.data,
     pageCount: total.data === undefined ? 0 : getPageCount(total.data),
     isPending: total.isPending || (pageWindow !== null && campaigns.isPending),
     isError: total.isError || campaigns.isError,
