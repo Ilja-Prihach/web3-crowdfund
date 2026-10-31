@@ -5,7 +5,7 @@
   position: relative;
   z-index: 10;
   border-bottom: var(--border-width) solid var(--color-border-soft);
-  background: rgb(243 239 228 / 86%);
+  background: var(--color-header);
   backdrop-filter: saturate(140%) blur(12px);
 }
 
@@ -40,7 +40,7 @@
 }
 
 .brand em {
-  color: var(--color-forest);
+  color: var(--color-link);
   font-style: italic;
   font-weight: 400;
 }
@@ -60,6 +60,10 @@
 }
 
 .actions .contractLink {
+  display: none;
+}
+
+.theme {
   display: none;
 }
 
@@ -107,6 +111,10 @@
 
   .actions .contractLink {
     display: inline-flex;
+  }
+
+  .theme {
+    display: block;
   }
 }
 

@@ -28,7 +28,7 @@
   letter-spacing: -0.035em;
 
   em {
-    color: var(--color-forest);
+    color: var(--color-link);
     font-style: italic;
     font-weight: 400;
   }
@@ -68,7 +68,7 @@
     width: 1.25rem;
     height: 1.25rem;
     border-radius: var(--radius-round);
-    color: var(--color-forest);
+    color: var(--color-link);
     background: var(--color-mint-tint);
     font-size: 0.7rem;
     font-weight: 800;
@@ -136,7 +136,7 @@
   width: 1.875rem;
   height: 1.875rem;
   border-radius: var(--radius-round);
-  color: var(--color-surface);
+  color: var(--color-on-solid);
   background: var(--color-forest);
   font-size: 0.8rem;
   font-weight: 800;

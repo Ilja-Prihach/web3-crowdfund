@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ThemeToggle } from "@/features/theme/ui/ThemeToggle/ThemeToggle";
 import { contractExplorerUrl } from "@/shared/config/web3";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
@@ -52,6 +53,7 @@ export function MobileMenu() {
             </li>
           ))}
         </ul>
+        <ThemeToggle showLabel />
         <ButtonLink
           aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
           fullWidth

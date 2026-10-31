@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ThemeToggle } from "@/features/theme/ui/ThemeToggle/ThemeToggle";
 import { ConnectWallet } from "@/features/wallet/ui/ConnectWallet/ConnectWallet";
 import { NetworkBadge } from "@/features/wallet/ui/NetworkBadge/NetworkBadge";
 import { contractExplorerUrl } from "@/shared/config/web3";
@@ -44,6 +45,9 @@ export function AppHeader() {
           >
             Контракт <span aria-hidden="true">↗</span>
           </ButtonLink>
+          <div className={styles.theme}>
+            <ThemeToggle />
+          </div>
           <ConnectWallet />
           <MobileMenu />
         </div>
