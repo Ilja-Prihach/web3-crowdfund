@@ -14,6 +14,10 @@
 | [frontend-major-versions-must-match-tooling](#frontend-major-versions-must-match-tooling) | Новейшие major-версии TypeScript и ESLint могут опережать поддержку Next.js tooling |
 | [wagmi-restored-session-is-reconnecting](#wagmi-restored-session-is-reconnecting) | Сессия из cookie приходит в статусе `reconnecting`, а не `connected` |
 | [git-add-directory-captures-parallel-edits](#git-add-directory-captures-parallel-edits) | `git add` целой папки забирает чужие незакоммиченные правки |
+| [viem-default-sepolia-rpc-is-rate-limited](#viem-default-sepolia-rpc-is-rate-limited) | Публичный Sepolia RPC из viem отвечает `429`, и каталог зависает на загрузке |
+| [node-test-does-not-resolve-path-alias](#node-test-does-not-resolve-path-alias) | `node --test` не понимает псевдоним `@/` из `tsconfig.json` |
+| [tsc-incremental-cache-keeps-stale-errors](#tsc-incremental-cache-keeps-stale-errors) | После смены `target` typecheck показывает старую ошибку из кэша |
+| [zsh-does-not-split-unquoted-variables](#zsh-does-not-split-unquoted-variables) | В zsh `$pair` остаётся одним аргументом, и `cast` получает пустые параметры |
 
 ## Карточки
 
@@ -102,3 +106,42 @@ forge fmt --check src test script
 **Причина.** `git add <папка>` индексирует все изменённые и новые файлы в ней, включая правки, которые в это время вносил другой участник.
 
 **Правило.** Добавлять в индекс файлы по именам и смотреть `git diff --cached --stat` перед коммитом. Если лишнее уже попало в незапушенный коммит, его разделяют через `git reset --soft` и сверяют итоговое дерево с исходным через `git diff`.
+
+### viem-default-sepolia-rpc-is-rate-limited
+
+**Симптом.** Без `NEXT_PUBLIC_SEPOLIA_RPC_URL` каталог `/campaigns` дольше 6 секунд показывает скелетон, затем ошибку чтения. 31 октября 2026 года `https://11155111.rpc.thirdweb.com` трижды подряд ответил `429 Too Many Requests` на первый же `eth_call`, а `https://ethereum-sepolia-rpc.publicnode.com` на тот же запрос вернул `nextCampaignId = 2`.
+
+**Причина.** `http()` без URL берёт `sepolia.rpcUrls.default` из `viem/chains`. Этот публичный узел ограничивает запросы без ключа, а TanStack Query повторяет упавший запрос три раза с растущей паузой, поэтому ошибка проявляется не сразу.
+
+**Правило.** RPC по умолчанию задаётся явно в `frontend/src/shared/config/web3.ts`, а не берётся из `viem/chains`. Проверка узла перед заменой:
+
+```bash
+curl -s -X POST <RPC_URL> -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A","data":"0x7903a756"},"latest"]}'
+```
+
+`0x7903a756` — селектор `nextCampaignId()`; ответ должен содержать `result`, а не HTTP `429`.
+
+### node-test-does-not-resolve-path-alias
+
+**Симптом.** `npm test` падает с `ERR_MODULE_NOT_FOUND: Cannot find package '@/shared'`, хотя `npm run typecheck` и `next build` проходят.
+
+**Причина.** Псевдоним `@/*` из `paths` в `tsconfig.json` понимают TypeScript и сборщик Next.js. `node --test` выполняет `.ts` через type stripping и разрешает импорты по правилам Node, без `tsconfig.json`.
+
+**Правило.** Модуль, который загружают unit-тесты, импортирует соседние модули относительным путём с расширением `.ts` (например, `entities/campaign/lib/deadline.ts`). Импорты только типов (`import type`) удаляются при запуске и могут использовать `@/`. Проверка: `npm test`.
+
+### tsc-incremental-cache-keeps-stale-errors
+
+**Симптом.** После замены `"target": "ES2017"` на `"ES2020"` команда `npm run typecheck` продолжает выводить `TS2737: BigInt literals are not available when targeting lower than ES2020`, а `npx tsc --noEmit --incremental false` проходит без ошибок.
+
+**Причина.** В `frontend/tsconfig.json` включён `"incremental": true`; `tsconfig.tsbuildinfo` сохранил результат прошлой проверки и не был пересчитан после смены опции.
+
+**Правило.** Если typecheck противоречит только что изменённому `tsconfig.json`, сначала сравнить с `npx tsc --noEmit --incremental false`. Файл `frontend/tsconfig.tsbuildinfo` — игнорируемый Git кэш, его можно удалить; следующий запуск создаст его заново.
+
+### zsh-does-not-split-unquoted-variables
+
+**Симптом.** Цикл `for pair in "2 0.004ether" …; do set -- $pair; cast send … "donate(uint256)" $1 --value $2 …; done` завершается `error: a value is required for '--value <VALUE>' but none was supplied`; транзакции не отправляются.
+
+**Причина.** Shell по умолчанию в macOS — zsh. В отличие от bash, zsh не разбивает значение переменной без кавычек на слова, поэтому `$pair` остаётся одним аргументом, `$1` получает всю строку, а `$2` пуст.
+
+**Правило.** Для повторяющихся `cast send` писать команды явно или читать параметры из файла с разделителем через `while IFS=$'\t' read -r …`. Перед отправкой денежных транзакций проверять подставленные значения выводом `echo`. Проверка: после цикла сверить `cast balance` deployer и состояние кампаний через `cast call`.

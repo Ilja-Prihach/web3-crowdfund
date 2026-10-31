@@ -34,6 +34,24 @@ On-chain-проверка V2 выполнена с deployment-аккаунта:
 
 После сценариев обе кампании имеют статус `Withdrawn`, а баланс контракта равен нулю. Для campaign `1` отдельно подтверждено, что активный refund обнулил вклад и `totalRaised`, сохранив статус `Active`, после чего новый donation снова достиг цели.
 
+#### Демо-кампании каталога
+
+31 октября 2026 года deployment-аккаунт создал в V2 демонстрационные кампании для on-chain-каталога frontend. Это реальные кампании контракта, а не данные frontend: их нельзя удалить, а вклады в них возвращаются по обычным правилам V2. Кампании `2`–`4` помечены в названии как «Демо»; тексты кампаний `5`–`7` подготовлены в локальном пакете `design/sepolia-demo-campaigns/`.
+
+| Campaign | Режим | Действие | Transaction |
+| --- | --- | --- | --- |
+| `2` | `FixedDeadline`, 30 дней | создание, цель `0.01 ETH` | [`0xadf5…f089`](https://sepolia.etherscan.io/tx/0xadf52405bcb53c073cd472955b8281c2af9d517be57f189bdc9e2f748023f089) |
+| `3` | `OpenEnded` | создание, цель `0.02 ETH` | [`0x9243…b261`](https://sepolia.etherscan.io/tx/0x92438530963bab5594abebefd7bd03b29cf49a6f2082f8e11e3aa0a28317b261) |
+| `4` | `FixedDeadline`, 7 дней | создание, цель `0.005 ETH` | [`0x72db…9f42`](https://sepolia.etherscan.io/tx/0x72db42e092dc44bf679e80743c5364be6542d1ede08b819decc21eecb9cd9f42) |
+| `2` | — | donation `0.004 ETH` | [`0xd2cf…a435`](https://sepolia.etherscan.io/tx/0xd2cfefe0963d89e60d3f0b4c7d172261facb4b9b6b76e5046f0e4e0951b7a435) |
+| `3` | — | donation `0.006 ETH` | [`0x8450…4f63`](https://sepolia.etherscan.io/tx/0x84503c8782d71ced6dc01906cb8ba4e272fef6ab07a08afd08e587b0d1124f63) |
+| `4` | — | donation `0.0045 ETH` | [`0xed21…d4cc`](https://sepolia.etherscan.io/tx/0xed21644a7a14d92eaa9b511c8b0f5fd40489527d46562de0145914062791d4cc) |
+| `5` | `FixedDeadline`, 45 дней | создание, цель `0.05 ETH` | [`0xb820…9738`](https://sepolia.etherscan.io/tx/0xb82066d399e4c0a1f7707cdfa9ef9226496ea136569880c28c8b0e8cc4c29738) |
+| `6` | `FixedDeadline`, 60 дней | создание, цель `0.08 ETH` | [`0x823e…7256`](https://sepolia.etherscan.io/tx/0x823e2714d76ebf2035ca68de9a4a07d272b334d18eff7cd5fc2b453007947256) |
+| `7` | `OpenEnded` | создание, цель `0.03 ETH` | [`0x8cae…cf74`](https://sepolia.etherscan.io/tx/0x8caea780b543269509a013d9dd68fcf59348307377648f85a064052d17dccf74) |
+
+Создание кампании `2` с коротким описанием использовало `1,362,549` gas при цене `0.001 gwei`; создание кампании `5` с описанием на 462 байта — `2,579,211` gas при `1 gwei`, то есть `0.002579 ETH`. Перед повторным заполнением проверяйте текущую цену gas: она меняла стоимость сильнее длины текста.
+
 ### V1 — fixed deadline after expiry
 
 - дата: 27 октября 2026 года;
