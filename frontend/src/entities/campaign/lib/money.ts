@@ -5,10 +5,20 @@ const ethFormatter = new Intl.NumberFormat("ru-RU", {
   roundingMode: "trunc",
 });
 
-// Сумма в wei → «0,5 ETH». Строка из formatEther форматируется без перевода в number.
+// Суммы меньше 0,0001 ETH иначе превратились бы в ноль: показываем их по значащим цифрам.
+const smallEthFormatter = new Intl.NumberFormat("ru-RU", {
+  maximumSignificantDigits: 4,
+  roundingMode: "trunc",
+});
+
+// Сумма в wei → «0,5». Строка из formatEther форматируется без перевода в number.
+export function formatEthValue(wei: bigint): string {
+  const formatter = wei > 0n && wei < 100_000_000_000_000n ? smallEthFormatter : ethFormatter;
+  return formatter.format(formatEther(wei) as `${number}`);
+}
+
 export function formatEth(wei: bigint): string {
-  if (wei > 0n && wei < 100_000_000_000_000n) return "< 0,0001 ETH";
-  return `${ethFormatter.format(formatEther(wei) as `${number}`)} ETH`;
+  return `${formatEthValue(wei)} ETH`;
 }
 
 // Процент собранного, округлённый вниз: 100 только когда цель действительно достигнута.
