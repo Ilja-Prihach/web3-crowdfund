@@ -19,7 +19,8 @@
 }
 
 .active {
-  color: var(--color-forest);
+  // --color-link совпадает с forest в светлой теме и остаётся читаемым в тёмной.
+  color: var(--color-link);
   background: var(--color-mint-tint);
 }
 
