@@ -9,7 +9,7 @@ import {
 } from "viem";
 
 import { crowdfundingAbi } from "../../../shared/config/crowdfundingAbi.ts";
-import { getTransactionErrorMessage } from "./transactionErrors.ts";
+import { getTransactionErrorMessage, isUserRejection } from "./transactionErrors.ts";
 
 // Так viem сообщает о revert: ошибка с декодированным по ABI именем внутри обёртки wagmi.
 function reverted(errorName: "GoalWasReached" | "CampaignHasEnded" | "OnlyCreatorCanCancel") {
@@ -39,5 +39,13 @@ describe("getTransactionErrorMessage", () => {
   it("передаёт ошибки кошелька общему переводу", () => {
     const error = new UserRejectedRequestError(new Error("User denied"));
     assert.match(getTransactionErrorMessage(error), /отменили запрос/);
+  });
+});
+
+describe("isUserRejection", () => {
+  it("отличает отказ в кошельке от revert", () => {
+    const rejection = Object.assign(new Error("wrapped"), { cause: new UserRejectedRequestError(new Error("User denied")) });
+    assert.equal(isUserRejection(rejection), true);
+    assert.equal(isUserRejection(reverted("GoalWasReached")), false);
   });
 });
