@@ -4,32 +4,35 @@ import { useRef, useState } from "react";
 
 import { CampaignCard } from "@/entities/campaign/CampaignCard/CampaignCard";
 import type { CatalogOrder } from "@/entities/campaign/lib/pagination";
-import type { CampaignStatus, FundingMode } from "@/entities/campaign/model/campaign";
+import type { FundingMode } from "@/entities/campaign/model/campaign";
 import { useCampaignCatalog } from "@/entities/campaign/model/useCampaignCatalog";
 import { pluralize } from "@/shared/lib/plural";
 import { Button } from "@/shared/ui/Button/Button";
 import { EmptyState } from "@/shared/ui/EmptyState/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
+import { Select } from "@/shared/ui/Select/Select";
 import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
 import styles from "./CampaignCatalog.module.scss";
 
-type StatusFilter = "all" | CampaignStatus;
+type StatusFilter = "all" | "active" | "finished";
 type ModeFilter = "all" | FundingMode;
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Все" },
-  { value: "active", label: "Активные" },
-  { value: "successful", label: "Успешные" },
-  { value: "failed", label: "Срок истёк" },
-  { value: "withdrawn", label: "Выведены" },
-  { value: "cancelled", label: "Отменены" },
+  { value: "active", label: "Идёт сбор" },
+  { value: "finished", label: "Завершены" },
 ];
 
 const modeFilters: { value: ModeFilter; label: string }[] = [
-  { value: "all", label: "Любой режим" },
-  { value: "fixedDeadline", label: "Сбор к сроку" },
-  { value: "openEnded", label: "Открытая цель" },
+  { value: "all", label: "Любой тип" },
+  { value: "fixedDeadline", label: "К сроку" },
+  { value: "openEnded", label: "Без срока" },
+];
+
+const orderOptions: { value: CatalogOrder; label: string }[] = [
+  { value: "newest", label: "Сначала новые" },
+  { value: "oldest", label: "Сначала старые" },
 ];
 
 export function CampaignCatalog() {
@@ -46,14 +49,10 @@ export function CampaignCatalog() {
   // Фильтры работают только по загруженной странице: без индексатора глобального поиска нет.
   const visibleCampaigns = catalog.campaigns.filter(
     (campaign) =>
-      (statusFilter === "all" || campaign.status === statusFilter) &&
+      (statusFilter === "all" ||
+        (statusFilter === "active" ? campaign.status === "active" : campaign.status !== "active")) &&
       (modeFilter === "all" || campaign.fundingMode === modeFilter),
   );
-
-  const countByStatus = (status: StatusFilter) =>
-    status === "all"
-      ? catalog.campaigns.length
-      : catalog.campaigns.filter((campaign) => campaign.status === status).length;
 
   const resetFilters = () => {
     setStatusFilter("all");
@@ -67,77 +66,68 @@ export function CampaignCatalog() {
 
   const total = catalog.total === undefined ? undefined : Number(catalog.total);
   const hasCampaigns = catalog.campaigns.length > 0;
+  const filtersActive = statusFilter !== "all" || modeFilter !== "all";
 
   return (
     <section aria-labelledby="catalog-title" className={styles.catalog} ref={sectionRef}>
       <header className={styles.head}>
-        <span className={styles.eyebrow}>On-chain каталог</span>
+        <span className={styles.eyebrow}>Открытое финансирование</span>
         <h1 className={styles.title} id="catalog-title">
           Кампании
         </h1>
         <p className={styles.lead}>
-          Реальные кампании из контракта OpenFund V2. Названия, условия и суммы читаются напрямую из Ethereum
-          Sepolia.
+          Выбирайте независимые проекты и общественные инициативы. Цель, прогресс и условия каждого сбора
+          доступны on-chain, а правила вывода и возврата исполняет контракт.
         </p>
         <p className={styles.summary}>
           {total === undefined
             ? catalog.isError
-              ? "Контракт V2 в Ethereum Sepolia"
-              : "Читаем контракт V2 в Sepolia…"
-            : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2`}
+              ? "Контракт V2 · Ethereum Sepolia"
+              : "Загружаем кампании…"
+            : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · Ethereum Sepolia`}
         </p>
       </header>
 
       {hasCampaigns ? (
         <div className={styles.toolbar}>
-          <div aria-label="Статус" className={styles.segments} role="group">
+          <div aria-label="Состояние кампании" className={styles.statusTabs} role="group">
             {statusFilters.map((filter) => (
               <button
                 aria-pressed={statusFilter === filter.value}
-                className={styles.segment}
+                className={styles.statusTab}
                 key={filter.value}
                 onClick={() => setStatusFilter(filter.value)}
                 type="button"
               >
                 {filter.label}
-                <span className={styles.count}>{countByStatus(filter.value)}</span>
               </button>
             ))}
           </div>
 
-          <div className={styles.toolbarRow}>
-            <div aria-label="Режим" className={styles.segments} role="group">
-              {modeFilters.map((filter) => (
-                <button
-                  aria-pressed={modeFilter === filter.value}
-                  className={styles.segment}
-                  key={filter.value}
-                  onClick={() => setModeFilter(filter.value)}
-                  type="button"
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-
-            <label className={styles.order}>
-              <span className={styles.visuallyHidden}>Порядок</span>
-              <select
-                onChange={(event) => {
-                  setOrder(event.target.value as CatalogOrder);
-                  setPage(0);
-                }}
-                value={order}
-              >
-                <option value="newest">Сначала новые</option>
-                <option value="oldest">Сначала старые</option>
-              </select>
-            </label>
+          <div className={styles.filterControls}>
+            <Select
+              ariaLabel="Тип сбора"
+              className={styles.filterSelect}
+              onChange={setModeFilter}
+              options={modeFilters}
+              value={modeFilter}
+            />
+            <Select
+              ariaLabel="Сортировка"
+              className={styles.filterSelect}
+              onChange={(nextOrder) => {
+                setOrder(nextOrder);
+                setPage(0);
+              }}
+              options={orderOptions}
+              value={order}
+            />
+            {filtersActive ? (
+              <button className={styles.reset} onClick={resetFilters} type="button">
+                Сбросить
+              </button>
+            ) : null}
           </div>
-
-          {catalog.pageCount > 1 ? (
-            <p className={styles.note}>Фильтры и счётчики относятся к текущей странице.</p>
-          ) : null}
         </div>
       ) : null}
 
