@@ -90,10 +90,20 @@ type CampaignArtworkProps = {
   fundingMode: FundingMode;
   id: bigint;
   muted?: boolean;
+  // Карточка каталога по умолчанию; крупная обложка страницы передаёт свои размеры и приоритет.
+  sizes?: string;
+  priority?: boolean;
   children?: ReactNode;
 };
 
-export function CampaignArtwork({ children, fundingMode, id, muted = false }: CampaignArtworkProps) {
+export function CampaignArtwork({
+  children,
+  fundingMode,
+  id,
+  muted = false,
+  priority = false,
+  sizes = "(max-width: 639px) calc(100vw - 2rem), (max-width: 959px) 50vw, 460px",
+}: CampaignArtworkProps) {
   const pattern = patterns[Number(id % BigInt(patterns.length))];
   const cover = getDemoCover(id);
 
@@ -106,7 +116,8 @@ export function CampaignArtwork({ children, fundingMode, id, muted = false }: Ca
             className={styles.cover}
             fill
             placeholder="blur"
-            sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 959px) 50vw, 460px"
+            priority={priority}
+            sizes={sizes}
             src={cover}
           />
         ) : (
