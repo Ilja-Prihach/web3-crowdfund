@@ -30,3 +30,8 @@ export function getTransactionErrorMessage(error: unknown): string {
 
   return getWalletErrorMessage(error);
 }
+
+// Отказ в кошельке — не сбой: интерфейс показывает его спокойнее, чем revert или ошибку сети.
+export function isUserRejection(error: unknown) {
+  return findInCauseChain(error, (candidate) => candidate.code === 4001) !== undefined;
+}
