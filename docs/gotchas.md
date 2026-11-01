@@ -18,6 +18,7 @@
 | [node-test-does-not-resolve-path-alias](#node-test-does-not-resolve-path-alias) | `node --test` не понимает псевдоним `@/` из `tsconfig.json` |
 | [tsc-incremental-cache-keeps-stale-errors](#tsc-incremental-cache-keeps-stale-errors) | После смены `target` typecheck показывает старую ошибку из кэша |
 | [zsh-does-not-split-unquoted-variables](#zsh-does-not-split-unquoted-variables) | В zsh `$pair` остаётся одним аргументом, и `cast` получает пустые параметры |
+| [wallet-uses-its-own-sepolia-rpc](#wallet-uses-its-own-sepolia-rpc) | Кошелёк отправляет транзакции через свой RPC и может упереться в `429`, хотя сайт работает |
 
 ## Карточки
 
@@ -145,3 +146,11 @@ curl -s -X POST <RPC_URL> -H 'content-type: application/json' \
 **Причина.** Shell по умолчанию в macOS — zsh. В отличие от bash, zsh не разбивает значение переменной без кавычек на слова, поэтому `$pair` остаётся одним аргументом, `$1` получает всю строку, а `$2` пуст.
 
 **Правило.** Для повторяющихся `cast send` писать команды явно или читать параметры из файла с разделителем через `while IFS=$'\t' read -r …`. Перед отправкой денежных транзакций проверять подставленные значения выводом `echo`. Проверка: после цикла сверить `cast balance` deployer и состояние кампаний через `cast call`.
+
+### wallet-uses-its-own-sepolia-rpc
+
+**Симптом.** 1 ноября 2026 года при вкладе через Rabby появилась ошибка `HTTP request failed. Status: 429 URL: https://11155111.rpc.thirdweb.com/` с телом `eth_getTransactionCount` и подписью `Version: viem@2.47.6`, хотя каталог и страница кампании читались без ошибок.
+
+**Причина.** Сайт читает Sepolia через свой RPC (`ethereum-sepolia-rpc.publicnode.com`), но подписанную транзакцию отправляет кошелёк — через RPC, настроенный в самом кошельке. Rabby для Sepolia по умолчанию использует тот же публичный узел thirdweb, который ограничивает запросы, см. [`viem-default-sepolia-rpc-is-rate-limited`](#viem-default-sepolia-rpc-is-rate-limited). Ошибка пришла не из проекта: в `frontend/node_modules` единственная копия viem версии 2.57.13, а thirdweb в коде не используется.
+
+**Правило.** При ошибке отправки сначала смотреть URL и версию библиотеки в тексте ошибки, чтобы понять, чей это RPC. Для кошелька — задать свой RPC Sepolia в его настройках (в Rabby: Settings → Custom RPC → Sepolia → `https://ethereum-sepolia-rpc.publicnode.com`). Проверка: `cd frontend && npm ls viem` показывает версию проекта, отличную от версии в ошибке.

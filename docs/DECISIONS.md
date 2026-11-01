@@ -30,6 +30,8 @@
 | [frontend-wallet-state-hydrates-from-cookie](#frontend-wallet-state-hydrates-from-cookie) | Подключение кошелька восстанавливается из cookie на сервере ценой динамического рендера |
 | [frontend-unit-tests-use-node-test](#frontend-unit-tests-use-node-test) | Чистые функции frontend тестируются встроенным `node:test` без Jest и Vitest |
 | [frontend-demo-campaigns-use-off-chain-covers](#frontend-demo-campaigns-use-off-chain-covers) | Demo-кампании Sepolia получают обложки из таблицы по ID, остальные — детерминированный узор |
+| [frontend-simulates-transactions-before-signing](#frontend-simulates-transactions-before-signing) | Транзакция сначала прогоняется через `eth_call`, и подписывается ровно проверенный запрос |
+| [pull-requests-attach-acceptance-screenshots](#pull-requests-attach-acceptance-screenshots) | Визуальные PR содержат скриншоты из релиза `acceptance-screens`, а не из Git |
 
 ## Действующие решения
 
@@ -295,3 +297,25 @@ Wagmi хранит состояние подключения в cookie (`ssr: tr
 Следствие: карточки с иллюстрацией заметнее карточек с узором, что частично расходится с [`frontend-catalog-cards-have-equal-prominence`](#frontend-catalog-cards-have-equal-prominence). Это допустимо только для demo-набора проекта. Изображения для кампаний любых создателей появятся вместе с off-chain-метаданными, одинаково доступными всем, а таблица по ID тогда заменяется.
 
 Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`roadmap.md#этап-5-backend-и-blockchain-indexer`](roadmap.md#этап-5-backend-и-blockchain-indexer).
+
+### frontend-simulates-transactions-before-signing
+
+**Статус:** действует во Frontend MVP, принято 1 ноября 2026 года.
+
+Каждая транзакция frontend сначала выполняется через `simulateContract` (`eth_call` от имени кошелька, с той же суммой), и только затем `writeContract` отправляет возвращённый симуляцией `request`. Симуляция запускается по нажатию кнопки, а не на каждое изменение поля.
+
+Причина: revert вроде `GoalWasReached` или `CampaignHasEnded` обнаруживается бесплатно и до окна кошелька, поэтому человек не платит gas за заведомо неудачную транзакцию, а интерфейс показывает понятный текст. Симуляция по нажатию не нагружает публичный RPC запросом на каждую цифру и даёт линейный поток «проверить → подписать».
+
+Следствие: симуляция не гарантирует успех — состояние может измениться до включения в блок, поэтому revert после отправки тоже обрабатывается. Ошибка симуляции появляется только после нажатия.
+
+Связано: [`architecture.md#пожертвование-и-жизненный-цикл-транзакции-frontend`](architecture.md#пожертвование-и-жизненный-цикл-транзакции-frontend).
+
+### pull-requests-attach-acceptance-screenshots
+
+**Статус:** действует, принято 1 ноября 2026 года.
+
+PR, меняющий визуал frontend, содержит в описании скриншоты приёмки: каждый затронутый экран на 390 и 1440 px, а где важна тема — в светлой и тёмной. Снимки загружаются вложениями GitHub-релиза `acceptance-screens` (`gh release upload acceptance-screens <PR>-<экран>-<ширина>.png --clobber`) и вставляются в описание по ссылке; в Git они не коммитятся. Состояния, которые трудно получить вживую, снимаются с временной страницы-витрины, которая удаляется до коммита. Шаблон — [`../.github/pull_request_template.md`](../.github/pull_request_template.md).
+
+Причина: ревьюер видит интерфейс без запуска проекта, а репозиторий не тяжелеет от бинарных снимков, которые устаревают с каждым изменением. Порядок повторяет принятый у автора в другом проекте.
+
+Следствие: репозиторий публичный, поэтому снимки не должны содержать секретов, приватных адресов RPC или реальных персональных данных.
