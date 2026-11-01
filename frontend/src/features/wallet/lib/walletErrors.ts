@@ -1,16 +1,17 @@
 type ErrorLike = { name?: unknown; code?: unknown; cause?: unknown };
 
 // wagmi и viem заворачивают исходную ошибку кошелька в несколько слоёв: идём вниз по cause.
-function findInCauseChain(error: unknown, matches: (candidate: ErrorLike) => boolean) {
+// Возвращает найденную ошибку, чтобы вызывающий код мог прочитать её поля.
+export function findInCauseChain(error: unknown, matches: (candidate: ErrorLike) => boolean) {
   let current: unknown = error;
 
   for (let depth = 0; current && depth < 10; depth += 1) {
     const candidate = current as ErrorLike;
-    if (matches(candidate)) return true;
+    if (matches(candidate)) return candidate;
     current = candidate.cause;
   }
 
-  return false;
+  return undefined;
 }
 
 const hasCode = (code: number) => (candidate: ErrorLike) => candidate.code === code;
