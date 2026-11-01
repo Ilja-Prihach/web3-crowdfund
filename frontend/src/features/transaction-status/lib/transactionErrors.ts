@@ -35,3 +35,8 @@ export function getTransactionErrorMessage(error: unknown): string {
 export function isUserRejection(error: unknown) {
   return findInCauseChain(error, (candidate) => candidate.code === 4001) !== undefined;
 }
+
+// Revert означает, что состояние кампании изменилось: повтор упадёт так же, нужны свежие данные.
+export function isContractRevert(error: unknown) {
+  return findInCauseChain(error, (candidate) => candidate.name === "ContractFunctionRevertedError") !== undefined;
+}
