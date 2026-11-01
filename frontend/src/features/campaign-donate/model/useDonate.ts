@@ -26,6 +26,9 @@ export function useDonate(campaignId: bigint) {
 
   const receipt = useWaitForTransactionReceipt({ chainId: crowdfundingContract.chainId, hash: send.data });
 
+  // Все чтения wagmi лежат под ключом "readContract": помечаем их устаревшими, и экран перечитает контракт.
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ["readContract"] });
+
   // После подтверждения перечитываем контракт: сумма, статус и вклад изменились.
   useEffect(() => {
     if (receipt.isSuccess) void queryClient.invalidateQueries({ queryKey: ["readContract"] });
@@ -47,5 +50,6 @@ export function useDonate(campaignId: bigint) {
     error: send.error ?? receipt.error,
     donate: (value: bigint) => send.mutate(value),
     reset: () => send.reset(),
+    refresh,
   };
 }
