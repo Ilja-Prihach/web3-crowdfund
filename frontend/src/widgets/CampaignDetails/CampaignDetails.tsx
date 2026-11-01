@@ -10,6 +10,7 @@ import { formatDeadlineDate, formatTimeLeft } from "@/entities/campaign/lib/dead
 import { formatEth, getProgressPercent } from "@/entities/campaign/lib/money";
 import { type Campaign, fundingModeLabels } from "@/entities/campaign/model/campaign";
 import { useCampaign } from "@/entities/campaign/model/useCampaign";
+import { DonateForm } from "@/features/campaign-donate/ui/DonateForm/DonateForm";
 import { contractExplorerUrl, supportedChain } from "@/shared/config/web3";
 import { addressHue, shortenAddress } from "@/shared/lib/address";
 import { Button } from "@/shared/ui/Button/Button";
@@ -107,6 +108,8 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
   const [nowSeconds] = useState(() => Math.floor(Date.now() / 1000));
   const percent = getProgressPercent(campaign.totalRaised, campaign.goal);
   const actions = getAvailableActions(campaign, account, contribution ?? 0n);
+  // Вклад уже работает; остальные действия пока показываются выключенными.
+  const previewActions = actions.filter((action) => action !== "donate");
   const isFixed = campaign.fundingMode === "fixedDeadline";
   const timeLeft = isFixed && campaign.status === "active" ? formatTimeLeft(campaign.deadline, nowSeconds) : null;
   const isClosedWithoutSuccess = campaign.status === "failed" || campaign.status === "cancelled";
@@ -191,29 +194,25 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               <p className={styles.hint}>Подключите кошелёк, чтобы увидеть свой вклад и доступные действия.</p>
             ) : null}
 
-            {actions.length > 0 ? (
+            {actions.includes("donate") ? (
+              <DonateForm campaignId={campaign.id} remaining={campaign.goal - campaign.totalRaised} />
+            ) : null}
+
+            {previewActions.length > 0 ? (
               <>
-                <p className={styles.actionPreview}>Предпросмотр доступных действий</p>
+                <p className={styles.actionPreview}>Предпросмотр других действий</p>
                 <div className={styles.actions}>
-                  {actions.map((action) => (
-                    <Button
-                      disabled
-                      fullWidth
-                      key={action}
-                      variant={action === "donate" ? "primary" : "secondary"}
-                    >
+                  {previewActions.map((action) => (
+                    <Button disabled fullWidth key={action} variant="secondary">
                       {actionLabels[action]}
                     </Button>
                   ))}
                 </div>
+                <p className={styles.notice}>Вывод, отмена, смена срока и возврат появятся в следующих версиях.</p>
               </>
-            ) : (
-              <p className={styles.closed}>{closedReasons[campaign.status]}</p>
-            )}
+            ) : null}
 
-            <p className={styles.notice}>
-              Пока доступны только чтение контракта и предпросмотр действий.
-            </p>
+            {actions.length === 0 ? <p className={styles.closed}>{closedReasons[campaign.status]}</p> : null}
           </section>
 
           <ButtonLink fullWidth href="/campaigns" variant="secondary">
