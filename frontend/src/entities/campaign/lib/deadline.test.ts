@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatTimeLeft } from "./deadline.ts";
+import { formatDeadlineDate, formatTimeLeft } from "./deadline.ts";
 
 const now = 1_800_000_000;
 const hour = 60 * 60;
@@ -23,5 +23,12 @@ describe("formatTimeLeft", () => {
   it("возвращает null, когда срок прошёл", () => {
     assert.equal(formatTimeLeft(BigInt(now), now), null);
     assert.equal(formatTimeLeft(BigInt(now - day), now), null);
+  });
+});
+
+describe("formatDeadlineDate", () => {
+  it("показывает дату дедлайна по UTC без «г.»", () => {
+    assert.equal(formatDeadlineDate(1_796_042_148n), "30 ноября 2026");
+    assert.equal(formatDeadlineDate(0n), "1 января 1970");
   });
 });
