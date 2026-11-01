@@ -1,24 +1,15 @@
 import { useReadContract } from "wagmi";
 
-import { crowdfundingAbi } from "@/shared/config/crowdfundingAbi";
-import { crowdfundingAddress, supportedChain } from "@/shared/config/web3";
-
 import { type CatalogOrder, getPageCount, getPageWindow } from "../lib/pagination";
 import { toCampaign } from "./campaign";
-
-// Каталог всегда читает Sepolia через наш RPC, независимо от сети и наличия кошелька.
-const contract = {
-  address: crowdfundingAddress,
-  abi: crowdfundingAbi,
-  chainId: supportedChain.id,
-} as const;
+import { crowdfundingContract } from "./contract";
 
 export function useCampaignCatalog(page: number, order: CatalogOrder) {
-  const total = useReadContract({ ...contract, functionName: "nextCampaignId" });
+  const total = useReadContract({ ...crowdfundingContract, functionName: "nextCampaignId" });
   const pageWindow = total.data === undefined ? null : getPageWindow(total.data, page, order);
 
   const campaigns = useReadContract({
-    ...contract,
+    ...crowdfundingContract,
     functionName: "getCampaigns",
     args: pageWindow ? [pageWindow.offset, pageWindow.limit] : undefined,
     query: {

@@ -1,6 +1,7 @@
 @use "../../../shared/styles/mixins";
 
 .card {
+  position: relative;
   display: flex;
   height: 100%;
   min-width: 0;
@@ -100,6 +101,12 @@
   font-size: var(--font-size-small);
 }
 
+.fundsNote {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
 .creator {
   display: inline-flex;
   min-width: 0;
@@ -130,6 +137,64 @@
   font-weight: 700;
 }
 
+.more {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-round);
+  color: var(--color-on-solid);
+  background: var(--color-forest);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform var(--transition-fast) ease;
+}
+
+.card:has(.link:hover) .arrow {
+  transform: translateX(3px);
+}
+
+.card:has(.link:hover) .more {
+  background: var(--color-forest-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow {
+    transition: none;
+  }
+}
+
 .visuallyHidden {
   @include mixins.visually-hidden;
+}
+
+.link {
+  color: inherit;
+  text-decoration: none;
+
+  &::after {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    border-radius: inherit;
+    content: "";
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: -3px;
+  }
+}
+
+.card:has(.link:hover) .title {
+  color: var(--color-link);
 }

@@ -17,3 +17,15 @@ export function formatTimeLeft(deadline: bigint, nowSeconds: number): string | n
   if (secondsLeft >= hour) return `${Math.floor(secondsLeft / hour)} ч`;
   return "< 1 ч";
 }
+
+const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// Дедлайн контракта в секундах Unix → «18 декабря 2026». Дата по UTC, как её видит блокчейн.
+export function formatDeadlineDate(deadline: bigint): string {
+  return dateFormatter.format(new Date(Number(deadline) * 1000)).replace(" г.", "");
+}
