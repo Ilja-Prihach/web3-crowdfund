@@ -159,6 +159,11 @@
   outline-offset: 2px;
 }
 
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
 .grid {
   display: grid;
   gap: var(--space-5);

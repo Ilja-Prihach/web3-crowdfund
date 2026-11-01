@@ -128,6 +128,11 @@ export function CampaignCatalog() {
               </button>
             ) : null}
           </div>
+
+          {/* Без indexer фильтры видят только загруженную страницу — говорим об этом прямо. */}
+          {catalog.pageCount > 1 ? (
+            <p className={styles.note}>Фильтры применяются к этой странице.</p>
+          ) : null}
         </div>
       ) : null}
 
