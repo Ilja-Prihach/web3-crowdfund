@@ -51,6 +51,7 @@ export function DonateForm({ campaignId, remaining }: DonateFormProps) {
     return (
       <TransactionStatus
         error={donation.error}
+        errorMessages={donation.errorMessages}
         hash={donation.hash}
         onDone={closeStatus}
         onRefresh={() => {

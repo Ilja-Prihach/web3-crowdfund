@@ -4,7 +4,12 @@ import { supportedChain } from "@/shared/config/web3";
 import { shortenAddress } from "@/shared/lib/address";
 import { Button } from "@/shared/ui/Button/Button";
 
-import { getTransactionErrorMessage, isContractRevert, isUserRejection } from "../../lib/transactionErrors";
+import {
+  type ContractErrorMessages,
+  getTransactionErrorMessage,
+  isContractRevert,
+  isUserRejection,
+} from "../../lib/transactionErrors";
 import styles from "./TransactionStatus.module.scss";
 
 export type TransactionStage = "signing" | "confirming" | "confirmed" | "failed";
@@ -19,6 +24,8 @@ type TransactionStatusProps = {
   successText: string;
   hash?: Hash;
   error?: unknown;
+  // Переводы ошибок контракта для этого действия; остальные берутся из общего словаря.
+  errorMessages?: ContractErrorMessages;
   onRetry: () => void;
   // После revert повтор бессмыслен: состояние кампании изменилось, его нужно перечитать.
   onRefresh: () => void;
@@ -35,6 +42,7 @@ const completedSteps: Record<TransactionStage, number> = {
 export function TransactionStatus({
   editLabel = "Изменить сумму",
   error,
+  errorMessages,
   hash,
   onDone,
   onRefresh,
@@ -84,7 +92,7 @@ export function TransactionStatus({
               ? successText
               : isRejected
                 ? "Ничего не отправлено, ETH остались в кошельке."
-                : getTransactionErrorMessage(error)}
+                : getTransactionErrorMessage(error, errorMessages)}
       </p>
 
       <p className={styles.summary}>{summary}</p>
