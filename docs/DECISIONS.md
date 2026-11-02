@@ -159,7 +159,7 @@ Next.js App Router отвечает за маршруты, layouts, metadata и 
 
 Причина: route-файлы остаются читаемой композицией страницы, Web3-действия не смешиваются с отображением кампании, а архитектура не получает лишнюю бюрократию на раннем этапе.
 
-Связано: [`plans/frontend-mvp.md#архитектура-исходников`](plans/frontend-mvp.md#архитектура-исходников), [`../frontend/README.md`](../frontend/README.md).
+Связано: [`archive/frontend-mvp.md#архитектура-исходников`](archive/frontend-mvp.md#архитектура-исходников), [`../frontend/README.md`](../frontend/README.md).
 
 ### frontend-styles-are-colocated-scss-modules
 
@@ -173,7 +173,7 @@ Next.js App Router отвечает за маршруты, layouts, metadata и 
 
 Причина: локальная изоляция упрощает сопровождение и удаление компонентов, а небольшой глобальный слой сохраняет единую систему без роста специфичности. Гибрид единиц сохраняет доступное масштабирование и одновременно позволяет контролировать физически тонкие линии и моменты перестроения композиции.
 
-Связано: [`plans/frontend-mvp.md#стили`](plans/frontend-mvp.md#стили).
+Связано: [`archive/frontend-mvp.md#стили`](archive/frontend-mvp.md#стили).
 
 ### frontend-reads-sepolia-directly
 
@@ -187,7 +187,7 @@ Frontend MVP использует wagmi, viem и TanStack Query для прям�
 
 Причина: MVP должен дать реальный Web3-сценарий без преждевременного backend-слоя и без зависимости от WalletConnect project ID. Следствие: каталог ограничен возможностями on-chain pagination до будущего indexer: доступен порядок по ID («сначала новые» и «сначала старые»), а сортировка по собранной сумме и категории ждут indexer.
 
-Связано: [`plans/frontend-mvp.md#web3-границы`](plans/frontend-mvp.md#web3-границы), [`deployments.md`](deployments.md).
+Связано: [`archive/frontend-mvp.md#web3-границы`](archive/frontend-mvp.md#web3-границы), [`deployments.md`](deployments.md).
 
 ### frontend-media-is-optimized-before-commit
 
@@ -201,7 +201,7 @@ Hero ограничен 1600 px по длинной стороне и целев
 
 Причина: исходно тяжёлые генерации ухудшают LCP и делают Git-историю невозвратно тяжёлой; сжатие только во время HTTP-выдачи не решает размер репозитория. Следствие: визуальная проверка выполняется уже на оптимизированном файле.
 
-Связано: [`plans/frontend-mvp.md#изображения-и-медиабюджет`](plans/frontend-mvp.md#изображения-и-медиабюджет).
+Связано: [`archive/frontend-mvp.md#изображения-и-медиабюджет`](archive/frontend-mvp.md#изображения-и-медиабюджет).
 
 ### frontend-uses-card-surfaces
 
@@ -213,7 +213,7 @@ Hero ограничен 1600 px по длинной стороне и целев
 
 Причина: карточки делают границы смысловых блоков явными, а разные композиции дают странице ритм. Мокап всех экранов заранее фиксирует единый язык и не даёт каждому PR изобретать стиль заново. Следствие: каждый визуальный PR сверяется с соответствующим рендером. Мокапы не являются спецификацией: вымышленные данные и функции, требующие indexer, в MVP не переносятся.
 
-Связано: [`plans/frontend-mvp.md#визуальное-направление`](plans/frontend-mvp.md#визуальное-направление), [`../AGENTS.md#визуальный-референс-frontend`](../AGENTS.md#визуальный-референс-frontend).
+Связано: [`archive/frontend-mvp.md#визуальное-направление`](archive/frontend-mvp.md#визуальное-направление), [`../AGENTS.md#визуальный-референс-frontend`](../AGENTS.md#визуальный-референс-frontend).
 
 ### frontend-catalog-cards-have-equal-prominence
 
@@ -225,7 +225,7 @@ On-chain-каталог PR 5 показывает кампании в карто
 
 Причина: одинаковые карточки дают создателям равные условия и не создают ложного впечатления, что крупную кампанию рекомендует контракт или платформа. Детальная страница остаётся одинаково полной для каждого сбора, а будущий механизм продвижения не маскируется под обычную выдачу.
 
-Связано: [`plans/frontend-mvp.md#pr-5-on-chain-каталог`](plans/frontend-mvp.md#pr-5-on-chain-каталог), [`frontend-uses-card-surfaces`](#frontend-uses-card-surfaces).
+Связано: [`archive/frontend-mvp.md#pr-5-on-chain-каталог`](archive/frontend-mvp.md#pr-5-on-chain-каталог), [`frontend-uses-card-surfaces`](#frontend-uses-card-surfaces).
 
 ### frontend-theme-follows-system-and-persists-choice
 
@@ -249,7 +249,7 @@ OpenFund поддерживает светлую и тёмную темы на �
 
 Причина: векторные сцены объясняют механизм (кто куда переводит ETH и что решает контракт), остаются чёткими на любом экране, не требуют сетевой загрузки и задают узнаваемый визуальный язык продукта. Следствие: правило плана «свечение только в обложках и финальном CTA» заменено ограничением «свечение только внутри панелей иллюстраций и финального CTA». Условные значения в рисунках иллюстрируют механизм и не выдаются за данные продукта. Если появится авторский растровый рендер, он подключается через `next/image` и проходит медиабюджет из [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit).
 
-Связано: [`plans/frontend-mvp.md#визуальное-направление`](plans/frontend-mvp.md#визуальное-направление), [`frontend-uses-card-surfaces`](#frontend-uses-card-surfaces).
+Связано: [`archive/frontend-mvp.md#визуальное-направление`](archive/frontend-mvp.md#визуальное-направление), [`frontend-uses-card-surfaces`](#frontend-uses-card-surfaces).
 
 ### frontend-illustrations-use-raster-exports
 
@@ -261,7 +261,7 @@ OpenFund поддерживает светлую и тёмную темы на �
 
 Причина: после утверждения статичных сцен редактируемость вектора внутри React перестала оправдывать объём исходников и SVG-разметки документа. Растровый экспорт сохраняет проверенный внешний вид, уменьшает DOM и отделяет декоративные материалы от компонентной логики. Компромисс — дополнительные запросы изображений и потеря бесконечного масштабирования; двойное разрешение и `next/image` сохраняют чёткость на целевых экранах.
 
-Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`plans/frontend-mvp.md#изображения-и-медиабюджет`](plans/frontend-mvp.md#изображения-и-медиабюджет).
+Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`archive/frontend-mvp.md#изображения-и-медиабюджет`](archive/frontend-mvp.md#изображения-и-медиабюджет).
 
 ### frontend-wallet-state-hydrates-from-cookie
 
