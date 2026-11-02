@@ -61,6 +61,14 @@ On-chain-проверка V2 выполнена с deployment-аккаунта:
 
 Создание кампании `8` с описанием на 284 байта использовало `1,915,712` gas; ID `8` прочитан из события `CampaignCreated`, после чего интерфейс открыл страницу кампании.
 
+Действия со страницы кампании выполнены тем же кошельком 2 ноября 2026 года:
+
+| Campaign | Действие | Результат | Transaction |
+| --- | --- | --- | --- |
+| `8` | `updateCampaignDeadline(8, 130)` | дедлайн 29.08.2027 → 12.03.2027, отсчёт от блока; `36,761` gas | [`0xe01b…8ec2`](https://sepolia.etherscan.io/tx/0xe01bcffa373ba3410a84994acac1239b09c93ba7f2abe1f2bd635b7bfa2c8ec2) |
+| `7` | `refund(7)` | возвращено `0.001 ETH`, `RefundClaimed`; `46,834` gas | [`0x8a0d…9371`](https://sepolia.etherscan.io/tx/0x8a0d23bdebef17cea2fabb38ff818d8334c2a6db17d06b50909758d90d319371) |
+| `8` | `cancelCampaign(8)` | статус «Отменена», `CampaignCancelled`; `136,356` gas | [`0x9ac1…b44e`](https://sepolia.etherscan.io/tx/0x9ac102a5bb406e6d3080cd890914e84e8ea90e3f3084ee9294dabb39309db44e) |
+
 ### V1 — fixed deadline after expiry
 
 - дата: 27 октября 2026 года;
