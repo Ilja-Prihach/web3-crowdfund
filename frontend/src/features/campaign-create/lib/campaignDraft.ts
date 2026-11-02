@@ -1,10 +1,10 @@
+import { parseDurationDays } from "../../../entities/campaign/lib/duration.ts";
 import { parseEthAmount } from "../../../shared/lib/ethAmount.ts";
 import { utf8ByteLength } from "../../../shared/lib/utf8.ts";
 
 // Совпадают с константами Crowdfunding.sol.
 export const maxTitleBytes = 100;
 export const maxDescriptionBytes = 1000;
-export const maxDurationDays = 365;
 
 export type CampaignDraft = {
   title: string;
@@ -39,12 +39,9 @@ export function validateCampaignDraft(draft: CampaignDraft): ValidatedDraft {
 
   let duration = 0n;
   if (draft.fundingMode === "fixedDeadline") {
-    const days = /^\d+$/.test(draft.durationDays.trim()) ? Number(draft.durationDays) : NaN;
-    if (!Number.isInteger(days) || days < 1 || days > maxDurationDays) {
-      errors.durationDays = `Срок — целое число дней от 1 до ${maxDurationDays}`;
-    } else {
-      duration = BigInt(days);
-    }
+    const parsed = parseDurationDays(draft.durationDays);
+    if (parsed.ok) duration = parsed.days;
+    else errors.durationDays = parsed.error;
   }
 
   if (Object.keys(errors).length > 0 || !goal.ok) return { ok: false, errors };
