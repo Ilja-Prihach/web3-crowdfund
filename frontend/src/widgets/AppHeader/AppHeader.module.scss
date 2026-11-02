@@ -51,6 +51,8 @@
 
 .actions {
   display: flex;
+  // Кнопки кошелька не сжимаются: иначе адрес «0xAcB3…C9c6» переносится на две строки.
+  flex: none;
   align-items: center;
   gap: var(--space-2);
 }
