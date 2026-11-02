@@ -9,11 +9,11 @@ import { CampaignArtwork } from "@/entities/campaign/CampaignArtwork/CampaignArt
 import { CampaignProgress } from "@/entities/campaign/CampaignProgress/CampaignProgress";
 import { CampaignStatus } from "@/entities/campaign/CampaignStatus/CampaignStatus";
 import { formatDeadlineDate } from "@/entities/campaign/lib/deadline";
+import { maxDurationDays } from "@/entities/campaign/lib/duration";
 import { formatEth } from "@/entities/campaign/lib/money";
 import {
   type CampaignDraft,
   maxDescriptionBytes,
-  maxDurationDays,
   maxTitleBytes,
   validateCampaignDraft,
 } from "@/features/campaign-create/lib/campaignDraft";

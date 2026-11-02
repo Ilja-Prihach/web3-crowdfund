@@ -5,11 +5,12 @@ import { useState, type CSSProperties } from "react";
 
 import { CampaignArtwork } from "@/entities/campaign/CampaignArtwork/CampaignArtwork";
 import { CampaignStatus } from "@/entities/campaign/CampaignStatus/CampaignStatus";
-import { type CampaignAction, getAvailableActions } from "@/entities/campaign/lib/actions";
+import { getAvailableActions } from "@/entities/campaign/lib/actions";
 import { formatDeadlineDate, formatTimeLeft } from "@/entities/campaign/lib/deadline";
 import { formatEth, getProgressPercent } from "@/entities/campaign/lib/money";
 import { type Campaign, fundingModeLabels } from "@/entities/campaign/model/campaign";
 import { useCampaign } from "@/entities/campaign/model/useCampaign";
+import { CampaignActions } from "@/features/campaign-actions/ui/CampaignActions/CampaignActions";
 import { DonateForm } from "@/features/campaign-donate/ui/DonateForm/DonateForm";
 import { contractExplorerUrl, supportedChain } from "@/shared/config/web3";
 import { addressHue, shortenAddress } from "@/shared/lib/address";
@@ -19,14 +20,6 @@ import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
 import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
 import styles from "./CampaignDetails.module.scss";
-
-const actionLabels: Record<CampaignAction, string> = {
-  donate: "Поддержать",
-  withdraw: "Вывести средства",
-  cancel: "Отменить сбор",
-  updateDeadline: "Изменить срок",
-  refund: "Вернуть вклад",
-};
 
 // Почему у кампании нет действий для этого посетителя.
 const closedReasons: Record<Campaign["status"], string> = {
@@ -108,8 +101,7 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
   const [nowSeconds] = useState(() => Math.floor(Date.now() / 1000));
   const percent = getProgressPercent(campaign.totalRaised, campaign.goal);
   const actions = getAvailableActions(campaign, account, contribution ?? 0n);
-  // Вклад уже работает; остальные действия пока показываются выключенными.
-  const previewActions = actions.filter((action) => action !== "donate");
+  const managedActions = actions.filter((action) => action !== "donate");
   const isFixed = campaign.fundingMode === "fixedDeadline";
   const timeLeft = isFixed && campaign.status === "active" ? formatTimeLeft(campaign.deadline, nowSeconds) : null;
   const isClosedWithoutSuccess = campaign.status === "failed" || campaign.status === "cancelled";
@@ -182,7 +174,10 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               </div>
               <div>
                 <dt>ваш вклад</dt>
-                <dd>{account === undefined ? "—" : contribution === undefined ? "…" : formatEth(contribution)}</dd>
+                {/* Неразрывный пробел: «0,006 ETH» не должен распадаться на две строки в узкой плитке. */}
+                <dd>
+                  {account === undefined ? "—" : contribution === undefined ? "…" : formatEth(contribution).replace(" ", "\u00a0")}
+                </dd>
               </div>
               <div>
                 <dt>{timeLeft ? "осталось" : "срок"}</dt>
@@ -198,18 +193,8 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               <DonateForm campaignId={campaign.id} remaining={campaign.goal - campaign.totalRaised} />
             ) : null}
 
-            {previewActions.length > 0 ? (
-              <>
-                <p className={styles.actionPreview}>Предпросмотр других действий</p>
-                <div className={styles.actions}>
-                  {previewActions.map((action) => (
-                    <Button disabled fullWidth key={action} variant="secondary">
-                      {actionLabels[action]}
-                    </Button>
-                  ))}
-                </div>
-                <p className={styles.notice}>Вывод, отмена, смена срока и возврат появятся в следующих версиях.</p>
-              </>
+            {managedActions.length > 0 ? (
+              <CampaignActions actions={managedActions} campaign={campaign} contribution={contribution ?? 0n} />
             ) : null}
 
             {actions.length === 0 ? <p className={styles.closed}>{closedReasons[campaign.status]}</p> : null}

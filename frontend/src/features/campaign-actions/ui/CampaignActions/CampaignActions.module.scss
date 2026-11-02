@@ -1,0 +1,55 @@
+.actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.label {
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border);
+  color: var(--color-text-soft);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+
+  h3 {
+    font-size: var(--font-size-body);
+  }
+
+  p {
+    color: var(--color-text-soft);
+    font-size: var(--font-size-small);
+  }
+}
+
+.buttons {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+// Отмена — необратимое действие: тихая кнопка, но цвета ошибки.
+.cancel {
+  color: var(--color-danger);
+}
+
+.danger {
+  border-color: var(--color-danger);
+  color: var(--color-surface);
+  background: var(--color-danger);
+
+  &:hover:not(:disabled) {
+    background: var(--color-cinnabar-strong);
+  }
+}
