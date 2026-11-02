@@ -18,7 +18,11 @@
   font-size: var(--font-size-small);
 
   a {
+    display: inline-flex;
     flex: none;
+    // Минимальная цель касания WCAG 2.2 — 24 px.
+    min-height: 1.5rem;
+    align-items: center;
     color: inherit;
     text-decoration: none;
 

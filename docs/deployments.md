@@ -68,6 +68,9 @@ On-chain-проверка V2 выполнена с deployment-аккаунта:
 | `8` | `updateCampaignDeadline(8, 130)` | дедлайн 29.08.2027 → 12.03.2027, отсчёт от блока; `36,761` gas | [`0xe01b…8ec2`](https://sepolia.etherscan.io/tx/0xe01bcffa373ba3410a84994acac1239b09c93ba7f2abe1f2bd635b7bfa2c8ec2) |
 | `7` | `refund(7)` | возвращено `0.001 ETH`, `RefundClaimed`; `46,834` gas | [`0x8a0d…9371`](https://sepolia.etherscan.io/tx/0x8a0d23bdebef17cea2fabb38ff818d8334c2a6db17d06b50909758d90d319371) |
 | `8` | `cancelCampaign(8)` | статус «Отменена», `CampaignCancelled`; `136,356` gas | [`0x9ac1…b44e`](https://sepolia.etherscan.io/tx/0x9ac102a5bb406e6d3080cd890914e84e8ea90e3f3084ee9294dabb39309db44e) |
+| `9` | создание, `FixedDeadline` 30 дней, цель `0.0001 ETH` | кампания для проверки вывода; `2,689,798` gas | [`0xfa5f…5570`](https://sepolia.etherscan.io/tx/0xfa5fcc3f693a0c8aaab2850941532b8e5dddf886bb3f3398fc17fccff6fc5570) |
+| `9` | `donate(9)` `0.0002 ETH` | цель достигнута с перевыполнением; `252,808` gas | [`0xb3c1…6709`](https://sepolia.etherscan.io/tx/0xb3c16ff601899f5a55067a0d24917b7d62607042b0638f061ca7b65654066709) |
+| `9` | `withdrawFunds(9)` | выведено `0.0002 ETH`, `FundsWithdrawn`, `fundsWithdrawn = true`; `144,501` gas | [`0x56cf…4077`](https://sepolia.etherscan.io/tx/0x56cf2d3fd0799663f1bef333ab5ad1b0249a97ca05a35a1be97f3eda5c3f4077) |
 
 ### V1 — fixed deadline after expiry
 

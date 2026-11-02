@@ -16,6 +16,8 @@
   --color-cinnabar: #e45b3f;
   --color-cinnabar-strong: #c94a31;
   --color-cinnabar-tint: #fbe3dc;
+  // Киноварь для текста: в тёмной теме strong-оттенок даёт 3,5:1, поэтому текст берёт светлый.
+  --color-cinnabar-text: #c94a31;
   --color-mint: #a8c7b8;
   --color-mint-tint: #dceae2;
   --color-amber: #c98a1b;
@@ -90,6 +92,7 @@
   --color-cinnabar: #df6c54;
   --color-cinnabar-strong: #b94f39;
   --color-cinnabar-tint: #39221c;
+  --color-cinnabar-text: #df6c54;
   --color-mint: #b0c9bc;
   --color-mint-tint: #22332a;
   --color-amber: #d39a32;

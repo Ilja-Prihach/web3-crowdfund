@@ -68,3 +68,9 @@
   color: var(--color-danger);
   font-weight: 650;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}

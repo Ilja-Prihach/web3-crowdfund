@@ -99,7 +99,8 @@
   }
 }
 
-@include mixins.from-medium {
+// Совпадает с появлением полного меню в AppHeader.
+@include mixins.from-large {
   .menu {
     display: none;
   }
