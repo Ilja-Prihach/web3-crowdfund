@@ -52,6 +52,15 @@ On-chain-проверка V2 выполнена с deployment-аккаунта:
 
 Создание кампании `2` с коротким описанием использовало `1,362,549` gas при цене `0.001 gwei`; создание кампании `5` с описанием на 462 байта — `2,579,211` gas при `1 gwei`, то есть `0.002579 ETH`. Перед повторным заполнением проверяйте текущую цену gas: она меняла стоимость сильнее длины текста.
 
+Первые транзакции через интерфейс frontend выполнены 2 ноября 2026 года кошельком Rabby автора [`0x012E40523eAca6BEd2e8205A05eC7e6281dB5Ef5`](https://sepolia.etherscan.io/address/0x012E40523eAca6BEd2e8205A05eC7e6281dB5Ef5), которому deployment-аккаунт перевёл `0.005 ETH` ([`0x6108…5595`](https://sepolia.etherscan.io/tx/0x6108d961e4ed570b3f94a6a17452310e52f269dab3a1d4c352aff3ac8ab85595)):
+
+| Campaign | Режим | Действие | Transaction |
+| --- | --- | --- | --- |
+| `7` | `OpenEnded` | donation `0.001 ETH` со страницы кампании | [`0x4ff4…e3b5`](https://sepolia.etherscan.io/tx/0x4ff4c093eae6fc01890a223d30559371b06aa80b8b86f4e85180df8f3d28e3b5) |
+| `8` | `FixedDeadline`, 300 дней | создание через `/campaigns/new`, цель `0.2 ETH` | [`0x5e29…943e`](https://sepolia.etherscan.io/tx/0x5e29cb79cc22aad2f618bfd7220fbcad36c4a86743bfc9c42e81d1d0d8f6943e) |
+
+Создание кампании `8` с описанием на 284 байта использовало `1,915,712` gas; ID `8` прочитан из события `CampaignCreated`, после чего интерфейс открыл страницу кампании.
+
 ### V1 — fixed deadline after expiry
 
 - дата: 27 октября 2026 года;

@@ -60,6 +60,7 @@ export function DonateForm({ campaignId, remaining }: DonateFormProps) {
         onRetry={() => donation.donate(sentAmount)}
         stage={donation.stage}
         successText={`${formatEth(sentAmount)} учтены в кампании. Сумма сбора и ваш вклад обновлены из сети.`}
+        successTitle="Спасибо! Вклад в контракте"
         summary={`Вклад ${formatEth(sentAmount)} в кампанию №${campaignId}`}
       />
     );

@@ -74,6 +74,16 @@ Frontend использует Next.js App Router. Корневой layout под
 
 `features/transaction-status/lib/transactionErrors` переводит custom errors контракта по имени, декодированному viem из ABI (`ContractFunctionRevertedError.data.errorName`); ключи переводов типизированы `ContractErrorName<typeof crowdfundingAbi>`. Непереведённая ошибка показывается по имени. `isUserRejection` и `isContractRevert` различают отказ (`4001`), revert и остальные сбои; общие ошибки кошелька переводит `getWalletErrorMessage`.
 
+## Создание кампании frontend
+
+Маршрут `/campaigns/new` рендерит клиентский виджет `widgets/CampaignCreate`: описание, режим и цель, проверка и запуск — на одной странице, справа живое превью карточки и вызов `createCampaign(…)` с аргументами, которые уйдут в контракт.
+
+`features/campaign-create/lib/campaignDraft` повторяет проверки `createCampaign` до подписи: название 1–100 и описание 1–1000 **байт UTF-8**, как `bytes(value).length` в Solidity (`shared/lib/utf8`; кириллица занимает 2 байта, эмодзи — 4), цель через `parseEthAmount`, срок `FixedDeadline` — целое число 1–365 дней, а у `OpenEnded` всегда `0`, поэтому `OpenEndedCampaignMustNotHaveDuration` из интерфейса не получить. Тексты обрезаются по краям до подсчёта и отправки. Успешная проверка возвращает готовый кортеж аргументов.
+
+Запись идёт через общий `features/transaction-status/model/useContractTransaction` — тот же путь «симуляция → подпись → receipt → обновление чтений», на котором построен `useDonate`. `useCreateCampaign` берёт ID новой кампании из события `CampaignCreated` в receipt (`parseEventLogs`), а не из `nextCampaignId`: событие относится ровно к этой транзакции, поэтому кампания, созданная кем-то в том же блоке, не подменит ID. После подтверждения страница переходит на `/campaigns/<id>`.
+
+Поля для обложки нет: контракт V2 не хранит изображений, а backend для файлов ещё не создан, см. [`DECISIONS.md#campaign-media-lives-in-backend`](DECISIONS.md#campaign-media-lives-in-backend).
+
 ## Контракт Crowdfunding
 
 Контракт `Crowdfunding` хранит кампании в `mapping`, где ключ — уникальный числовой идентификатор. Счётчик `nextCampaignId` выдаёт следующий свободный ID.

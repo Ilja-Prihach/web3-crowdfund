@@ -2,6 +2,7 @@ import type { StaticImageData } from "next/image";
 
 import airSensors from "./assets/air-sensors.webp";
 import bikeMap from "./assets/bike-map.webp";
+import electronicsRepair from "./assets/electronics-repair.webp";
 import solidityBook from "./assets/solidity-book.webp";
 import toolLibrary from "./assets/tool-library.webp";
 import youthStudio from "./assets/youth-studio.webp";
@@ -14,6 +15,7 @@ const demoCovers: Record<string, StaticImageData> = {
   "5": bikeMap,
   "6": airSensors,
   "7": solidityBook,
+  "8": electronicsRepair,
 };
 
 export function getDemoCover(id: bigint): StaticImageData | undefined {

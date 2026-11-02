@@ -13,6 +13,9 @@ type TransactionStatusProps = {
   stage: TransactionStage;
   // Что именно подписывается: «Вклад 0,01 ETH в кампанию №5».
   summary: string;
+  successTitle: string;
+  // Кнопка возврата к форме после сбоя: «Изменить сумму» для вклада, «Вернуться к форме» для создания.
+  editLabel?: string;
   successText: string;
   hash?: Hash;
   error?: unknown;
@@ -30,6 +33,7 @@ const completedSteps: Record<TransactionStage, number> = {
 };
 
 export function TransactionStatus({
+  editLabel = "Изменить сумму",
   error,
   hash,
   onDone,
@@ -37,6 +41,7 @@ export function TransactionStatus({
   onRetry,
   stage,
   successText,
+  successTitle,
   summary,
 }: TransactionStatusProps) {
   const txUrl = hash ? `${supportedChain.blockExplorers.default.url}/tx/${hash}` : undefined;
@@ -64,7 +69,7 @@ export function TransactionStatus({
           : stage === "confirming"
             ? "Транзакция отправлена"
             : stage === "confirmed"
-              ? "Спасибо! Вклад в контракте"
+              ? successTitle
               : isRejected
                 ? "Вы отменили подпись"
                 : "Транзакция не прошла"}
@@ -102,7 +107,7 @@ export function TransactionStatus({
             </Button>
           )}
           <Button fullWidth onClick={onDone} variant="quiet">
-            Изменить сумму
+            {editLabel}
           </Button>
         </div>
       ) : stage === "confirmed" ? (
