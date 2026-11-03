@@ -86,7 +86,7 @@ Roadmap задаёт порядок, а не обещание параллель
 
 ## Этап 5. Backend и blockchain indexer
 
-Перед кодом принять отдельные решения о backend framework, БД, миграциях и модели повторной обработки событий. PostgreSQL — основной кандидат, но пока не утверждён.
+Backend пишется на Node.js, TypeScript и Fastify, данные хранит PostgreSQL со схемой и миграциями через Drizzle, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node) и [`DECISIONS.md#database-is-postgresql-with-drizzle`](DECISIONS.md#database-is-postgresql-with-drizzle). Перед кодом indexer отдельно решается модель повторной обработки событий.
 
 - вход подписью кошелька (Sign-In with Ethereum, EIP-4361): сервер выдаёт nonce, кошелёк подписывает сообщение без транзакции, сервер проверяет подпись и создаёт защищённую cookie-сессию; проектируется первым, потому что от него зависят загрузка медиа и профили;
 - локальный Anvil с воспроизводимым seed как инструмент разработки и тестов indexer: события создаются мгновенно, время перематывается, сеть сбрасывается; demo-интерфейса это не требует;
