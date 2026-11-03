@@ -88,7 +88,7 @@ Roadmap задаёт порядок, а не обещание параллель
 
 Backend пишется на Node.js, TypeScript и Fastify, данные хранит PostgreSQL со схемой и миграциями через Drizzle, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node) и [`DECISIONS.md#database-is-postgresql-with-drizzle`](DECISIONS.md#database-is-postgresql-with-drizzle). Модель чтения событий выбрана: опрос `eth_getLogs` только до `finalized` блока с записью событий, проекции и checkpoint в одной транзакции, см. [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs).
 
-- вход подписью кошелька (Sign-In with Ethereum, EIP-4361): сервер выдаёт nonce, кошелёк подписывает сообщение без транзакции, сервер проверяет подпись и создаёт защищённую cookie-сессию; проектируется первым, потому что от него зависят загрузка медиа и профили;
+- вход подписью кошелька (Sign-In with Ethereum, EIP-4361), см. [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions); от него зависят загрузка медиа и профили;
 - локальный Anvil с воспроизводимым seed как инструмент разработки и тестов indexer: события создаются мгновенно, время перематывается, сеть сбрасывается; demo-интерфейса это не требует;
 - профиль пользователя, связанный с wallet address: созданные и поддержанные кампании из проекции indexer;
 
