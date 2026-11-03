@@ -36,6 +36,7 @@
 | [demo-mode-is-deferred](#demo-mode-is-deferred) | Локальный demo-режим отложен; вход подписью, профили и Anvil-seed переходят в этап backend |
 | [backend-uses-fastify-on-node](#backend-uses-fastify-on-node) | Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify; API и indexer — два процесса |
 | [database-is-postgresql-with-drizzle](#database-is-postgresql-with-drizzle) | Данные backend хранит PostgreSQL, схема и миграции ведутся через Drizzle в виде SQL-файлов |
+| [indexer-reads-finalized-logs](#indexer-reads-finalized-logs) | Indexer опрашивает `eth_getLogs` пачками только до `finalized` блока и в одной транзакции пишет события, проекцию и checkpoint |
 
 ## Действующие решения
 
@@ -371,3 +372,15 @@ Backend хранит данные в PostgreSQL. Схема описываетс
 Следствие: схема меняется только новой миграцией, а не правкой базы вручную. Таблицы проекции indexer можно удалить и восстановить из событий; загруженные файлы и тексты метаданных восстановлению не подлежат и требуют резервного копирования, см. [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend).
 
 Связано: [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection), [`roadmap.md#этап-6-docker`](roadmap.md#этап-6-docker).
+
+### indexer-reads-finalized-logs
+
+**Статус:** принято 3 ноября 2026 года.
+
+Indexer опрашивает `eth_getLogs` по адресу контракта примерно раз в 12 секунд, пачками блоков настраиваемого размера, начиная с блока deploy. Верхняя граница — блок с тегом `finalized`, а не `latest`. Каждая пачка обрабатывается в одной транзакции БД: события вставляются с `ON CONFLICT DO NOTHING` по уникальному `(chain_id, tx_hash, log_index)`, проекции `campaigns` и `contributions` обновляются из этих событий, checkpoint сдвигается на последний обработанный блок. Названия и описания кампаний, которых нет в `CampaignCreated`, дочитываются через `getCampaigns`: в V2 они неизменяемы. RPC задаёт серверная переменная `SEPOLIA_RPC_URL`.
+
+Причина: `finalized` блок Ethereum PoS не откатывается без нарушения консенсуса, поэтому indexer не хранит хэши блоков и не пишет откат при chain reorg — самую рискованную часть indexer. 3 ноября 2026 года `finalized` отставал от `latest` на 77 блоков, около 15 минут. Задержка каталога допустима: суммы и действия на странице кампании frontend читает из контракта напрямую. Опрос проще и надёжнее WebSocket-подписки, которая рвётся и всё равно требует догоняющего чтения. Транзакция БД и уникальный индекс делают повторную обработку пачки после падения безопасной.
+
+Следствие: каталог и профили backend показывают состояние примерно 15-минутной давности и должны честно это обозначать. Пункт roadmap об ограниченных chain reorg закрывается выбором `finalized`; если когда-нибудь понадобится `latest`, это отдельное решение с хранением хэшей блоков и откатом. Публичные RPC с обрезанной историей не подходят для первого чтения, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history).
+
+Связано: [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection), [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).

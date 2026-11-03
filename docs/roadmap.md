@@ -86,7 +86,7 @@ Roadmap задаёт порядок, а не обещание параллель
 
 ## Этап 5. Backend и blockchain indexer
 
-Backend пишется на Node.js, TypeScript и Fastify, данные хранит PostgreSQL со схемой и миграциями через Drizzle, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node) и [`DECISIONS.md#database-is-postgresql-with-drizzle`](DECISIONS.md#database-is-postgresql-with-drizzle). Перед кодом indexer отдельно решается модель повторной обработки событий.
+Backend пишется на Node.js, TypeScript и Fastify, данные хранит PostgreSQL со схемой и миграциями через Drizzle, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node) и [`DECISIONS.md#database-is-postgresql-with-drizzle`](DECISIONS.md#database-is-postgresql-with-drizzle). Модель чтения событий выбрана: опрос `eth_getLogs` только до `finalized` блока с записью событий, проекции и checkpoint в одной транзакции, см. [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs).
 
 - вход подписью кошелька (Sign-In with Ethereum, EIP-4361): сервер выдаёт nonce, кошелёк подписывает сообщение без транзакции, сервер проверяет подпись и создаёт защищённую cookie-сессию; проектируется первым, потому что от него зависят загрузка медиа и профили;
 - локальный Anvil с воспроизводимым seed как инструмент разработки и тестов indexer: события создаются мгновенно, время перематывается, сеть сбрасывается; demo-интерфейса это не требует;
@@ -95,7 +95,7 @@ Backend пишется на Node.js, TypeScript и Fastify, данные хра�
 - чтение `CampaignCreated`, `CampaignDeadlineUpdated`, `DonationMade`, `CampaignCancelled`, `RefundClaimed` и `FundsWithdrawn`;
 - идемпотентная обработка по chain ID, transaction hash и log index;
 - checkpoint последнего подтверждённого блока;
-- обработка повторного запуска и ограниченных chain reorg;
+- обработка повторного запуска; chain reorg исключён чтением только до `finalized` блока;
 - таблицы профилей, кошельков, кампаний, вкладов и событий;
 - API каталога, поиска и профилей;
 - сортировка каталога по собранной сумме и категории кампаний: on-chain-пагинация отдаёт кампании только по порядку ID;

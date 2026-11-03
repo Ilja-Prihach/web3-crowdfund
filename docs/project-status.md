@@ -66,7 +66,7 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-Frontend MVP завершён, локальный demo-режим (этап 4) отложен, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Следующий этап — backend и indexer ([`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer)). Стек выбран: Node.js, TypeScript и Fastify, PostgreSQL с миграциями Drizzle. Перед indexer остаются решения о модели повторной обработки событий и о входе подписью кошелька; работа идёт в учебном формате с маленькими шагами.
+Frontend MVP завершён, локальный demo-режим (этап 4) отложен, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Следующий этап — backend и indexer ([`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer)). Стек выбран: Node.js, TypeScript и Fastify, PostgreSQL с миграциями Drizzle. Модель indexer выбрана: опрос `eth_getLogs` до `finalized` блока, события, проекция и checkpoint в одной транзакции, см. [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs). Публичный RPC frontend не хранит логи с блока deploy, поэтому indexer получает собственный RPC, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history). Остаётся спроектировать вход подписью кошелька; работа идёт в учебном формате с маленькими шагами.
 
 Реальная статистика и блок «Сейчас собирают» на главной пока не сделаны.
 
