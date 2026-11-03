@@ -34,6 +34,8 @@
 | [pull-requests-attach-acceptance-screenshots](#pull-requests-attach-acceptance-screenshots) | Визуальные PR содержат скриншоты из релиза `acceptance-screens`, а не из Git |
 | [campaign-media-lives-in-backend](#campaign-media-lives-in-backend) | Обложки и расширенные метаданные кампаний хранит будущий backend, а не контракт и не IPFS |
 | [demo-mode-is-deferred](#demo-mode-is-deferred) | Локальный demo-режим отложен; вход подписью, профили и Anvil-seed переходят в этап backend |
+| [backend-uses-fastify-on-node](#backend-uses-fastify-on-node) | Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify; API и indexer — два процесса |
+| [database-is-postgresql-with-drizzle](#database-is-postgresql-with-drizzle) | Данные backend хранит PostgreSQL, схема и миграции ведутся через Drizzle в виде SQL-файлов |
 
 ## Действующие решения
 
@@ -123,7 +125,7 @@ Production-код, тесты и документация по возможно�
 
 Будущий backend хранит профили и индексирует события контракта для поиска, категорий, рейтингов и аналитики. Финансовое состояние остаётся в блокчейне, а индексируемые таблицы должны восстанавливаться повторным чтением событий.
 
-Причина: SQL удобен для каталога и агрегатов, но доверие к базе не должно менять баланс, право возврата или статус кампании. Следствие: indexer обязан быть идемпотентным, хранить checkpoint и учитывать повторную обработку и chain reorg. Окончательные backend framework и БД пока не выбраны; PostgreSQL — основной кандидат.
+Причина: SQL удобен для каталога и агрегатов, но доверие к базе не должно менять баланс, право возврата или статус кампании. Следствие: indexer обязан быть идемпотентным, хранить checkpoint и учитывать повторную обработку и chain reorg. Backend framework и БД выбраны 3 ноября 2026 года, см. [`backend-uses-fastify-on-node`](#backend-uses-fastify-on-node) и [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).
 
 Связано: [`product-vision.md#границы-данных`](product-vision.md#границы-данных), [`roadmap.md#этап-5-backend-и-blockchain-indexer`](roadmap.md#этап-5-backend-и-blockchain-indexer).
 
@@ -345,3 +347,27 @@ PR, меняющий визуал frontend, содержит в описании
 Следствие: следующий этап — backend, и он начинается с решений о фреймворке, базе данных, миграциях и повторной обработке событий. Публичная сборка frontend по-прежнему работает только с Sepolia. Demo-режим возвращается на этапе 6 вместе с Docker или раньше отдельным решением автора.
 
 Связано: [`roadmap.md#этап-4-локальный-demo-режим--отложен`](roadmap.md#этап-4-локальный-demo-режим--отложен), [`product-vision.md#demo-регистрация-и-настоящая-авторизация`](product-vision.md#demo-регистрация-и-настоящая-авторизация).
+
+### backend-uses-fastify-on-node
+
+**Статус:** принято 3 ноября 2026 года.
+
+Backend — отдельное приложение `backend/` в этом репозитории на Node.js и TypeScript с HTTP-фреймворком Fastify. В одном пакете два процесса: API, отвечающий frontend, и indexer, постоянно читающий события контракта. Чтение блокчейна идёт через viem с тем же ABI, что во frontend.
+
+Причина: автор знает JavaScript, а TypeScript уже используется во frontend; viem выводит из ABI типы аргументов событий, поэтому опечатка в поле события видна при проверке типов. Fastify проверяет запросы и ответы по схеме и корректно обрабатывает ошибки `async`-обработчиков, оставаясь почти таким же простым, как Express. Route Handlers Next.js не подходят: indexer — постоянный процесс, а не обработчик запроса. NestJS отклонён как слишком тяжёлый для учебного этапа, другой язык — из-за повторного описания типов ABI.
+
+Следствие: у `backend/` свой `package.json`, проверки и раздел CI. Backend не хранит приватных ключей и не подписывает транзакции, см. [`blockchain-is-source-of-truth`](#blockchain-is-source-of-truth). Код пишется в учебном формате: теория, маленькие шаги, подтверждение автора.
+
+Связано: [`roadmap.md#этап-5-backend-и-blockchain-indexer`](roadmap.md#этап-5-backend-и-blockchain-indexer), [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection).
+
+### database-is-postgresql-with-drizzle
+
+**Статус:** принято 3 ноября 2026 года.
+
+Backend хранит данные в PostgreSQL. Схема описывается на TypeScript через Drizzle ORM, а миграции генерируются в SQL-файлы, которые коммитятся и читаются как обычный SQL.
+
+Причина: indexer опирается на уникальный индекс по `(chain_id, tx_hash, log_index)`, чтобы повторно прочитанное событие не записалось дважды, и на транзакции, чтобы запись событий блока и сдвиг checkpoint выполнялись целиком. Этап 6 и так планирует PostgreSQL в Docker. Drizzle выбран вместо Prisma, потому что не прячет SQL за собственным языком схемы, и вместо ручных миграций на Kysely, потому что схема и типы не дублируются.
+
+Следствие: схема меняется только новой миграцией, а не правкой базы вручную. Таблицы проекции indexer можно удалить и восстановить из событий; загруженные файлы и тексты метаданных восстановлению не подлежат и требуют резервного копирования, см. [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend).
+
+Связано: [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection), [`roadmap.md#этап-6-docker`](roadmap.md#этап-6-docker).

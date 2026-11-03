@@ -66,7 +66,7 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-Frontend MVP завершён, локальный demo-режим (этап 4) отложен, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Следующий этап — backend и indexer ([`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer)). До кода автор принимает решения о backend framework, базе данных, миграциях и модели повторной обработки событий; первым проектируется вход подписью кошелька.
+Frontend MVP завершён, локальный demo-режим (этап 4) отложен, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Следующий этап — backend и indexer ([`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer)). Стек выбран: Node.js, TypeScript и Fastify, PostgreSQL с миграциями Drizzle. Перед indexer остаются решения о модели повторной обработки событий и о входе подписью кошелька; работа идёт в учебном формате с маленькими шагами.
 
 Реальная статистика и блок «Сейчас собирают» на главной пока не сделаны.
 
@@ -75,7 +75,7 @@ Frontend MVP завершён, локальный demo-режим (этап 4) �
 - обложку при создании приложить нельзя: контракт не хранит изображений, а хранилище в backend запланировано на этап 5;
 - фильтры каталога действуют только на загруженную страницу; сортировка по сумме, поиск и категории ждут indexer;
 - в MetaMask со скрытыми тестовыми сетями программное переключение на Sepolia завершалось внутренней ошибкой окна расширения (`Cannot read properties of undefined (reading 'origin')`); причина не подтверждена, обход — включить тестовые сети и выбрать Sepolia вручную, о чём подсказывает полоса неверной сети;
-- backend и blockchain indexer ещё не созданы; PostgreSQL является кандидатом, но не утверждённым выбором;
+- backend и blockchain indexer ещё не созданы;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
 - актуальная Sepolia оценивает deployment gas значительно выше локальной Cancun-симуляции; перед любым следующим deployment требуется новый RPC estimate, см. [`gotchas.md`](gotchas.md#sepolia-deployment-gas-differs-from-local-simulation).
