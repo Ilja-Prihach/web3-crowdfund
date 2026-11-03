@@ -66,7 +66,7 @@ Chain ID, deployment-транзакция, gas и верификация зап�
 
 ## Следующий учебный шаг
 
-Frontend MVP завершён. Следующий этап выбирает автор по [`roadmap.md`](roadmap.md): этап 4 — локальный demo-режим на Anvil и профили, этап 5 — backend с хранением обложек и метаданных кампаний.
+Frontend MVP завершён, локальный demo-режим (этап 4) отложен, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Следующий этап — backend и indexer ([`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer)). До кода автор принимает решения о backend framework, базе данных, миграциях и модели повторной обработки событий; первым проектируется вход подписью кошелька.
 
 Реальная статистика и блок «Сейчас собирают» на главной пока не сделаны.
 
