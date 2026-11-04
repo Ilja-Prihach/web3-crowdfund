@@ -1,16 +1,16 @@
 # Непрерывная интеграция (CI)
 
-Проверки контрактов и frontend выполняются автоматически в GitHub Actions. Конфигурации находятся в `.github/workflows/contracts.yml` и `.github/workflows/frontend.yml`.
+Проверки контрактов, frontend и backend выполняются автоматически в GitHub Actions. Конфигурации находятся в `.github/workflows/contracts.yml`, `.github/workflows/frontend.yml` и `.github/workflows/backend.yml`.
 
 ## Когда запускается
 
-Workflows `Contracts CI` и `Frontend CI` запускаются при каждом pull request в `main` и при каждом push в `main`.
+Workflows `Contracts CI`, `Frontend CI` и `Backend CI` запускаются при каждом pull request в `main` и при каждом push в `main`.
 
 Фильтр по путям (`paths`) намеренно не используется. Обязательный workflow, пропущенный фильтром, не сообщает статус, из-за чего pull request с изменениями только другой подсистемы нельзя было бы слить. Полный прогон бесплатен для публичного репозитория.
 
 ## Что проверяется
 
-Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` выполняются независимо на `ubuntu-latest`.
+Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lint, typecheck, test` выполняются независимо на `ubuntu-latest`.
 
 `Lint, typecheck, build` работает в каталоге `frontend/`:
 
@@ -21,6 +21,15 @@ Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` вы�
 5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
 6. `npm test` — запускает unit-тесты чистых функций встроенным `node:test`.
 7. `npm run build` — собирает production-версию Next.js.
+
+`Lint, typecheck, test` работает в каталоге `backend/`:
+
+1. Загружает репозиторий.
+2. Устанавливает версию Node.js из `backend/.nvmrc` и включает npm cache по lock-файлу.
+3. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
+4. `npm run lint` — ESLint с правилами, использующими типы TypeScript, без допустимых предупреждений.
+5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
+6. `npm test` — запускает тесты встроенным `node:test`.
 
 `Format, build, test` работает в каталоге `contracts/`:
 
@@ -38,7 +47,7 @@ Jobs `Format, build, test`, `Slither analysis` и `Lint, typecheck, build` вы�
 ## Защита ветки `main`
 
 - изменения попадают в `main` только через pull request;
-- перед слиянием должны успешно пройти `Format, build, test`, `Slither analysis` и `Lint, typecheck, build`; новый frontend check добавляется в required checks после первого успешного запуска в GitHub;
+- перед слиянием должны успешно пройти `Format, build, test`, `Slither analysis` и `Lint, typecheck, build`; новые checks frontend и backend добавляются в required checks после первого успешного запуска в GitHub;
 - перед слиянием ветка должна быть обновлена до актуального `main`, чтобы CI проверял именно тот код, который попадёт в `main`;
 - одобрение ревьюера не требуется, так как проект ведёт один разработчик;
 - правила распространяются и на администраторов репозитория.
@@ -67,4 +76,13 @@ forge lint src/Crowdfunding.sol --deny warnings
 forge build --sizes
 forge test
 slither . --filter-paths "(lib/|test/|script/)" --fail-medium
+```
+
+Из каталога `backend/`:
+
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm test
 ```
