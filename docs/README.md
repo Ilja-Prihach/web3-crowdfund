@@ -28,6 +28,7 @@
 | Что проверяет CI? | [`ci.md`](ci.md) |
 | Как строился Frontend MVP (архив)? | [`archive/frontend-mvp.md`](archive/frontend-mvp.md) |
 | Где практические frontend-инструкции? | [`../frontend/README.md`](../frontend/README.md) |
+| Где практические backend-инструкции? | [`../backend/README.md`](../backend/README.md) |
 | Как запускать deployment? | [`../contracts/script/README.md`](../contracts/script/README.md) |
 | Как устроены тесты? | [`../contracts/test/README.md`](../contracts/test/README.md) |
 

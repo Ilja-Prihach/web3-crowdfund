@@ -8,6 +8,7 @@ Decentralized crowdfunding platform where campaign creators can raise ETH transp
 
 - `contracts/` — Solidity smart contracts, tests, and deployment scripts.
 - `frontend/` — the web application for campaign creators and contributors.
+- `backend/` — the Fastify API and blockchain indexer (in development).
 - `docs/` — architecture, project status, decisions and operational knowledge.
 
 ## Documentation
