@@ -36,6 +36,12 @@
 | [demo-mode-is-deferred](#demo-mode-is-deferred) | Локальный demo-режим отложен; вход подписью, профили и Anvil-seed переходят в этап backend |
 | [backend-uses-fastify-on-node](#backend-uses-fastify-on-node) | Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify; API и indexer — два процесса |
 | [database-is-postgresql-with-drizzle](#database-is-postgresql-with-drizzle) | Данные backend хранит PostgreSQL, схема и миграции ведутся через Drizzle в виде SQL-файлов |
+| [indexer-reads-finalized-logs](#indexer-reads-finalized-logs) | Indexer опрашивает `eth_getLogs` пачками только до `finalized` блока и в одной транзакции пишет события, проекцию и checkpoint |
+| [backend-signs-in-with-siwe-sessions](#backend-signs-in-with-siwe-sessions) | Вход — подпись сообщения EIP-4361 через `viem/siwe`, одноразовый nonce и отзываемая сессия в БД за `httpOnly`-cookie |
+| [backend-is-a-standalone-package](#backend-is-a-standalone-package) | `backend/` ставится отдельно без workspaces, генерирует ABI сам, а локальный PostgreSQL поднимает Docker Compose |
+| [backend-api-is-versioned-rest](#backend-api-is-versioned-rest) | API — REST/JSON под `/v1` со схемами TypeBox; финансовые данные frontend по-прежнему читает из контракта |
+| [campaign-media-is-reencoded-on-upload](#campaign-media-is-reencoded-on-upload) | Обложки принимаются как JPEG/PNG/WebP до 5 МБ, пережимаются в WebP 1200×675 и хранятся за интерфейсом `MediaStorage` |
+| [backend-tests-use-real-postgresql](#backend-tests-use-real-postgresql) | Тесты backend идут на `node:test` с настоящим PostgreSQL, а indexer проверяется на Anvil |
 
 ## Действующие решения
 
@@ -371,3 +377,75 @@ Backend хранит данные в PostgreSQL. Схема описываетс
 Следствие: схема меняется только новой миграцией, а не правкой базы вручную. Таблицы проекции indexer можно удалить и восстановить из событий; загруженные файлы и тексты метаданных восстановлению не подлежат и требуют резервного копирования, см. [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend).
 
 Связано: [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection), [`roadmap.md#этап-6-docker`](roadmap.md#этап-6-docker).
+
+### indexer-reads-finalized-logs
+
+**Статус:** принято 3 ноября 2026 года.
+
+Indexer опрашивает `eth_getLogs` по адресу контракта примерно раз в 12 секунд, пачками блоков настраиваемого размера, начиная с блока deploy. Верхняя граница — блок с тегом `finalized`, а не `latest`. Каждая пачка обрабатывается в одной транзакции БД: события вставляются с `ON CONFLICT DO NOTHING` по уникальному `(chain_id, tx_hash, log_index)`, проекции `campaigns` и `contributions` обновляются из этих событий, checkpoint сдвигается на последний обработанный блок. Названия и описания кампаний, которых нет в `CampaignCreated`, дочитываются через `getCampaigns`: в V2 они неизменяемы. RPC задаёт серверная переменная `SEPOLIA_RPC_URL`.
+
+Причина: `finalized` блок Ethereum PoS не откатывается без нарушения консенсуса, поэтому indexer не хранит хэши блоков и не пишет откат при chain reorg — самую рискованную часть indexer. 3 ноября 2026 года `finalized` отставал от `latest` на 77 блоков, около 15 минут. Задержка каталога допустима: суммы и действия на странице кампании frontend читает из контракта напрямую. Опрос проще и надёжнее WebSocket-подписки, которая рвётся и всё равно требует догоняющего чтения. Транзакция БД и уникальный индекс делают повторную обработку пачки после падения безопасной.
+
+Следствие: каталог и профили backend показывают состояние примерно 15-минутной давности и должны честно это обозначать. Пункт roadmap об ограниченных chain reorg закрывается выбором `finalized`; если когда-нибудь понадобится `latest`, это отдельное решение с хранением хэшей блоков и откатом. Публичные RPC с обрезанной историей не подходят для первого чтения, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history).
+
+Связано: [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection), [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).
+
+### backend-signs-in-with-siwe-sessions
+
+**Статус:** принято 3 ноября 2026 года.
+
+Пользователь входит в backend подписью текстового сообщения стандарта Sign-In with Ethereum (EIP-4361). Сервер выдаёт случайный nonce, frontend собирает сообщение с доменом сайта, адресом, chain ID `11155111`, nonce и временем выдачи, кошелёк подписывает его без транзакции. Сервер проверяет сообщение и подпись через `createSiweMessage` и `verifySiweMessage` из `viem/siwe`, сверяет домен, chain ID и срок, затем удаляет nonce и создаёт сессию. Nonce хранится в PostgreSQL 10 минут и годится один раз. Сессия — строка в БД сроком 7 дней; браузер получает только её случайный идентификатор в cookie с флагами `httpOnly`, `Secure` и `SameSite=Lax`.
+
+Причина: подпись доказывает владение адресом бесплатно и без сети. Одноразовый nonce исключает повторное предъявление перехваченной подписи, а домен в сообщении — использование подписи, выманенной другим сайтом. `verifySiweMessage` через RPC проверяет и подписи смарт-кошельков (ERC-1271, ERC-6492), а отдельный пакет `siwe` не нужен: viem уже в стеке. Сессия в БД отзывается сразу, в отличие от JWT, который действует до истечения срока; cookie с `httpOnly` недоступна JavaScript страницы.
+
+Следствие: backend получает право действовать только в своих данных — профиле и медиа кампаний, где адрес сессии совпадает с `creator`. Деньги и транзакции подпись входа не затрагивает: on-chain-действия по-прежнему подписывает кошелёк пользователя.
+
+Связано: [`security.md#backend-и-вход-подписью`](security.md#backend-и-вход-подписью), [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend).
+
+### backend-is-a-standalone-package
+
+**Статус:** принято 3 ноября 2026 года.
+
+`backend/` — самостоятельный пакет со своими `package.json` и `package-lock.json`, как `frontend/`, без npm workspaces. ABI контракта backend генерирует из артефакта Foundry тем же способом, что frontend, а не импортирует из соседнего приложения. Для локальной разработки PostgreSQL запускается через Docker Compose одним сервисом с зафиксированной версией образа; параметры подключения задаются в `backend/.env`, который не коммитится, а пример лежит в `backend/.env.example`. Где backend работает в интернете, решается на этапе 6.
+
+Причина: раздельные пакеты ставятся и проверяются независимо, без скрытого связывания зависимостей, которое добавляют workspaces. Общий пакет ради одного ABI на двух потребителей сложнее, чем повторная генерация из одного источника. Docker Compose фиксирует версию PostgreSQL и повторяется на любой машине, а этап 6 расширит этот же файл.
+
+Следствие: при изменении ABI генерация повторяется в обоих приложениях. Для разработки backend нужен Docker; у автора он установлен.
+
+Связано: [`backend-uses-fastify-on-node`](#backend-uses-fastify-on-node), [`roadmap.md#этап-6-docker`](roadmap.md#этап-6-docker).
+
+### backend-api-is-versioned-rest
+
+**Статус:** принято 3 ноября 2026 года.
+
+API отвечает JSON по REST-маршрутам с префиксом версии: `/v1/campaigns`, `/v1/profiles/:address`, `/v1/auth/nonce` и далее. Параметры, тела запросов и ответы описываются схемами TypeBox — официальным провайдером типов Fastify; одна схема даёт и проверку данных, и тип TypeScript. Суммы, статусы и доступные действия на странице кампании frontend по-прежнему читает из контракта; backend отдаёт то, чего контракт не умеет: сортировку, поиск, профили, агрегаты и обложки.
+
+Причина: версия в пути позволяет менять формат ответа, не ломая работающий frontend. Схема на входе отсекает некорректные данные до кода обработчика. Финансовая истина остаётся в контракте, поэтому задержка indexer не превращается в неверную сумму перед подписью транзакции.
+
+Следствие: каждый маршрут имеет схему запроса и ответа. Данные backend помечаются во frontend как состояние на момент последнего `finalized` блока.
+
+Связано: [`indexer-reads-finalized-logs`](#indexer-reads-finalized-logs), [`blockchain-is-source-of-truth`](#blockchain-is-source-of-truth).
+
+### campaign-media-is-reencoded-on-upload
+
+**Статус:** принято 3 ноября 2026 года.
+
+Backend принимает обложку только в форматах JPEG, PNG или WebP размером до 5 МБ, от сессии, адрес которой совпадает с `creator` кампании. Файл пережимается через `sharp` в WebP 1200×675, исходник не сохраняется. Файлы сохраняются через интерфейс `MediaStorage`: сейчас в локальную папку, S3-совместимое хранилище выбирается при деплое. Резервное копирование настраивается на этапе 6 вместе с volume Docker.
+
+Причина: пережатие удаляет EXIF с возможной геолокацией и не даёт отдать посетителям файл, который лишь притворяется картинкой. Единый размер совпадает с demo-обложками frontend. Интерфейс хранилища позволяет сменить место хранения без изменения кода маршрутов.
+
+Следствие: загруженные обложки нельзя восстановить из блокчейна, им нужны бэкапы, см. [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend).
+
+Связано: [`frontend-media-is-optimized-before-commit`](#frontend-media-is-optimized-before-commit), [`security.md#backend-и-вход-подписью`](security.md#backend-и-вход-подписью).
+
+### backend-tests-use-real-postgresql
+
+**Статус:** принято 3 ноября 2026 года.
+
+Тесты backend запускаются встроенным `node:test`, как во frontend. Тесты базы данных работают с настоящим PostgreSQL в отдельной тестовой БД, а не с эмуляцией в памяти. Indexer проверяется интеграционно на Anvil: контракт разворачивается локально, тест создаёт кампанию и вклад, прогоняет indexer и сверяет таблицы. В CI backend получает отдельный job с сервисом PostgreSQL.
+
+Причина: корректность indexer держится на уникальном индексе и транзакциях, а их поведение достоверно проверяет только настоящий PostgreSQL. Anvil создаёт события мгновенно и перематывает время без ожидания Sepolia.
+
+Следствие: для локального запуска тестов backend нужен Docker с PostgreSQL и установленный Foundry.
+
+Связано: [`frontend-unit-tests-use-node-test`](#frontend-unit-tests-use-node-test), [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).

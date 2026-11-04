@@ -19,6 +19,7 @@
 | [tsc-incremental-cache-keeps-stale-errors](#tsc-incremental-cache-keeps-stale-errors) | После смены `target` typecheck показывает старую ошибку из кэша |
 | [zsh-does-not-split-unquoted-variables](#zsh-does-not-split-unquoted-variables) | В zsh `$pair` остаётся одним аргументом, и `cast` получает пустые параметры |
 | [wallet-uses-its-own-sepolia-rpc](#wallet-uses-its-own-sepolia-rpc) | Кошелёк отправляет транзакции через свой RPC и может упереться в `429`, хотя сайт работает |
+| [public-rpc-prunes-log-history](#public-rpc-prunes-log-history) | Публичные Sepolia RPC не отдают логи с блока deploy V2, поэтому indexer не может прочитать историю |
 
 ## Карточки
 
@@ -154,3 +155,19 @@ curl -s -X POST <RPC_URL> -H 'content-type: application/json' \
 **Причина.** Сайт читает Sepolia через свой RPC (`ethereum-sepolia-rpc.publicnode.com`), но подписанную транзакцию отправляет кошелёк — через RPC, настроенный в самом кошельке. Rabby для Sepolia по умолчанию использует тот же публичный узел thirdweb, который ограничивает запросы, см. [`viem-default-sepolia-rpc-is-rate-limited`](#viem-default-sepolia-rpc-is-rate-limited). Ошибка пришла не из проекта: в `frontend/node_modules` единственная копия viem версии 2.57.13, а thirdweb в коде не используется.
 
 **Правило.** При ошибке отправки сначала смотреть URL и версию библиотеки в тексте ошибки, чтобы понять, чей это RPC. Для кошелька — задать свой RPC Sepolia в его настройках (в Rabby: Settings → Custom RPC → Sepolia → `https://ethereum-sepolia-rpc.publicnode.com`). Проверка: `cd frontend && npm ls viem` показывает версию проекта, отличную от версии в ошибке. После замены RPC Sepolia в Rabby вклад и создание кампании 2 ноября 2026 года прошли без ошибок, см. [`deployments.md`](deployments.md#демо-кампании-каталога).
+
+### public-rpc-prunes-log-history
+
+**Симптом.** 3 ноября 2026 года `eth_getLogs` по адресу V2 с блока deploy `12014545` на `https://ethereum-sepolia-rpc.publicnode.com` вернул `error code 4444: pruned history unavailable`, хотя запросы по последним блокам работали.
+
+**Причина.** Публичный узел хранит только недавнюю историю: двоичный поиск границы показал около 19 800 последних блоков, это примерно 2,7 дня. Другие бесплатные узлы в тот же день тоже не подошли для полной истории: `sepolia.drpc.org` ограничивает диапазон блоков на бесплатном тарифе, `1rpc.io/sepolia` — 50 блоками за запрос, `rpc.sepolia.org` ответил `522`, а Blast API закрыт. `https://sepolia.gateway.tenderly.co` вернул все 25 событий контракта одним запросом на 45 000 блоков. Frontend это не затрагивает: он читает текущее состояние контракта, а не логи.
+
+**Правило.** Indexer получает RPC из серверной переменной окружения backend и перед первым запуском проверяет, что узел отдаёт логи с блока deploy. Ключ платного или бесплатного провайдера с полной историей допустим только в backend и не попадает в `NEXT_PUBLIC_*`. Проверка:
+
+```bash
+cast rpc eth_getLogs '{"address":"0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A","fromBlock":"0xb753d1","toBlock":"0xb7f511"}' --rpc-url "$SEPOLIA_RPC_URL"
+```
+
+Ответ — массив событий, а не ошибка `4444`. `0xb753d1` — блок deploy `12014545`.
+
+Связано: [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs).
