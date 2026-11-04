@@ -1,13 +1,26 @@
 import { buildApp } from "./app.ts";
+import { loadEnv } from "./config/env.ts";
 
-const port = Number(process.env.PORT ?? 4000);
-// Только этот компьютер: с 0.0.0.0 сервер был бы виден всей локальной сети.
-const host = process.env.HOST ?? "127.0.0.1";
+const env = loadEnv();
+const app = buildApp({ logger: { level: env.logLevel } });
 
-const app = buildApp({ logger: true });
+// Docker и хостинг останавливают процесс сигналом: даём текущим запросам завершиться.
+// once: если close зависнет, повторный сигнал завершит процесс как обычно.
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    app.log.info({ signal }, "shutting down");
+    app.close().then(
+      () => process.exit(0),
+      (error: unknown) => {
+        app.log.error(error, "shutdown failed");
+        process.exit(1);
+      },
+    );
+  });
+}
 
 try {
-  await app.listen({ port, host });
+  await app.listen({ port: env.port, host: env.host });
 } catch (error) {
   app.log.error(error);
   process.exit(1);
