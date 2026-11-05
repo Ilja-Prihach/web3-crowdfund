@@ -1,8 +1,15 @@
 import { buildApp } from "./app.ts";
 import { loadEnv } from "./config/env.ts";
+import { createDatabase } from "./db/client.ts";
 
 const env = loadEnv();
-const app = buildApp({ logger: { level: env.logLevel } });
+const { db, pool } = createDatabase(env.databaseUrl, {
+  // Простаивающее соединение появляется только после старта, когда app уже создан.
+  onIdleError: (error) => app.log.warn(error, "idle database connection failed"),
+});
+const app = buildApp({ db }, { logger: { level: env.logLevel } });
+// Пул закрывается последним шагом плавной остановки, после текущих запросов.
+app.addHook("onClose", () => pool.end());
 
 // Docker и хостинг останавливают процесс сигналом: даём текущим запросам завершиться.
 // once: если close зависнет, повторный сигнал завершит процесс как обычно.

@@ -7,20 +7,29 @@
     "node": ">=24.0.0 <27"
   },
   "scripts": {
-    "dev": "node --watch src/server.ts",
-    "start": "node src/server.ts",
+    "dev": "node --env-file-if-exists=.env --watch src/server.ts",
+    "start": "node --env-file-if-exists=.env src/server.ts",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"src/**/*.test.ts\""
+    "test": "node --test \"src/**/*.test.ts\"",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "fastify": "5.12.7"
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
     "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
     "eslint": "9.39.5",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.0"
+  },
+  "allowScripts": {
+    "esbuild": false
   }
 }
