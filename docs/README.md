@@ -26,6 +26,7 @@
 | Какие угрозы и защиты учтены? | [`security.md`](security.md) |
 | Где развёрнут контракт? | [`deployments.md`](deployments.md) |
 | Что проверяет CI? | [`ci.md`](ci.md) |
+| Как задача проходит от идеи до merge? | [`workflow.md`](workflow.md) |
 | Как строился Frontend MVP (архив)? | [`archive/frontend-mvp.md`](archive/frontend-mvp.md) |
 | Где практические frontend-инструкции? | [`../frontend/README.md`](../frontend/README.md) |
 | Где практические backend-инструкции? | [`../backend/README.md`](../backend/README.md) |

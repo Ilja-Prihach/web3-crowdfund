@@ -1,0 +1,44 @@
+name: PR metadata
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Conventional title and linked issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate PR title and body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          node <<'NODE'
+          const title = process.env.PR_TITLE ?? "";
+          const body = (process.env.PR_BODY ?? "").replace(/<!--[\s\S]*?-->/g, "");
+          const convention = /^(feat|fix|refactor|docs|chore|perf|style|test|build|ci|revert)(\([a-z0-9_-]+\))?!?: [\x20-\x7e]+$/;
+          const errors = [];
+
+          if (!convention.test(title)) {
+            errors.push("Title must follow English Conventional Commits: type(scope): subject");
+          }
+          if (title.length > 72) {
+            errors.push(`Title is ${title.length} characters; maximum is 72`);
+          }
+          if (/#\d+/.test(title)) {
+            errors.push("Put the issue number in the PR body as Closes #N, not in the title");
+          }
+          if (!/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+\b/i.test(body)) {
+            errors.push("PR body must link an issue with Closes #N, Fixes #N, or Resolves #N");
+          }
+
+          if (errors.length > 0) {
+            console.error(errors.map((error) => `- ${error}`).join("\n"));
+            process.exit(1);
+          }
+          NODE

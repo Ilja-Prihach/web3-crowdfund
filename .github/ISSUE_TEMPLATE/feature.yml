@@ -1,0 +1,60 @@
+name: Новая возможность
+description: Пользовательское или техническое изменение с проверяемым результатом
+title: ""
+labels:
+  - type:feature
+projects:
+  - Ilja-Prihach/1
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишите результат, а не предполагаемую реализацию. Детали решения появятся после согласования задачи.
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Результат
+      description: Что изменится для пользователя, разработчика или системы?
+      placeholder: После этой задачи…
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Границы
+      description: Что входит и явно не входит в задачу?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Наблюдаемые условия, по которым задачу можно считать завершённой.
+      placeholder: |
+        - [ ] …
+        - [ ] …
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Риски и зависимости
+      description: Безопасность, Web3-границы, внешние решения и задачи, которые должны завершиться раньше.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Подсистема
+      options:
+        - Backend и indexer
+        - Frontend
+        - Contracts
+        - CI, Docker и deployment
+        - Документация
+        - Сквозное изменение
+    validations:
+      required: true
