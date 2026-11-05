@@ -2,7 +2,9 @@ name: PR metadata
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened]
+    # synchronize — новый push в PR: обязательная проверка привязана к head commit
+    # и без повторного запуска отсутствовала бы у нового коммита.
+    types: [opened, edited, reopened, synchronize]
 
 permissions: {}
 
