@@ -1,0 +1,58 @@
+name: Ошибка
+description: Воспроизводимый дефект с ожидаемым поведением
+title: ""
+labels:
+  - type:bug
+projects:
+  - Ilja-Prihach/1
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Исправление начинается с теста или другого доказательства, которое воспроизводит ошибку до изменения.
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Что происходит
+      description: Наблюдаемый симптом без предположения о причине.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Как воспроизвести
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Доказательства
+      description: Логи без секретов, transaction hash, скриншот, команда или падающий тест.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Подсистема
+      options:
+        - Backend и indexer
+        - Frontend
+        - Contracts
+        - CI, Docker и deployment
+        - Документация
+        - Неизвестно
+    validations:
+      required: true
