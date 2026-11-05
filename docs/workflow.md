@@ -36,4 +36,4 @@ GitHub хранит текущее движение задач, а репози�
 
 ## Автоматические проверки
 
-Workflow `PR metadata` проверяет название pull request по Conventional Commits, ограничение 72 символа и наличие `Closes #N`, `Fixes #N` или `Resolves #N` в описании. Основные CI-workflows отменяют устаревший запуск при новом push в тот же pull request, но продолжают выполняться все вместе: они являются обязательными checks защищённой ветки `main`.
+Workflow `PR metadata` проверяет название pull request по Conventional Commits, ограничение 72 символа и наличие `Closes #N`, `Fixes #N` или `Resolves #N` в описании. Он перезапускается на каждом новом push в pull request, поэтому вместе с основными CI-workflows входит в обязательные checks защищённой ветки `main`. Основные CI-workflows отменяют устаревший запуск при новом push в тот же pull request, но продолжают выполняться все вместе.
