@@ -20,6 +20,7 @@
 | [zsh-does-not-split-unquoted-variables](#zsh-does-not-split-unquoted-variables) | В zsh `$pair` остаётся одним аргументом, и `cast` получает пустые параметры |
 | [wallet-uses-its-own-sepolia-rpc](#wallet-uses-its-own-sepolia-rpc) | Кошелёк отправляет транзакции через свой RPC и может упереться в `429`, хотя сайт работает |
 | [public-rpc-prunes-log-history](#public-rpc-prunes-log-history) | Публичные Sepolia RPC не отдают логи с блока deploy V2, поэтому indexer не может прочитать историю |
+| [pg-pool-idle-error-crashes-process](#pg-pool-idle-error-crashes-process) | Без слушателя `error` у `pg.Pool` перезапуск PostgreSQL роняет весь backend |
 
 ## Карточки
 
@@ -171,3 +172,11 @@ cast rpc eth_getLogs '{"address":"0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A","f
 Ответ — массив событий, а не ошибка `4444`. `0xb753d1` — блок deploy `12014545`.
 
 Связано: [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs).
+
+### pg-pool-idle-error-crashes-process
+
+**Симптом.** 5 ноября 2026 года при живой проверке `/ready` после `docker compose stop postgres` backend завершился целиком: перестал отвечать даже `/health`, а в выводе было `Unhandled 'error' event` и `error: terminating connection due to administrator command` из `pg-pool`.
+
+**Причина.** `pg.Pool` держит простаивающие соединения. Когда PostgreSQL закрывает их сам — при остановке, перезапуске или сетевом сбое, — пул генерирует событие `error`. У EventEmitter без слушателя `error` Node.js бросает исключение и останавливает процесс.
+
+**Правило.** `createDatabase` в `backend/src/db/client.ts` требует обязательный `onIdleError` и вешает его на `pool.on("error")`; сломанное соединение пул выбрасывает сам и при следующем запросе открывает новое. Сразу после обрыва один запрос ещё может взять мёртвое соединение и ответить `503`. Проверка: тест «не падает при обрыве простаивающего соединения и снова готов» обрывает соединение через `pg_terminate_backend`, ждёт событие `error` и получает `/ready` → `200`; без слушателя тот же тест падает с исходной ошибкой. Вживую после исправления: база остановлена — `/ready` 503, `/health` 200; база поднята — `/ready` 200.

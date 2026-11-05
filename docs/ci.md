@@ -22,14 +22,14 @@ Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lin
 6. `npm test` — запускает unit-тесты чистых функций встроенным `node:test`.
 7. `npm run build` — собирает production-версию Next.js.
 
-`Lint, typecheck, test` работает в каталоге `backend/`:
+`Lint, typecheck, test` работает в каталоге `backend/` и поднимает сервис PostgreSQL 18.4 с БД `openfund_test` на порту `5433`, как локальный `compose.yaml`; тесты получают его адрес через `TEST_DATABASE_URL`:
 
 1. Загружает репозиторий.
 2. Устанавливает версию Node.js из `backend/.nvmrc` и включает npm cache по lock-файлу.
 3. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
 4. `npm run lint` — ESLint с правилами, использующими типы TypeScript, без допустимых предупреждений.
 5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
-6. `npm test` — запускает тесты встроенным `node:test`.
+6. `npm test` — запускает тесты встроенным `node:test`, включая запросы к настоящей БД.
 
 `Format, build, test` работает в каталоге `contracts/`:
 
@@ -78,7 +78,7 @@ forge test
 slither . --filter-paths "(lib/|test/|script/)" --fail-medium
 ```
 
-Из каталога `backend/`:
+Из каталога `backend/`, после `docker compose up -d --wait` в корне репозитория:
 
 ```sh
 npm ci
