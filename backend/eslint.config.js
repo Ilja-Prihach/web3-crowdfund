@@ -15,5 +15,11 @@ export default tseslint.config(
       ],
     },
   },
-  { ignores: ["node_modules/", "eslint.config.js"] },
+  {
+    // Служебные скрипты на JavaScript не входят в TS-проект: правила с типами к ним не применить.
+    files: ["scripts/**/*.mjs"],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { globals: { console: "readonly" } },
+  },
+  { ignores:["node_modules/", "eslint.config.js"] },
 );
