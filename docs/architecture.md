@@ -94,9 +94,9 @@ Frontend использует Next.js App Router. Корневой layout под
 
 ## Backend
 
-Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас и подключение к PostgreSQL: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.
+Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас, подключение к PostgreSQL и модуль `chain`: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.
 
-`config/env.ts` читает переменные окружения в одном месте и проверяет их при старте: неверный `PORT` или `LOG_LEVEL` останавливает процесс сразу. По умолчанию сервер слушает только `127.0.0.1`. На `SIGINT` и `SIGTERM` вызывается `app.close()`: новые запросы не принимаются, текущие завершаются.
+`config/env.ts` читает переменные окружения в одном месте и проверяет их при старте: неверный `PORT`, `LOG_LEVEL`, `DATABASE_URL` или `SEPOLIA_RPC_URL` останавливает процесс сразу; значения строк подключения в текст ошибки не попадают. По умолчанию сервер слушает только `127.0.0.1`. На `SIGINT` и `SIGTERM` вызывается `app.close()`: новые запросы не принимаются, текущие завершаются.
 
 `shared/errors.ts` отвечает на любую ошибку в формате `{ "error": { "code", "message" } }`: `code` — стабильный машинный ключ для клиента, `message` — пояснение для разработчика. Ошибки `4xx` передают свой статус и код; текст ошибок `5xx` пишется только в лог, а клиент получает `INTERNAL_ERROR`, чтобы наружу не утекли SQL, пути или секреты. Неизвестный маршрут отвечает `404 NOT_FOUND`.
 
@@ -108,6 +108,8 @@ Backend — отдельное приложение `backend/` на Node.js, Typ
 - `indexer_checkpoints` — последний полностью обработанный `finalized`-блок с ключом `(chain_id, contract_address)`, поэтому позиция одной сети или контракта не может принадлежать другим.
 
 Значения `uint256` — ID кампаний, а в проекциях и суммы в wei — хранятся как `NUMERIC(78, 0)` и читаются в JavaScript как `bigint`: PostgreSQL `bigint` вмещает только около 9,2 ETH в wei. Внутри `jsonb` большие числа и адреса лежат строками, потому что в JSON нет `bigint`. Формат адресов и хэшей (строчные `0x…`), допустимые имена событий и положительный chain ID проверяет сама база через `CHECK`, а не только код. Хэш блока не хранится: indexer читает только `finalized`-блоки, см. [`DECISIONS.md#indexer-reads-finalized-logs`](DECISIONS.md#indexer-reads-finalized-logs). Запись событий и сдвиг checkpoint появятся вместе с чтением логов.
+
+`chain/` описывает контракт V2 для backend. `contract.ts` хранит сеть Sepolia из `viem/chains`, адрес, блок deploy `12014545` и ABI. Адрес и блок сверяются тестом с [`deployments.md`](deployments.md), а `crowdfundingAddressInDatabase` даёт адрес в нижнем регистре, как требует `CHECK` таблицы `chain_events`. `crowdfundingAbi.ts` генерирует `npm run abi:export` из той же сборки Foundry, что и frontend; тест сравнивает две копии ABI, и забытая перегенерация одной из них роняет CI. Типы аргументов событий viem выводит из `as const`-ABI, поэтому опечатка в имени поля ловится `npm run typecheck`. `client.ts` создаёт клиент чтения viem из `SEPOLIA_RPC_URL`: клиент передаётся зависимостью, а URL, который может содержать ключ провайдера, не логируется. Первыми клиент подключат indexer (#54) и вход подписью (#52); узел с историей событий для indexer выбирается в #71, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history).
 
 Модуль `modules/health` отвечает на два вопроса. `GET /health` — жив ли процесс; БД не трогает, потому что перезапуск сервера при упавшей базе не помогает. `GET /ready` — готов ли он обслуживать запросы: выполняет `select 1` и при недоступной базе отвечает `503 NOT_READY` без текста ошибки PostgreSQL.
 
