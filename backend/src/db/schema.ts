@@ -4,6 +4,16 @@ import { bigint, check, index, integer, jsonb, numeric, pgTable, primaryKey, tex
 // uint256 из контракта: 78 цифр вмещают 2^256. PostgreSQL bigint (64 бита) переполнился бы на ~9,2 ETH в wei.
 const uint256 = (name: string) => numeric(name, { precision: 78, scale: 0, mode: "bigint" });
 
+// События Crowdfunding V2, которые принимает журнал; тест сверяет список с ABI.
+export const crowdfundingEventNames = [
+  "CampaignCreated",
+  "CampaignDeadlineUpdated",
+  "DonationMade",
+  "CampaignCancelled",
+  "RefundClaimed",
+  "FundsWithdrawn",
+] as const;
+
 // Сырые события контракта — журнал, из которого пересобираются проекции.
 export const chainEvents = pgTable(
   "chain_events",
@@ -29,7 +39,7 @@ export const chainEvents = pgTable(
     check("chain_events_log_index_non_negative", sql`${table.logIndex} >= 0`),
     check(
       "chain_events_event_name_known",
-      sql`${table.eventName} in ('CampaignCreated', 'CampaignDeadlineUpdated', 'DonationMade', 'CampaignCancelled', 'RefundClaimed', 'FundsWithdrawn')`,
+      sql`${table.eventName} in (${sql.raw(crowdfundingEventNames.map((name) => `'${name}'`).join(", "))})`,
     ),
   ],
 );

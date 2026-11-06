@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 
 import { decodeEventLog } from "viem";
 
+import { crowdfundingEventNames } from "../db/schema.ts";
 import { crowdfunding, crowdfundingAddressInDatabase } from "./contract.ts";
 
 const repoRoot = new URL("../../../", import.meta.url);
@@ -19,7 +20,11 @@ describe("crowdfunding", () => {
 
   it("адрес, сеть и блок deploy совпадают с docs/deployments.md", async () => {
     const deployments = await readFile(new URL("docs/deployments.md", repoRoot), "utf8");
-    const v2 = deployments.slice(deployments.indexOf("### V2"), deployments.indexOf("\n### ", deployments.indexOf("### V2") + 1));
+    const start = deployments.indexOf("### V2");
+    assert.notEqual(start, -1, "раздел V2");
+    // Раздел V2 длится до следующего заголовка ### или до конца файла.
+    const end = deployments.indexOf("\n### ", start + 1);
+    const v2 = deployments.slice(start, end === -1 ? undefined : end);
 
     assert.ok(v2.includes(`- контракт: [\`${crowdfunding.address}\`]`), "адрес контракта");
     assert.ok(v2.includes(`- chain ID: \`${crowdfunding.chain.id}\``), "chain ID");
@@ -30,14 +35,7 @@ describe("crowdfunding", () => {
   it("события ABI совпадают со списком в CHECK таблицы chain_events", () => {
     const events = crowdfunding.abi.filter((item) => item.type === "event").map((item) => item.name);
 
-    assert.deepEqual(events.sort(), [
-      "CampaignCancelled",
-      "CampaignCreated",
-      "CampaignDeadlineUpdated",
-      "DonationMade",
-      "FundsWithdrawn",
-      "RefundClaimed",
-    ]);
+    assert.deepEqual(events.sort(), [...crowdfundingEventNames].sort());
   });
 
   it("декодирует настоящий лог вклада в кампанию 7", () => {

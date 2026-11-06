@@ -47,12 +47,27 @@ describe("loadEnv", () => {
     }
   });
 
-  it("требует http(s) URL узла Sepolia и не выводит его в ошибку", () => {
-    for (const SEPOLIA_RPC_URL of [undefined, "", "ftp://sepolia.example/v3/secret-key", "sepolia.example/v3/secret-key"]) {
+  it("требует https URL узла Sepolia и не выводит его в ошибку", () => {
+    for (const SEPOLIA_RPC_URL of [
+      undefined,
+      "",
+      "https://",
+      "https://exa mple/v3/secret-key",
+      "ftp://sepolia.example/v3/secret-key",
+      "sepolia.example/v3/secret-key",
+      "http://sepolia.example/v3/secret-key",
+    ]) {
       assert.throws(
         () => loadEnv({ ...required, SEPOLIA_RPC_URL }),
         (error: Error) => error.message.startsWith("SEPOLIA_RPC_URL must be") && !error.message.includes("secret-key"),
+        String(SEPOLIA_RPC_URL),
       );
+    }
+  });
+
+  it("разрешает http только для локального узла", () => {
+    for (const SEPOLIA_RPC_URL of ["http://127.0.0.1:8545", "http://localhost:8545"]) {
+      assert.equal(loadEnv({ ...required, SEPOLIA_RPC_URL }).sepoliaRpcUrl, SEPOLIA_RPC_URL);
     }
   });
 });
