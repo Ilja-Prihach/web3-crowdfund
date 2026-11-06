@@ -11,9 +11,9 @@
     "start": "node --env-file-if-exists=.env src/server.ts",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"src/**/*.test.ts\"",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "test": "node --test --test-concurrency=1 \"src/**/*.test.ts\"",
+    "db:generate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",
