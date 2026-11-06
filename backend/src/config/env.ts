@@ -3,6 +3,7 @@ export type Env = {
   host: string;
   logLevel: "fatal" | "error" | "warn" | "info" | "debug" | "trace";
   databaseUrl: string;
+  sepoliaRpcUrl: string;
 };
 
 const logLevels: Env["logLevel"][] = ["fatal", "error", "warn", "info", "debug", "trace"];
@@ -25,11 +26,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error("DATABASE_URL must be a postgres:// connection string, see backend/.env.example");
   }
 
+  const sepoliaRpcUrl = source.SEPOLIA_RPC_URL;
+  // URL может содержать ключ провайдера, поэтому значение в ошибку тоже не попадает.
+  if (!sepoliaRpcUrl?.startsWith("https://") && !sepoliaRpcUrl?.startsWith("http://")) {
+    throw new Error("SEPOLIA_RPC_URL must be an http(s) URL, see backend/.env.example");
+  }
+
   return {
     port,
     // Только этот компьютер: с 0.0.0.0 сервер был бы виден всей локальной сети.
     host: source.HOST ?? "127.0.0.1",
     logLevel: logLevel as Env["logLevel"],
     databaseUrl,
+    sepoliaRpcUrl,
   };
 }
