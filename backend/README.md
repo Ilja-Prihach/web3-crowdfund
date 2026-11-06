@@ -1,6 +1,6 @@
 # Backend
 
-Статус: каркас и подключение к PostgreSQL. Есть сервер Fastify с маршрутами `GET /health` и `GET /ready`, проверка конфигурации при старте, плавная остановка, единый формат ошибок, пул PostgreSQL с Drizzle, ESLint с проверкой типов и тесты на настоящей БД. Таблицы, indexer, вход подписью и API каталога появятся следующими шагами этапа 5, см. [`docs/roadmap.md`](../docs/roadmap.md#этап-5-backend-и-blockchain-indexer).
+Статус: каркас, подключение к PostgreSQL и схема indexer. Есть сервер Fastify с маршрутами `GET /health` и `GET /ready`, проверка конфигурации при старте, плавная остановка, единый формат ошибок, пул PostgreSQL с Drizzle, первая миграция с таблицами событий и checkpoint, ESLint с проверкой типов и тесты на настоящей БД. Чтение логов, проекции, вход подписью и API каталога появятся следующими шагами этапа 5, см. [`docs/roadmap.md`](../docs/roadmap.md#этап-5-backend-и-blockchain-indexer).
 
 ## Стек
 
@@ -40,13 +40,15 @@ npm run dev
 | `HOST` | `127.0.0.1` | адрес прослушивания; `0.0.0.0` открывает сервер всей сети и нужен только в контейнере |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` или `trace` |
 | `DATABASE_URL` | нет, обязательна | строка подключения `postgres://`, пример — в `.env.example` |
-| `TEST_DATABASE_URL` | `postgres://openfund:openfund@127.0.0.1:5433/openfund_test` | БД для `npm test` |
+| `TEST_DATABASE_URL` | `postgres://openfund:openfund@127.0.0.1:5433/openfund_test` | БД для `npm test`; имя базы обязано оканчиваться на `_test` |
 
 Неверное значение останавливает процесс при старте с понятной ошибкой. Строка подключения в текст ошибки не попадает: в ней пароль.
 
 ## Миграции
 
-Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate` превращает её изменения в SQL-файл в `drizzle/`, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`. Миграции коммитятся; база меняется только ими. Таблиц пока нет.
+Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate -- --name <что_меняется>` превращает её изменения в SQL-файл в `drizzle/` с понятным именем, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`; обе команды сами читают `.env`. Миграции коммитятся; база меняется только ими. Уже применённые миграции Drizzle помнит в схеме `drizzle` и повторно не выполняет.
+
+Сейчас есть одна миграция — `0000_chain_events_and_checkpoints.sql`: журнал событий контракта и checkpoint indexer, см. [`docs/architecture.md`](../docs/architecture.md#backend).
 
 Install-скрипты `esbuild`, которые тянет `drizzle-kit`, запрещены в `allowScripts` файла `package.json`: генерация миграций работает без них.
 
@@ -61,7 +63,7 @@ Node.js только вырезает типы, поэтому:
 
 ## Проверки перед push
 
-Тестам нужен запущенный PostgreSQL из `compose.yaml`.
+Тестам нужен запущенный PostgreSQL из `compose.yaml`. Тесты схемы стирают всю тестовую БД, поэтому `resetTestDatabase` сначала спрашивает у соединения `current_database()` и отказывается работать, если имя не оканчивается на `_test`: ошибка в `TEST_DATABASE_URL` не удалит рабочие данные. Файлы тестов выполняются по очереди (`--test-concurrency=1`): тесты схемы пересоздают тестовую БД и применяют миграции заново, и параллельный файл увидел бы её наполовину удалённой.
 
 ```sh
 npm run lint
