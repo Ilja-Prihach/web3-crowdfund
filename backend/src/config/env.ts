@@ -26,10 +26,13 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error("DATABASE_URL must be a postgres:// connection string, see backend/.env.example");
   }
 
-  const sepoliaRpcUrl = source.SEPOLIA_RPC_URL;
+  const sepoliaRpcUrl = source.SEPOLIA_RPC_URL ?? "";
   // URL может содержать ключ провайдера, поэтому значение в ошибку тоже не попадает.
-  if (!sepoliaRpcUrl?.startsWith("https://") && !sepoliaRpcUrl?.startsWith("http://")) {
-    throw new Error("SEPOLIA_RPC_URL must be an http(s) URL, see backend/.env.example");
+  // http:// — только для локального узла (Anvil): по сети ключ шёл бы открытым текстом.
+  const rpc = URL.canParse(sepoliaRpcUrl) ? new URL(sepoliaRpcUrl) : null;
+  const local = rpc?.hostname === "127.0.0.1" || rpc?.hostname === "localhost";
+  if (!rpc || !(rpc.protocol === "https:" || (rpc.protocol === "http:" && local))) {
+    throw new Error("SEPOLIA_RPC_URL must be an https URL (http only for localhost), see backend/.env.example");
   }
 
   return {
