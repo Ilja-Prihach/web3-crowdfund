@@ -21,5 +21,5 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { console: "readonly" } },
   },
-  { ignores:["node_modules/", "eslint.config.js"] },
+  { ignores: ["node_modules/", "eslint.config.js"] },
 );
