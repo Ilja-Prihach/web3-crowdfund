@@ -1,6 +1,6 @@
 # Backend
 
-Статус: каркас и подключение к PostgreSQL. Есть сервер Fastify с маршрутами `GET /health` и `GET /ready`, проверка конфигурации при старте, плавная остановка, единый формат ошибок, пул PostgreSQL с Drizzle, ESLint с проверкой типов и тесты на настоящей БД. Таблицы, indexer, вход подписью и API каталога появятся следующими шагами этапа 5, см. [`docs/roadmap.md`](../docs/roadmap.md#этап-5-backend-и-blockchain-indexer).
+Статус: каркас, подключение к PostgreSQL и схема indexer. Есть сервер Fastify с маршрутами `GET /health` и `GET /ready`, проверка конфигурации при старте, плавная остановка, единый формат ошибок, пул PostgreSQL с Drizzle, первая миграция с таблицами событий и checkpoint, ESLint с проверкой типов и тесты на настоящей БД. Чтение логов, проекции, вход подписью и API каталога появятся следующими шагами этапа 5, см. [`docs/roadmap.md`](../docs/roadmap.md#этап-5-backend-и-blockchain-indexer).
 
 ## Стек
 
@@ -46,7 +46,9 @@ npm run dev
 
 ## Миграции
 
-Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate` превращает её изменения в SQL-файл в `drizzle/`, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`. Миграции коммитятся; база меняется только ими. Таблиц пока нет.
+Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate -- --name <что_меняется>` превращает её изменения в SQL-файл в `drizzle/` с понятным именем, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`; обе команды сами читают `.env`. Миграции коммитятся; база меняется только ими. Уже применённые миграции Drizzle помнит в схеме `drizzle` и повторно не выполняет.
+
+Сейчас есть одна миграция — `0000_chain_events_and_checkpoints.sql`: журнал событий контракта и checkpoint indexer, см. [`docs/architecture.md`](../docs/architecture.md#backend).
 
 Install-скрипты `esbuild`, которые тянет `drizzle-kit`, запрещены в `allowScripts` файла `package.json`: генерация миграций работает без них.
 
@@ -61,7 +63,7 @@ Node.js только вырезает типы, поэтому:
 
 ## Проверки перед push
 
-Тестам нужен запущенный PostgreSQL из `compose.yaml`.
+Тестам нужен запущенный PostgreSQL из `compose.yaml`. Файлы тестов выполняются по очереди (`--test-concurrency=1`): тесты схемы пересоздают тестовую БД и применяют миграции заново, и параллельный файл увидел бы её наполовину удалённой.
 
 ```sh
 npm run lint
