@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { type Static, Type } from "typebox";
 
 // Единый формат ошибки API: code — стабильный машинный ключ, message — пояснение для разработчика.
-export type ApiError = { error: { code: string; message: string } };
+// Одна схема даёт и тип для кода, и описание ответа для маршрутов.
+export const ApiErrorSchema = Type.Object({ error: Type.Object({ code: Type.String(), message: Type.String() }) });
+export type ApiError = Static<typeof ApiErrorSchema>;
 
 // Поля, которые Fastify и наш код добавляют к Error. Ничего из них не гарантировано.
 type HttpError = Error & { statusCode?: number; code?: string; validation?: unknown };
