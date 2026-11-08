@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 
 import { buildApp } from "../../app.ts";
 import { authNonces } from "../../db/schema.ts";
+import { testDeps } from "../../test/app.ts";
 import { createTestDatabase, resetTestDatabase } from "../../test/database.ts";
 
 const { db, pool } = createTestDatabase();
@@ -12,7 +13,7 @@ after(() => pool.end());
 beforeEach(() => resetTestDatabase(db));
 
 async function requestNonce() {
-  const app = buildApp({ db });
+  const app = buildApp(testDeps(db));
   const response = await app.inject({ method: "POST", url: "/v1/auth/nonce" });
   await app.close();
   return response;

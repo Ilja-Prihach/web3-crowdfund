@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 
 import { buildApp } from "../../app.ts";
 import type { ApiError } from "../../shared/errors.ts";
+import { testDeps } from "../../test/app.ts";
 import { createTestDatabase } from "../../test/database.ts";
 
 const { db, pool } = createTestDatabase();
@@ -12,7 +13,7 @@ after(() => pool.end());
 
 describe("маршруты здоровья", () => {
   it("GET /health отвечает ok", async () => {
-    const app = buildApp({ db });
+    const app = buildApp(testDeps(db));
     const response = await app.inject({ method: "GET", url: "/health" });
 
     assert.equal(response.statusCode, 200);
@@ -21,7 +22,7 @@ describe("маршруты здоровья", () => {
   });
 
   it("GET /ready отвечает ready, когда база доступна", async () => {
-    const app = buildApp({ db });
+    const app = buildApp(testDeps(db));
     const response = await app.inject({ method: "GET", url: "/ready" });
 
     assert.equal(response.statusCode, 200);
@@ -32,7 +33,7 @@ describe("маршруты здоровья", () => {
   it("GET /ready отвечает 503 без подробностей, когда база недоступна", async () => {
     const closed = createTestDatabase();
     await closed.pool.end();
-    const app = buildApp({ db: closed.db });
+    const app = buildApp(testDeps(closed.db));
     const response = await app.inject({ method: "GET", url: "/ready" });
 
     assert.equal(response.statusCode, 503);
@@ -47,7 +48,7 @@ describe("маршруты здоровья", () => {
     const applicationName = "openfund-ready-reconnect-test";
     const { promise: idleErrorReceived, resolve } = Promise.withResolvers<Error>();
     const victim = createTestDatabase({ applicationName, onIdleError: resolve });
-    const app = buildApp({ db: victim.db });
+    const app = buildApp(testDeps(victim.db));
     await app.inject({ method: "GET", url: "/ready" });
 
     // Так база закрывает соединения при остановке: без слушателя error процесс упал бы.

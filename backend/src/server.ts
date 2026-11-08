@@ -1,4 +1,5 @@
 import { buildApp } from "./app.ts";
+import { createChainClient } from "./chain/client.ts";
 import { loadEnv } from "./config/env.ts";
 import { createDatabase } from "./db/client.ts";
 
@@ -7,7 +8,8 @@ const { db, pool } = createDatabase(env.databaseUrl, {
   // Простаивающее соединение появляется только после старта, когда app уже создан.
   onIdleError: (error) => app.log.warn(error, "idle database connection failed"),
 });
-const app = buildApp({ db }, { logger: { level: env.logLevel } });
+const chain = createChainClient(env.sepoliaRpcUrl);
+const app = buildApp({ db, chain, appOrigin: env.appOrigin }, { logger: { level: env.logLevel } });
 // Пул закрывается последним шагом плавной остановки, после текущих запросов.
 app.addHook("onClose", () => pool.end());
 
