@@ -191,6 +191,40 @@ describe("POST /v1/auth/verify", () => {
     assertRejected(await verify({ message: signed.message, signature: flipped }), "испорченная подпись");
   });
 
+  it("не обращается к RPC, если nonce не выдавался", async () => {
+    const signed = await signedSignIn({ nonce: "c".repeat(64) });
+    const other = privateKeyToAccount(generatePrivateKey());
+    const { chain, calls } = createTestChain("rejects-signatures");
+
+    const response = await verify(
+      { message: signed.message, signature: await other.signMessage({ message: signed.message }) },
+      testDeps(db, { chain }),
+    );
+
+    assertRejected(response, "выдуманный nonce");
+    assert.deepEqual(calls, [], "квота RPC не тратится без выданного nonce");
+  });
+
+  it("гасит nonce при первой же попытке: после неудачной подписи он недействителен", async () => {
+    const signed = await signedSignIn();
+    const other = privateKeyToAccount(generatePrivateKey());
+    const { chain, calls } = createTestChain("rejects-signatures");
+    const deps = testDeps(db, { chain });
+
+    assertRejected(
+      await verify({ message: signed.message, signature: await other.signMessage({ message: signed.message }) }, deps),
+      "чужая подпись",
+    );
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assertRejected(
+        await verify({ message: signed.message, signature: await other.signMessage({ message: signed.message }) }, deps),
+        `повторная попытка ${attempt}`,
+      );
+    }
+    assert.deepEqual(calls, ["eth_call"], "один nonce — один вызов RPC");
+    assertRejected(await verify(signed, deps), "верная подпись после неудачи");
+  });
+
   it("отклоняет чужую подпись и при упавшем RPC", async () => {
     const signed = await signedSignIn();
     const other = privateKeyToAccount(generatePrivateKey());
