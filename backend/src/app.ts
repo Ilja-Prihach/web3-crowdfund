@@ -1,3 +1,4 @@
+import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyServerOptions } from "fastify";
 
 import type { Database } from "./db/client.ts";
@@ -9,7 +10,8 @@ export type AppDeps = { db: Database };
 
 // Сборка приложения отдельно от запуска: тест создаёт app и шлёт запросы через inject без порта.
 export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
-  const app = Fastify(options);
+  // Type provider выводит типы параметров, тела и ответа из схем TypeBox: одна схема и проверяет данные, и задаёт тип.
+  const app = Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
   registerErrorHandlers(app);
   void app.register(healthRoutes, deps);
 

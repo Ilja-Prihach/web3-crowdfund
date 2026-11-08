@@ -60,3 +60,36 @@ export const indexerCheckpoints = pgTable(
     check("indexer_checkpoints_last_block_non_negative", sql`${table.lastBlock} >= 0`),
   ],
 );
+
+// Одноразовые nonce входа SIWE. Строка удаляется при входе, а просроченные чистятся попутно.
+export const authNonces = pgTable(
+  "auth_nonces",
+  {
+    // 32 случайных байта из crypto.randomBytes в hex.
+    nonce: text("nonce").primaryKey(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    // Чистка просроченных и подсчёт живых nonce идут по сроку.
+    index("auth_nonces_expires_at_idx").on(table.expiresAt),
+    check("auth_nonces_nonce_format", sql`${table.nonce} ~ '^[0-9a-f]{64}$'`),
+  ],
+);
+
+// Серверные сессии. Cookie несёт случайный идентификатор, а база хранит только его SHA-256:
+// дамп таблицы не даёт готовых cookie.
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    idHash: text("id_hash").primaryKey(),
+    address: text("address").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("auth_sessions_expires_at_idx").on(table.expiresAt),
+    check("auth_sessions_id_hash_format", sql`${table.idHash} ~ '^[0-9a-f]{64}$'`),
+    check("auth_sessions_address_format", sql`${table.address} ~ '^0x[0-9a-f]{40}$'`),
+    check("auth_sessions_expires_after_created", sql`${table.expiresAt} > ${table.createdAt}`),
+  ],
+);
