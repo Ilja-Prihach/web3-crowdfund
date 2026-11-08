@@ -4,9 +4,17 @@ export type Env = {
   logLevel: "fatal" | "error" | "warn" | "info" | "debug" | "trace";
   databaseUrl: string;
   sepoliaRpcUrl: string;
+  appOrigin: string;
 };
 
 const logLevels: Env["logLevel"][] = ["fatal", "error", "warn", "info", "debug", "trace"];
+
+// https везде, http — только для этого компьютера: по сети ключи и cookie шли бы открытым текстом.
+function parseSecureUrl(value: string | undefined) {
+  const url = value && URL.canParse(value) ? new URL(value) : null;
+  const local = url?.hostname === "127.0.0.1" || url?.hostname === "localhost";
+  return url && (url.protocol === "https:" || (url.protocol === "http:" && local)) ? url : null;
+}
 
 // Все переменные читаются и проверяются здесь, при старте: ошибка конфигурации видна сразу, а не на первом запросе.
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -26,13 +34,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error("DATABASE_URL must be a postgres:// connection string, see backend/.env.example");
   }
 
-  const sepoliaRpcUrl = source.SEPOLIA_RPC_URL ?? "";
+  const sepoliaRpcUrl = source.SEPOLIA_RPC_URL;
   // URL может содержать ключ провайдера, поэтому значение в ошибку тоже не попадает.
-  // http:// — только для локального узла (Anvil): по сети ключ шёл бы открытым текстом.
-  const rpc = URL.canParse(sepoliaRpcUrl) ? new URL(sepoliaRpcUrl) : null;
-  const local = rpc?.hostname === "127.0.0.1" || rpc?.hostname === "localhost";
-  if (!rpc || !(rpc.protocol === "https:" || (rpc.protocol === "http:" && local))) {
+  if (!sepoliaRpcUrl || !parseSecureUrl(sepoliaRpcUrl)) {
     throw new Error("SEPOLIA_RPC_URL must be an https URL (http only for localhost), see backend/.env.example");
+  }
+
+  // Источник frontend: из него backend берёт ожидаемые domain и uri сообщения SIWE.
+  // Ровно источник, без пути и косой черты в конце: сравнение строгое.
+  const appOrigin = source.APP_ORIGIN;
+  if (!appOrigin || parseSecureUrl(appOrigin)?.origin !== appOrigin) {
+    throw new Error(
+      `APP_ORIGIN must be an origin like https://openfund.example (http only for localhost), got "${appOrigin}"`,
+    );
   }
 
   return {
@@ -42,5 +56,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     logLevel: logLevel as Env["logLevel"],
     databaseUrl,
     sepoliaRpcUrl,
+    appOrigin,
   };
 }
