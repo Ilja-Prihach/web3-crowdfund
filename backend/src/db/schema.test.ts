@@ -4,7 +4,7 @@ import { after, beforeEach, describe, it } from "node:test";
 import { sql } from "drizzle-orm";
 
 import { createTestDatabase, postgresErrorCode, resetTestDatabase } from "../test/database.ts";
-import { chainEvents, indexerCheckpoints } from "./schema.ts";
+import { authNonces, authSessions, chainEvents, indexerCheckpoints } from "./schema.ts";
 
 const { db, pool } = createTestDatabase();
 after(() => pool.end());
@@ -31,13 +31,13 @@ async function rejectsWith(code: string, query: Promise<unknown>) {
 }
 
 describe("схема indexer", () => {
-  it("миграция создаёт обе таблицы на пустой базе", async () => {
+  it("миграции создают все таблицы на пустой базе", async () => {
     const result = await db.execute<{ table_name: string }>(
       sql`select table_name from information_schema.tables where table_schema = 'public' order by table_name`,
     );
     assert.deepEqual(
       result.rows.map((row) => row.table_name),
-      ["chain_events", "indexer_checkpoints"],
+      ["auth_nonces", "auth_sessions", "chain_events", "indexer_checkpoints"],
     );
   });
 
@@ -82,5 +82,41 @@ describe("схема indexer", () => {
 
     const rows = await db.select().from(indexerCheckpoints);
     assert.equal(rows.length, 3);
+  });
+});
+
+describe("схема входа", () => {
+  const nonce = "a".repeat(64);
+  const inTenMinutes = () => new Date(Date.now() + 10 * 60_000);
+  const session = {
+    idHash: "b".repeat(64),
+    address: "0x012e40523eaca6bed2e8205a05ec7e6281db5ef5",
+    expiresAt: new Date(Date.now() + 7 * 24 * 3_600_000),
+  };
+
+  it("не выдаёт один nonce дважды", async () => {
+    await db.insert(authNonces).values({ nonce, expiresAt: inTenMinutes() });
+    await rejectsWith("23505", db.insert(authNonces).values({ nonce, expiresAt: inTenMinutes() }));
+  });
+
+  it("принимает nonce только как 32 байта в hex нижнего регистра", async () => {
+    for (const bad of ["a".repeat(63), "A".repeat(64), "g".repeat(64), "0x" + "a".repeat(62)]) {
+      await rejectsWith("23514", db.insert(authNonces).values({ nonce: bad, expiresAt: inTenMinutes() }));
+    }
+  });
+
+  it("хранит сессию с хэшем идентификатора и сроком позже создания", async () => {
+    await db.insert(authSessions).values(session);
+
+    const [row] = await db.select().from(authSessions);
+    assert.equal(row?.idHash, session.idHash);
+    assert.ok(row && row.expiresAt > row.createdAt);
+    await rejectsWith("23505", db.insert(authSessions).values(session));
+  });
+
+  it("отклоняет хэш не того формата, адрес не в нижнем регистре и срок раньше создания", async () => {
+    await rejectsWith("23514", db.insert(authSessions).values({ ...session, idHash: "b".repeat(32) }));
+    await rejectsWith("23514", db.insert(authSessions).values({ ...session, address: session.address.toUpperCase() }));
+    await rejectsWith("23514", db.insert(authSessions).values({ ...session, expiresAt: new Date(Date.now() - 1_000) }));
   });
 });
