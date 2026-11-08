@@ -14,23 +14,25 @@ export async function deleteExpiredNonces(db: Database) {
   await db.delete(authNonces).where(lt(authNonces.expiresAt, sql`now()`));
 }
 
-// Одна транзакция: nonce удаляется и сессия создаётся вместе или не происходит ничего.
-// DELETE … RETURNING блокирует строку: из двух одновременных входов с одним nonce строку получит один.
-export async function consumeNonceAndCreateSession(
-  db: Database,
-  { nonce, idHash, address }: { nonce: string; idHash: string; address: string },
-) {
-  return db.transaction(async (tx) => {
-    const [consumed] = await tx
-      .delete(authNonces)
-      .where(and(eq(authNonces.nonce, nonce), gt(authNonces.expiresAt, sql`now()`)))
-      .returning({ nonce: authNonces.nonce });
-    if (!consumed) return null;
+// Гасит nonce, если он выдан и не истёк. DELETE … RETURNING блокирует строку:
+// из двух одновременных попыток с одним nonce строку получит одна.
+export async function consumeNonce(db: Database, nonce: string) {
+  const consumed = await db
+    .delete(authNonces)
+    .where(and(eq(authNonces.nonce, nonce), gt(authNonces.expiresAt, sql`now()`)))
+    .returning({ nonce: authNonces.nonce });
+  return consumed.length > 0;
+}
 
+export async function createSession(db: Database, { idHash, address }: { idHash: string; address: string }) {
+  return db.transaction(async (tx) => {
+    // Попутная чистка, как у nonce: просроченные сессии не копятся.
+    await tx.delete(authSessions).where(lt(authSessions.expiresAt, sql`now()`));
     const [session] = await tx
       .insert(authSessions)
       .values({ idHash, address, expiresAt: sql`now() + interval '7 days'` })
       .returning({ expiresAt: authSessions.expiresAt });
-    return session ?? null;
+    if (!session) throw new Error("session insert returned no row");
+    return session;
   });
 }

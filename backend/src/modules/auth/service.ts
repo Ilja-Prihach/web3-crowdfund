@@ -7,7 +7,7 @@ import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { ChainClient } from "../../chain/client.ts";
 import { crowdfunding } from "../../chain/contract.ts";
 import type { Database } from "../../db/client.ts";
-import { consumeNonceAndCreateSession, deleteExpiredNonces, insertNonce } from "./repository.ts";
+import { consumeNonce, createSession, deleteExpiredNonces, insertNonce } from "./repository.ts";
 
 export type AuthDeps = { db: Database; chain: ChainClient; appOrigin: string };
 
@@ -67,18 +67,17 @@ export async function signIn(
   // Адрес берётся из проверенного сообщения, а не из отдельного поля запроса.
   const { nonce, address } = checkMessageFields(message, appOrigin, now);
 
+  // Nonce гасится до проверки подписи: один выданный nonce — одна попытка. Иначе запрос с выдуманным
+  // или чужим nonce доходил бы до RPC и тратил квоту, а с одним настоящим nonce попыток было бы сколько угодно.
+  if (!(await consumeNonce(db, nonce))) throw new SignInError("unknown, expired or used nonce");
+
   // mode "eoa": обычный кошелёк проверяется локально, без RPC. К сети идёт только подпись,
   // которую не удалось восстановить локально, — смарт-кошелёк (ERC-1271 / ERC-6492) или чужая.
   const valid = await verifyHash(chain, { address, hash: hashMessage(message), signature, mode: "eoa" });
   if (!valid) throw new SignInError("invalid signature");
 
   const sessionId = randomBytes(32).toString("base64url");
-  const session = await consumeNonceAndCreateSession(db, {
-    nonce,
-    idHash: hashSessionId(sessionId),
-    address: address.toLowerCase(),
-  });
-  if (!session) throw new SignInError("unknown, expired or used nonce");
+  const session = await createSession(db, { idHash: hashSessionId(sessionId), address: address.toLowerCase() });
 
   return { sessionId, address, expiresAt: session.expiresAt };
 }
