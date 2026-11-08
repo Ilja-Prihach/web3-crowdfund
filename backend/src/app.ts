@@ -2,6 +2,7 @@ import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyServerOptions } from "fastify";
 
 import type { Database } from "./db/client.ts";
+import { authRoutes } from "./modules/auth/routes.ts";
 import { healthRoutes } from "./modules/health/routes.ts";
 import { registerErrorHandlers } from "./shared/errors.ts";
 
@@ -14,6 +15,8 @@ export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
   const app = Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
   registerErrorHandlers(app);
   void app.register(healthRoutes, deps);
+  // Версия в пути: формат ответа можно поменять в /v2, не ломая работающий frontend.
+  void app.register(authRoutes, { ...deps, prefix: "/v1/auth" });
 
   return app;
 }
