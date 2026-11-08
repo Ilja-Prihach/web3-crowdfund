@@ -5,7 +5,7 @@
 ## Стек
 
 - Node.js 24 запускает TypeScript напрямую, вырезая типы (type stripping), без сборщика;
-- Fastify — HTTP-сервер;
+- Fastify — HTTP-сервер, схемы маршрутов — TypeBox;
 - viem — ABI, типы событий и клиент чтения Sepolia;
 - PostgreSQL 18.4 в Docker Compose, драйвер `pg`, Drizzle ORM и `drizzle-kit` для миграций;
 - проверка типов — `tsc`, линтер — ESLint с `typescript-eslint`, тесты — встроенный `node:test`.
@@ -50,7 +50,12 @@ npm run dev
 
 Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate -- --name <что_меняется>` превращает её изменения в SQL-файл в `drizzle/` с понятным именем, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`; обе команды сами читают `.env`. Миграции коммитятся; база меняется только ими. Уже применённые миграции Drizzle помнит в схеме `drizzle` и повторно не выполняет.
 
-Сейчас есть одна миграция — `0000_chain_events_and_checkpoints.sql`: журнал событий контракта и checkpoint indexer, см. [`docs/architecture.md`](../docs/architecture.md#backend).
+Миграции:
+
+- `0000_chain_events_and_checkpoints.sql` — журнал событий контракта и checkpoint indexer;
+- `0001_auth_nonces_and_sessions.sql` — nonce и сессии входа подписью.
+
+Подробности — в [`docs/architecture.md`](../docs/architecture.md#backend).
 
 Install-скрипты `esbuild`, которые тянет `drizzle-kit`, запрещены в `allowScripts` файла `package.json`: генерация миграций работает без них.
 

@@ -95,11 +95,12 @@ Slither независимо анализирует потоки управле�
 
 ## Backend и вход подписью
 
-Backend ещё не создан; правила ниже приняты заранее, см. [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions).
+Вход подписью строится по задаче #52; правила ниже приняты до кода, см. [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions).
 
 - Backend не хранит приватных ключей и не подписывает транзакции. Подпись входа доказывает владение адресом и даёт права только в данных backend — профиле и медиа своих кампаний.
 - Повторное предъявление подписи исключено одноразовым nonce сроком 10 минут; подпись, выманенная другим сайтом, отклоняется по домену в сообщении EIP-4361; сообщение для другой сети — по chain ID.
-- Сессия хранится в БД и отзывается сразу; браузер получает только случайный идентификатор в cookie `httpOnly`, `Secure`, `SameSite=Lax`.
+- Сессия хранится в БД и отзывается сразу; браузер получает только случайный идентификатор в cookie `httpOnly`, `Secure`, `SameSite=Lax`. База хранит только SHA-256 этого идентификатора, поэтому утечка дампа не даёт готовых cookie.
+- Лимиты входа по IP опираются на `X-Forwarded-For` только от доверенного прокси из `TRUST_PROXY`; потолок nonce и общий лимит проверок подписи от IP не зависят, см. [`DECISIONS.md#frontend-and-backend-share-one-origin`](DECISIONS.md#frontend-and-backend-share-one-origin).
 - Загрузка обложки разрешена, только если адрес сессии совпадает с `creator` кампании в контракте. Файл ограничен JPEG, PNG и WebP до 5 МБ и пережимается в WebP, что удаляет EXIF и содержимое, не являющееся картинкой, см. [`DECISIONS.md#campaign-media-is-reencoded-on-upload`](DECISIONS.md#campaign-media-is-reencoded-on-upload).
 - RPC indexer с ключом провайдера и параметры БД живут только в серверном `backend/.env`, который не коммитится.
 

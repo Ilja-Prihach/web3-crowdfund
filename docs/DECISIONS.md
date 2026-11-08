@@ -42,6 +42,7 @@
 | [backend-api-is-versioned-rest](#backend-api-is-versioned-rest) | API — REST/JSON под `/v1` со схемами TypeBox; финансовые данные frontend по-прежнему читает из контракта |
 | [campaign-media-is-reencoded-on-upload](#campaign-media-is-reencoded-on-upload) | Обложки принимаются как JPEG/PNG/WebP до 5 МБ, пережимаются в WebP 1200×675 и хранятся за интерфейсом `MediaStorage` |
 | [backend-tests-use-real-postgresql](#backend-tests-use-real-postgresql) | Тесты backend идут на `node:test` с настоящим PostgreSQL, а indexer проверяется на Anvil |
+| [frontend-and-backend-share-one-origin](#frontend-and-backend-share-one-origin) | Браузер ходит в backend по `/api` своего источника; в продакшене маршрутизирует внешний reverse proxy, backend доверяет `X-Forwarded-For` только от него |
 
 ## Действующие решения
 
@@ -449,3 +450,15 @@ Backend принимает обложку только в форматах JPEG,
 Следствие: для локального запуска тестов backend нужен Docker с PostgreSQL и установленный Foundry.
 
 Связано: [`frontend-unit-tests-use-node-test`](#frontend-unit-tests-use-node-test), [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).
+
+### frontend-and-backend-share-one-origin
+
+**Статус:** принято 6 ноября 2026 года, уточнено 7 ноября.
+
+Браузер обращается к backend по относительному пути `/api/*` на том же источнике, что и frontend. В разработке этот путь проксируют `rewrites` Next.js. В продакшене `/` и `/api` маршрутизирует внешний reverse proxy или платформа хостинга, и он перезаписывает `X-Forwarded-For` адресом соединения. Backend доверяет этому заголовку только от адресов из `TRUST_PROXY`; по умолчанию доверия нет.
+
+Причина: на одном источнике cookie сессии остаётся cookie первой стороны, а CORS с `credentials` не нужен. Прокси Next.js для продакшена не подходит: в `next` 16.4.3 `base-server.js` выставляет `x-forwarded-for` через `??=`, то есть оставляет присланный клиентом заголовок, а прокси `httpxy` свой адрес не дописывает. Без внешнего прокси лимиты входа по IP были бы либо общими на всех пользователей (backend видит адрес сервера Next), либо обходились бы подделкой заголовка.
+
+Следствие: схема хостинга (#64) обязана включать reverse proxy, перезаписывающий `X-Forwarded-For`. Лимиты, которые защищают базу и квоту RPC, не зависят от IP: потолок живых nonce и общий лимит проверок подписи.
+
+Связано: [`backend-signs-in-with-siwe-sessions`](#backend-signs-in-with-siwe-sessions), [`security.md#backend-и-вход-подписью`](security.md#backend-и-вход-подписью).

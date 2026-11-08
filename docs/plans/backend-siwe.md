@@ -1,6 +1,6 @@
 # План: вход подписью на backend (#52)
 
-Статус: решения приняты, идёт шаг 1 (#75).
+Статус: шаги 1–2 (#75) готовы и на ревью, дальше шаги 3–4 (#76).
 
 Временный документ. Задача — [#52](https://github.com/Ilja-Prihach/web3-crowdfund/issues/52), разбитая на три подзадачи с отдельными PR: [#75](https://github.com/Ilja-Prihach/web3-crowdfund/issues/75) — шаги 1–2, [#76](https://github.com/Ilja-Prihach/web3-crowdfund/issues/76) — шаги 3–4, [#77](https://github.com/Ilja-Prihach/web3-crowdfund/issues/77) — шаги 5–6. Пометки по реализации живут в этих задачах. Когда задача будет закрыта, постоянные факты переедут в [`architecture.md`](../architecture.md), [`security.md`](../security.md) и [`backend/README.md`](../../backend/README.md), а этот файл будет удалён или перенесён в `docs/archive/`.
 
