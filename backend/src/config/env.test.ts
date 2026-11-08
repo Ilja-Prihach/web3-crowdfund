@@ -5,7 +5,8 @@ import { loadEnv } from "./env.ts";
 
 const databaseUrl = "postgres://openfund:secret-password@127.0.0.1:5433/openfund";
 const sepoliaRpcUrl = "https://sepolia.example/v3/secret-key";
-const required = { DATABASE_URL: databaseUrl, SEPOLIA_RPC_URL: sepoliaRpcUrl };
+const appOrigin = "http://localhost:3000";
+const required = { DATABASE_URL: databaseUrl, SEPOLIA_RPC_URL: sepoliaRpcUrl, APP_ORIGIN: appOrigin };
 
 describe("loadEnv", () => {
   it("подставляет значения по умолчанию", () => {
@@ -15,6 +16,7 @@ describe("loadEnv", () => {
       logLevel: "info",
       databaseUrl,
       sepoliaRpcUrl,
+      appOrigin,
     });
   });
 
@@ -25,6 +27,7 @@ describe("loadEnv", () => {
       logLevel: "debug",
       databaseUrl,
       sepoliaRpcUrl,
+      appOrigin,
     });
   });
 
@@ -69,5 +72,20 @@ describe("loadEnv", () => {
     for (const SEPOLIA_RPC_URL of ["http://127.0.0.1:8545", "http://localhost:8545"]) {
       assert.equal(loadEnv({ ...required, SEPOLIA_RPC_URL }).sepoliaRpcUrl, SEPOLIA_RPC_URL);
     }
+  });
+
+  it("требует APP_ORIGIN ровно в виде источника", () => {
+    for (const APP_ORIGIN of [
+      undefined,
+      "",
+      "localhost:3000",
+      "http://localhost:3000/",
+      "https://openfund.example/app",
+      "http://openfund.example",
+      "ftp://localhost:3000",
+    ]) {
+      assert.throws(() => loadEnv({ ...required, APP_ORIGIN }), /APP_ORIGIN must be an origin/, String(APP_ORIGIN));
+    }
+    assert.equal(loadEnv({ ...required, APP_ORIGIN: "https://openfund.example" }).appOrigin, "https://openfund.example");
   });
 });

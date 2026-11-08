@@ -21,6 +21,7 @@
 | [wallet-uses-its-own-sepolia-rpc](#wallet-uses-its-own-sepolia-rpc) | Кошелёк отправляет транзакции через свой RPC и может упереться в `429`, хотя сайт работает |
 | [public-rpc-prunes-log-history](#public-rpc-prunes-log-history) | Публичные Sepolia RPC не отдают логи с блока deploy V2, поэтому indexer не может прочитать историю |
 | [pg-pool-idle-error-crashes-process](#pg-pool-idle-error-crashes-process) | Без слушателя `error` у `pg.Pool` перезапуск PostgreSQL роняет весь backend |
+| [viem-siwe-nonce-is-predictable](#viem-siwe-nonce-is-predictable) | `generateSiweNonce()` из viem выдаёт nonce, почти целиком предсказуемый по предыдущему |
 
 ## Карточки
 
@@ -180,3 +181,17 @@ cast rpc eth_getLogs '{"address":"0x68905C4394c10c37b1D3b2f7bB3342EAFF5a077A","f
 **Причина.** `pg.Pool` держит простаивающие соединения. Когда PostgreSQL закрывает их сам — при остановке, перезапуске или сетевом сбое, — пул генерирует событие `error`. У EventEmitter без слушателя `error` Node.js бросает исключение и останавливает процесс.
 
 **Правило.** `createDatabase` в `backend/src/db/client.ts` требует обязательный `onIdleError` и вешает его на `pool.on("error")`; сломанное соединение пул выбрасывает сам и при следующем запросе открывает новое. Сразу после обрыва один запрос ещё может взять мёртвое соединение и ответить `503`. Проверка: тест «не падает при обрыве простаивающего соединения и снова готов» обрывает соединение через `pg_terminate_backend`, ждёт событие `error` и получает `/ready` → `200`; без слушателя тот же тест падает с исходной ошибкой. Вживую после исправления: база остановлена — `/ready` 503, `/health` 200; база поднята — `/ready` 200.
+
+### viem-siwe-nonce-is-predictable
+
+**Симптом.** 7 ноября 2026 года при подготовке входа SIWE два вызова `generateSiweNonce()` из viem 2.57.13 подряд вернули строки, где второй nonce — это первый со сдвигом на один символ: `b.slice(0, 95) === a.slice(1)` → `true`.
+
+**Причина.** `generateSiweNonce()` вызывает `uid(96)` из `viem/_esm/utils/uid.js`. Тот один раз заполняет буфер из `Math.random()` и выдаёт его подстроки, сдвигая начало на один символ за вызов. `Math.random()` не криптографический генератор, а соседние nonce почти совпадают: увидев один, можно предсказать следующие.
+
+**Правило.** Nonce входа создаёт только backend через `crypto.randomBytes(32)` (`backend/src/modules/auth/service.ts`); frontend запрашивает его у `POST /v1/auth/nonce`, а не генерирует сам. Проверка: тест «выдаёт независимые nonce, а не сдвиг одного буфера» в `backend/src/modules/auth/routes.test.ts` падает, если подставить `generateSiweNonce()`. Воспроизведение:
+
+```sh
+cd backend && node -e 'import("viem/siwe").then(({ generateSiweNonce: g }) => { const a = g(), b = g(); console.log(b.slice(0, 95) === a.slice(1)) })'
+```
+
+Связано: [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions).

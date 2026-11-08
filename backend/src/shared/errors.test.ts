@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 
 import { buildApp } from "../app.ts";
+import { testDeps } from "../test/app.ts";
 import { createTestDatabase } from "../test/database.ts";
 import type { ApiError } from "./errors.ts";
 
@@ -10,7 +11,7 @@ after(() => pool.end());
 
 // Приложение с маршрутами, которые нарочно бросают ошибки разных видов.
 function appWithFailingRoutes() {
-  const app = buildApp({ db });
+  const app = buildApp(testDeps(db));
   app.get("/conflict", () => {
     throw Object.assign(new Error("Nonce already used"), { statusCode: 409, code: "NONCE_USED" });
   });
