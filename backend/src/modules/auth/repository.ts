@@ -10,6 +10,10 @@ export async function insertNonce(db: Database, nonce: string) {
   await db.insert(authNonces).values({ nonce, expiresAt: nonceLifetime });
 }
 
+export async function countNonces(db: Database) {
+  return db.$count(authNonces);
+}
+
 export async function deleteExpiredNonces(db: Database) {
   await db.delete(authNonces).where(lt(authNonces.expiresAt, sql`now()`));
 }
