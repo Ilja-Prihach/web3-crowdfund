@@ -19,7 +19,14 @@ export const anvilAccounts = anvilKeys.map((key) => privateKeyToAccount(key));
 
 function createAnvilClient(url: string) {
   // Chain ID Sepolia: тот же клиент и те же проверки, что в приложении, только узел локальный.
-  return createTestClient({ chain: crowdfunding.chain, mode: "anvil", transport: http(url) })
+  // Anvil майнит блок сразу, а viem по умолчанию опрашивает узел раз в 4 секунды: без короткого
+  // интервала каждое ожидание транзакции стоило бы секунды.
+  return createTestClient({
+    chain: crowdfunding.chain,
+    mode: "anvil",
+    transport: http(url),
+    pollingInterval: 50,
+  })
     .extend(publicActions)
     .extend(walletActions);
 }
