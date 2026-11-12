@@ -38,6 +38,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          # Тестам нужны контракты из contracts/: forge build собирает их вместе с OpenZeppelin и forge-std.
+          submodules: recursive
+
+      # Anvil для интеграционных тестов и forge для pretest — тем же способом, что в job контрактов.
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -55,5 +62,6 @@ jobs:
       - name: Typecheck backend
         run: npm run typecheck
 
+      # pretest сначала собирает контракты (forge build), затем тесты поднимают свой Anvil.
       - name: Test backend
         run: npm test
