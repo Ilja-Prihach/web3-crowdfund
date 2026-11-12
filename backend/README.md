@@ -50,7 +50,7 @@ npm run dev
 
 ## Вход подписью
 
-Маршруты: `POST /v1/auth/nonce` — одноразовый nonce, `POST /v1/auth/verify` — сообщение EIP-4361 с подписью, ставит cookie сессии, `GET /v1/auth/session` — текущая сессия, `POST /v1/auth/logout` — выход. Маршрут, которому нужен вход, подключает `preHandler: requireSession(db)` и читает `request.session`. Лимиты: 10 nonce и 10 проверок в минуту с одного адреса, потолок живых nonce и бюджет проверок через RPC — `defaultAuthLimits` в `src/modules/auth/service.ts`. Проверка вручную:
+Маршруты: `POST /v1/auth/nonce` — одноразовый nonce, `POST /v1/auth/verify` — сообщение EIP-4361 с подписью, ставит cookie сессии, `GET /v1/auth/session` — текущая сессия, `POST /v1/auth/logout` — выход. Маршрут, которому нужен вход, подключает `preHandler: requireSession(db)` и читает `request.session`. Лимиты: 10 nonce и 10 проверок в минуту с одного адреса (IPv6 — с подсети `/64`), бюджет проверок через RPC и порог предупреждения о числе живых nonce — `defaultAuthLimits` в `src/modules/auth/service.ts`. Проверка вручную:
 
 ```sh
 curl -i -X POST http://127.0.0.1:4000/v1/auth/nonce
