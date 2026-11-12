@@ -137,6 +137,8 @@ Backend — отдельное приложение `backend/` на Node.js, Typ
 
 Лимиты задаются `defaultAuthLimits`; тесты уменьшают их через `authLimits` в зависимостях `buildApp`.
 
+Интеграционные тесты работают на стенде Anvil (`src/test/anvil.ts`, `src/test/crowdfunding.ts`, подробности — в [`backend/README.md`](../backend/README.md#стенд-anvil)): локальный узел с chain ID Sepolia, свежий контракт V2 и снимок состояния на каждый тест. На нём проверены все шесть событий V2, разобранные backend-ABI, и вход смарт-кошельком: развёрнутый ERC-1271 и неразвёрнутый ERC-6492 (тестовые контракты `contracts/test/helpers/TestSmartWallet.sol`). viem не знает адреса валидатора ERC-6492 в Sepolia, поэтому проверка идёт «без развёртывания» — `eth_call` с байткодом валидатора — и одинаково работает в Sepolia и на Anvil.
+
 `buildApp` получает `{ db, chain, appOrigin, authLimits? }`: клиент цепочки создаёт `server.ts` из `SEPOLIA_RPC_URL`, а тесты подставляют узел без сети из `test/app.ts`, который отвечает на `eth_call` отказом или имитирует упавший RPC. Тип `ChainClient` — `PublicClient` для Sepolia без привязки к транспорту.
 
 Модуль `modules/health` отвечает на два вопроса. `GET /health` — жив ли процесс; БД не трогает, потому что перезапуск сервера при упавшей базе не помогает. `GET /ready` — готов ли он обслуживать запросы: выполняет `select 1` и при недоступной базе отвечает `503 NOT_READY` без текста ошибки PostgreSQL.

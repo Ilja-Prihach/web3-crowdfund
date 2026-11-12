@@ -14,7 +14,7 @@
 - `invariant/CrowdfundingInvariant.t.sol` моделирует fixed-кампанию, отмену и возвраты;
 - `invariant/OpenEndedCrowdfundingInvariant.t.sol` моделирует активные возвраты, достижение цели и вывод open-ended-кампании;
 - `invariant/` содержит handlers с независимым ghost-учётом для обеих моделей;
-- `helpers/` содержит вспомогательные контракты для моделирования атак и других специальных сценариев.
+- `helpers/` содержит вспомогательные контракты для моделирования атак и других специальных сценариев; `TestSmartWallet.sol` — смарт-кошелёк ERC-1271 с фабрикой CREATE2 для тестов входа SIWE в backend, контрактом Crowdfunding не используется.
 
 ## Unit-тесты
 

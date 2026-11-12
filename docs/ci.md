@@ -26,12 +26,13 @@ Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lin
 
 `Lint, typecheck, test` работает в каталоге `backend/` и поднимает сервис PostgreSQL 18.4 с БД `openfund_test` на порту `5433`, как локальный `compose.yaml`; тесты получают его адрес через `TEST_DATABASE_URL`:
 
-1. Загружает репозиторий.
-2. Устанавливает версию Node.js из `backend/.nvmrc` и включает npm cache по lock-файлу.
-3. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
-4. `npm run lint` — ESLint с правилами, использующими типы TypeScript, без допустимых предупреждений.
-5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
-6. `npm test` — запускает тесты встроенным `node:test`, включая запросы к настоящей БД.
+1. Загружает репозиторий вместе с подмодулями `contracts/lib`.
+2. Устанавливает Foundry (`foundry-toolchain@v1`, как job контрактов): `forge` для сборки контрактов и `anvil` для интеграционных тестов.
+3. Устанавливает версию Node.js из `backend/.nvmrc` и включает npm cache по lock-файлу.
+4. `npm ci` — воспроизводимо устанавливает точные версии из `package-lock.json`.
+5. `npm run lint` — ESLint с правилами, использующими типы TypeScript, без допустимых предупреждений.
+6. `npm run typecheck` — проверяет TypeScript без генерации файлов.
+7. `npm test` — сначала `pretest` собирает контракты (`forge build`), затем тесты встроенного `node:test` работают с настоящей БД и поднимают собственные узлы Anvil.
 
 `Format, build, test` работает в каталоге `contracts/`:
 
@@ -80,7 +81,7 @@ forge test
 slither . --filter-paths "(lib/|test/|script/)" --fail-medium
 ```
 
-Из каталога `backend/`, после `docker compose up -d --wait` в корне репозитория:
+Из каталога `backend/`, после `docker compose up -d --wait` в корне репозитория; нужен установленный Foundry (`forge`, `anvil`):
 
 ```sh
 npm ci
