@@ -86,23 +86,43 @@ describe("лимиты по адресу клиента", () => {
   });
 });
 
-describe("лимиты, не зависящие от адреса", () => {
-  it("сверх потолка живых nonce отвечает 503 AUTH_BUSY, а после их истечения снова выдаёт", async () => {
-    const deps = testDeps(db, { authLimits: limits({ nonceCapacity: 2 }) });
+describe("лимит по IPv6", () => {
+  it("считает подсеть /64 одним клиентом, а IPv4 в форме IPv6 — тем же адресом IPv4", async () => {
+    const deps = testDeps(db, { authLimits: limits({ perIp: { nonce: 1 } }) });
     await withApp(deps, {}, async (app) => {
       const nonce = (remoteAddress: string) => app.inject({ method: "POST", url: "/v1/auth/nonce", remoteAddress });
 
-      assert.equal((await nonce("203.0.113.1")).statusCode, 201);
-      assert.equal((await nonce("203.0.113.2")).statusCode, 201);
-      const busy = await nonce("203.0.113.3");
-      assert.equal(busy.statusCode, 503);
-      assert.equal(errorCode(busy), "AUTH_BUSY");
-      assert.equal(busy.headers["retry-after"], "60");
-      assert.equal(await db.$count(authNonces), 2);
+      assert.equal((await nonce("2001:db8:0:0::1")).statusCode, 201);
+      assert.equal((await nonce("2001:db8::ffff:2")).statusCode, 429, "другой адрес той же /64");
+      assert.equal((await nonce("2001:db8:0:1::1")).statusCode, 201, "соседняя /64");
 
-      await db.update(authNonces).set({ expiresAt: sql`now() - interval '1 second'` });
-      assert.equal((await nonce("203.0.113.3")).statusCode, 201);
+      assert.equal((await nonce("203.0.113.7")).statusCode, 201);
+      assert.equal((await nonce("::ffff:203.0.113.7")).statusCode, 429, "IPv4 в форме IPv6");
     });
+  });
+});
+
+describe("лимиты, не зависящие от адреса", () => {
+  it("заполнение nonce с многих адресов не закрывает выдачу новому адресу, а видно в логе", async () => {
+    const lines: string[] = [];
+    const options = { logger: loggerOptions("warn", { write: (line: string) => void lines.push(line) }) };
+    const deps = testDeps(db, { authLimits: limits({ nonceWarningThreshold: 3, perIp: { nonce: 1 } }) });
+    // Атака уже идёт: живых nonce выше порога.
+    await db.insert(authNonces).values(
+      ["a", "b", "c", "d"].map((char) => ({ nonce: char.repeat(64), expiresAt: sql`now() + interval '10 minutes'` })),
+    );
+
+    await withApp(deps, options, async (app) => {
+      const nonce = (remoteAddress: string) => app.inject({ method: "POST", url: "/v1/auth/nonce", remoteAddress });
+
+      assert.equal((await nonce("203.0.113.50")).statusCode, 201, "настоящий пользователь получает nonce");
+      assert.equal((await nonce("203.0.113.51")).statusCode, 201);
+    });
+
+    const warnings = lines.filter((line) => line.includes("many live sign-in nonces"));
+    // Подсчёт не чаще раза в минуту: второй запрос таблицу не пересчитывает.
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0] ?? "", /"liveNonces":5/);
   });
 
   it("бюджет проверок через RPC общий на сервер и не мешает обычным кошелькам", async () => {

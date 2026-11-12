@@ -7,11 +7,12 @@ import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { ChainClient } from "../../chain/client.ts";
 import { crowdfunding } from "../../chain/contract.ts";
 import type { Database } from "../../db/client.ts";
-import { consumeNonce, countNonces, createSession, deleteExpiredNonces, insertNonce } from "./repository.ts";
+import { consumeNonce, createSession, deleteExpiredNonces, insertNonce } from "./repository.ts";
 
 export type AuthLimits = {
-  // Живых nonce одновременно. Сверх — 503: таблица не растёт от атаки с многих адресов.
-  nonceCapacity: number;
+  // Живых nonce, после которых в лог пишется предупреждение. Это не отказ: общий потолок
+  // позволил бы атакующему с многих адресов закрыть вход всем. Рост таблицы ограничивает лимит на адрес.
+  nonceWarningThreshold: number;
   // Проверок подписи через RPC в минуту на весь сервер — защита квоты провайдера.
   rpcVerificationsPerMinute: number;
   // Запросов в минуту с одного адреса клиента.
@@ -19,7 +20,7 @@ export type AuthLimits = {
 };
 
 export const defaultAuthLimits: AuthLimits = {
-  nonceCapacity: 10_000,
+  nonceWarningThreshold: 10_000,
   rpcVerificationsPerMinute: 30,
   perIp: { nonce: 10, verify: 10, session: 60, logout: 30 },
 };
@@ -44,13 +45,10 @@ const clockSkewMs = 60_000;
 
 // Nonce — 32 байта криптографического генератора. generateSiweNonce() из viem не годится:
 // он берёт Math.random(), и соседние nonce совпадают со сдвигом в один символ.
-export async function issueNonce(db: Database, capacity: number) {
+export async function issueNonce(db: Database) {
   const nonce = randomBytes(32).toString("hex");
   // Попутная чистка вместо планировщика: таблица не растёт от брошенных попыток входа.
   await deleteExpiredNonces(db);
-  // Потолок не зависит от адреса клиента: подмена или общий IP за прокси его не обходят.
-  // Подсчёт и вставка не атомарны, поэтому при гонке потолок может быть превышен на несколько строк.
-  if ((await countNonces(db)) >= capacity) throw new AuthBusyError("nonce capacity reached");
   await insertNonce(db, nonce);
   return nonce;
 }

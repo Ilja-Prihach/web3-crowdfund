@@ -3,7 +3,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Hex } from "viem";
 
 import type { ApiError } from "../../shared/errors.ts";
-import { deleteSession } from "./repository.ts";
+import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
+import { countNonces, deleteSession } from "./repository.ts";
 import { logoutSchema, nonceSchema, sessionSchema, verifySchema } from "./schemas.ts";
 import { AuthBusyError, type AuthDeps, hashSessionId, issueNonce, SignInError, signIn } from "./service.ts";
 import { clearSessionCookie, requireSession, sessionCookie, sessionCookieOptions } from "./session.ts";
@@ -19,7 +20,9 @@ function replyBusy(request: FastifyRequest, reply: FastifyReply, error: AuthBusy
 }
 
 export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, done) => {
-  const { perIp } = deps.limits;
+  const { perIp, nonceWarningThreshold } = deps.limits;
+  // Подсчёт живых nonce — полный проход по таблице, поэтому не чаще раза в минуту: под атакой он сам не стал бы нагрузкой.
+  const allowNonceCount = createFixedWindowLimiter(1, 60_000);
 
   // Защита от CSRF сверх SameSite=Lax: браузер всегда присылает Origin с POST, и он должен быть нашим.
   // Запрос без Origin — не из браузера, а значит, и без cookie жертвы; такой запрос пропускается.
@@ -32,14 +35,14 @@ export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, do
 
   // POST, а не GET: запрос создаёт строку в базе, а GET по правилам HTTP не должен ничего менять.
   app.post("/nonce", { schema: nonceSchema, config: perMinute(perIp.nonce) }, async (request, reply) => {
-    try {
-      const nonce = await issueNonce(deps.db, deps.limits.nonceCapacity);
-      // Nonce одноразовый: ни браузер, ни промежуточный прокси не должны отдавать его из кэша.
-      return reply.code(201).header("cache-control", "no-store").send({ nonce });
-    } catch (error) {
-      if (error instanceof AuthBusyError) return replyBusy(request, reply, error);
-      throw error;
+    const nonce = await issueNonce(deps.db);
+    if (allowNonceCount()) {
+      const liveNonces = await countNonces(deps.db);
+      // Предупреждение вместо отказа: атака видна в логах, а вход остаётся открытым.
+      if (liveNonces >= nonceWarningThreshold) request.log.warn({ liveNonces }, "many live sign-in nonces");
     }
+    // Nonce одноразовый: ни браузер, ни промежуточный прокси не должны отдавать его из кэша.
+    return reply.code(201).header("cache-control", "no-store").send({ nonce });
   });
 
   app.post("/verify", { schema: verifySchema, config: perMinute(perIp.verify) }, async (request, reply) => {
