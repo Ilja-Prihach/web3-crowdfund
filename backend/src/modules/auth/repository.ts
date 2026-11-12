@@ -36,3 +36,16 @@ export async function createSession(db: Database, { idHash, address }: { idHash:
     return session;
   });
 }
+
+// Живая сессия по хэшу идентификатора: просроченная считается отсутствующей, даже если строка ещё не удалена.
+export async function findLiveSession(db: Database, idHash: string) {
+  const [session] = await db
+    .select({ address: authSessions.address, expiresAt: authSessions.expiresAt })
+    .from(authSessions)
+    .where(and(eq(authSessions.idHash, idHash), gt(authSessions.expiresAt, sql`now()`)));
+  return session ?? null;
+}
+
+export async function deleteSession(db: Database, idHash: string) {
+  await db.delete(authSessions).where(eq(authSessions.idHash, idHash));
+}

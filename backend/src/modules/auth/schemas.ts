@@ -18,3 +18,13 @@ export const verifySchema = {
     401: ApiErrorSchema,
   },
 };
+
+const sessionBody = Type.Object({ address: Type.String(), expiresAt: Type.String({ format: "date-time" }) });
+
+export const sessionSchema = {
+  response: { 200: sessionBody, 401: ApiErrorSchema },
+};
+
+export const logoutSchema = {
+  response: { 204: Type.Null() },
+};

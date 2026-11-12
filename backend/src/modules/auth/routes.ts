@@ -2,10 +2,11 @@ import type { FastifyPluginCallbackTypebox } from "@fastify/type-provider-typebo
 import type { Hex } from "viem";
 
 import type { ApiError } from "../../shared/errors.ts";
-import { nonceSchema, verifySchema } from "./schemas.ts";
-import { type AuthDeps, issueNonce, SignInError, signIn } from "./service.ts";
+import { deleteSession } from "./repository.ts";
+import { logoutSchema, nonceSchema, sessionSchema, verifySchema } from "./schemas.ts";
+import { type AuthDeps, hashSessionId, issueNonce, SignInError, signIn } from "./service.ts";
+import { clearSessionCookie, requireSession, sessionCookie, sessionCookieOptions } from "./session.ts";
 
-export const sessionCookie = "openfund_session";
 const sessionMaxAgeSeconds = 7 * 24 * 60 * 60;
 
 export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, done) => {
@@ -22,15 +23,7 @@ export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, do
         message: request.body.message,
         signature: request.body.signature as Hex,
       });
-      // httpOnly — недоступна JavaScript страницы; secure — только по https (и на localhost);
-      // sameSite lax — не уходит с POST-запросами чужих сайтов.
-      void reply.setCookie(sessionCookie, sessionId, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: sessionMaxAgeSeconds,
-      });
+      void reply.setCookie(sessionCookie, sessionId, { ...sessionCookieOptions, maxAge: sessionMaxAgeSeconds });
       return reply.header("cache-control", "no-store").send({ address, expiresAt: expiresAt.toISOString() });
     } catch (error) {
       if (!(error instanceof SignInError)) throw error;
@@ -39,6 +32,21 @@ export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, do
       const body: ApiError = { error: { code: "SIWE_INVALID", message: "Sign-in message or signature is invalid" } };
       return reply.code(401).send(body);
     }
+  });
+
+  app.get("/session", { schema: sessionSchema, preHandler: requireSession(deps.db) }, (request, reply) => {
+    const { session } = request;
+    if (!session) throw new Error("requireSession did not set request.session");
+    void reply.header("cache-control", "no-store");
+    return { address: session.address, expiresAt: session.expiresAt.toISOString() };
+  });
+
+  // Выход идемпотентен: без cookie или с уже удалённой сессией ответ тот же — 204 и очищенная cookie.
+  app.post("/logout", { schema: logoutSchema }, async (request, reply) => {
+    const sessionId = request.cookies[sessionCookie];
+    if (sessionId) await deleteSession(deps.db, hashSessionId(sessionId));
+    clearSessionCookie(reply);
+    return reply.code(204).send(null);
   });
 
   done();
