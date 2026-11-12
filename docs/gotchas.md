@@ -21,6 +21,7 @@
 | [wallet-uses-its-own-sepolia-rpc](#wallet-uses-its-own-sepolia-rpc) | Кошелёк отправляет транзакции через свой RPC и может упереться в `429`, хотя сайт работает |
 | [public-rpc-prunes-log-history](#public-rpc-prunes-log-history) | Публичные Sepolia RPC не отдают логи с блока deploy V2, поэтому indexer не может прочитать историю |
 | [pg-pool-idle-error-crashes-process](#pg-pool-idle-error-crashes-process) | Без слушателя `error` у `pg.Pool` перезапуск PostgreSQL роняет весь backend |
+| [next-rewrites-forward-client-x-forwarded-for](#next-rewrites-forward-client-x-forwarded-for) | Прокси `rewrites` Next.js не сообщает backend адрес клиента и пропускает подделанный `X-Forwarded-For` |
 | [viem-siwe-nonce-is-predictable](#viem-siwe-nonce-is-predictable) | `generateSiweNonce()` из viem выдаёт nonce, почти целиком предсказуемый по предыдущему |
 
 ## Карточки
@@ -195,3 +196,13 @@ cd backend && node -e 'import("viem/siwe").then(({ generateSiweNonce: g }) => { 
 ```
 
 Связано: [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions).
+
+### next-rewrites-forward-client-x-forwarded-for
+
+**Симптом.** 12 ноября 2026 года на стенде `next dev` 16.4.3 с `rewrites` `/echo/*` → эхо-сервер запрос без заголовков дошёл до цели только с `x-forwarded-host: localhost:3100`, без `X-Forwarded-For`, с адреса `127.0.0.1` — сервера Next.js. Запрос с `X-Forwarded-For: 6.6.6.6` от клиента дошёл с `x-forwarded-for: 6.6.6.6` без изменений.
+
+**Причина.** Прокси `rewrites` (`next/dist/server/lib/router-utils/proxy-request.js`, `httpxy`) запущен без `xfwd` и добавляет только `x-forwarded-host`; заголовки клиента он передаёт как есть.
+
+**Правило.** Если backend не доверяет заголовку, за `rewrites` у всех пользователей один адрес и общий лимит по IP; если доверяет — клиент подставляет любой адрес. Поэтому `rewrites` используются только в разработке, `TRUST_PROXY` никогда не указывает на сервер Next.js, а в продакшене `/api` маршрутизирует reverse proxy, перезаписывающий `X-Forwarded-For` (#64). Проверка: эхо-сервер за `rewrites` и два запроса `curl` — без заголовка и с `-H 'X-Forwarded-For: 6.6.6.6'`; в ответе эхо-сервера видно, что именно дошло.
+
+Связано: [`DECISIONS.md#frontend-and-backend-share-one-origin`](DECISIONS.md#frontend-and-backend-share-one-origin).

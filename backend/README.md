@@ -43,13 +43,14 @@ npm run dev
 | `DATABASE_URL` | нет, обязательна | строка подключения `postgres://`, пример — в `.env.example` |
 | `APP_ORIGIN` | нет, обязательна | источник frontend, например `http://localhost:3000`, ровно без пути и косой черты в конце; из него берутся ожидаемые `domain` и `uri` сообщения входа; `http` — только для `localhost` |
 | `SEPOLIA_RPC_URL` | нет, обязательна | `https`-адрес узла Sepolia (`http` — только для `localhost`); может содержать ключ провайдера, поэтому хранится только в `.env` и не логируется |
+| `TRUST_PROXY` | пусто | адреса или CIDR reverse proxy через запятую, которому backend верит в `X-Forwarded-For`; пусто — лимиты по адресу соединения; никогда не сервер Next.js |
 | `TEST_DATABASE_URL` | `postgres://openfund:openfund@127.0.0.1:5433/openfund_test` | БД для `npm test`; имя базы обязано оканчиваться на `_test` |
 
 Неверное значение останавливает процесс при старте с понятной ошибкой. Строка подключения и адрес узла в текст ошибки не попадают: в них пароль или ключ.
 
 ## Вход подписью
 
-`POST /v1/auth/nonce` выдаёт одноразовый nonce, `POST /v1/auth/verify` принимает сообщение EIP-4361 с подписью и ставит cookie сессии. Проверка вручную:
+Маршруты: `POST /v1/auth/nonce` — одноразовый nonce, `POST /v1/auth/verify` — сообщение EIP-4361 с подписью, ставит cookie сессии, `GET /v1/auth/session` — текущая сессия, `POST /v1/auth/logout` — выход. Маршрут, которому нужен вход, подключает `preHandler: requireSession(db)` и читает `request.session`. Лимиты: 10 nonce и 10 проверок в минуту с одного адреса, потолок живых nonce и бюджет проверок через RPC — `defaultAuthLimits` в `src/modules/auth/service.ts`. Проверка вручную:
 
 ```sh
 curl -i -X POST http://127.0.0.1:4000/v1/auth/nonce

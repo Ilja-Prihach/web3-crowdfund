@@ -3,7 +3,7 @@ import { Type } from "typebox";
 import { ApiErrorSchema } from "../../shared/errors.ts";
 
 export const nonceSchema = {
-  response: { 201: Type.Object({ nonce: Type.String({ pattern: "^[0-9a-f]{64}$" }) }) },
+  response: { 201: Type.Object({ nonce: Type.String({ pattern: "^[0-9a-f]{64}$" }) }), 503: ApiErrorSchema },
 };
 
 export const verifySchema = {
@@ -16,5 +16,16 @@ export const verifySchema = {
   response: {
     200: Type.Object({ address: Type.String(), expiresAt: Type.String({ format: "date-time" }) }),
     401: ApiErrorSchema,
+    503: ApiErrorSchema,
   },
+};
+
+const sessionBody = Type.Object({ address: Type.String(), expiresAt: Type.String({ format: "date-time" }) });
+
+export const sessionSchema = {
+  response: { 200: sessionBody, 401: ApiErrorSchema },
+};
+
+export const logoutSchema = {
+  response: { 204: Type.Null() },
 };

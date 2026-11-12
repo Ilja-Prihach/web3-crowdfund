@@ -17,6 +17,7 @@ describe("loadEnv", () => {
       databaseUrl,
       sepoliaRpcUrl,
       appOrigin,
+      trustProxy: [],
     });
   });
 
@@ -28,6 +29,7 @@ describe("loadEnv", () => {
       databaseUrl,
       sepoliaRpcUrl,
       appOrigin,
+      trustProxy: [],
     });
   });
 
@@ -87,5 +89,17 @@ describe("loadEnv", () => {
       assert.throws(() => loadEnv({ ...required, APP_ORIGIN }), /APP_ORIGIN must be an origin/, String(APP_ORIGIN));
     }
     assert.equal(loadEnv({ ...required, APP_ORIGIN: "https://openfund.example" }).appOrigin, "https://openfund.example");
+  });
+
+  it("читает TRUST_PROXY как список адресов и диапазонов и отклоняет остальное", () => {
+    assert.deepEqual(loadEnv({ ...required, TRUST_PROXY: " 10.0.0.1, 10.0.0.0/8 ,::1,fd00::/8" }).trustProxy, [
+      "10.0.0.1",
+      "10.0.0.0/8",
+      "::1",
+      "fd00::/8",
+    ]);
+    for (const TRUST_PROXY of ["true", "proxy.local", "10.0.0.0/33", "::/129", "10.0.0.1/8/1", "10.0.0.0/x"]) {
+      assert.throws(() => loadEnv({ ...required, TRUST_PROXY }), /TRUST_PROXY must be/, TRUST_PROXY);
+    }
   });
 });

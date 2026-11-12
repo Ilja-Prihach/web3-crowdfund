@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 export type Env = {
   port: number;
   host: string;
@@ -5,9 +7,19 @@ export type Env = {
   databaseUrl: string;
   sepoliaRpcUrl: string;
   appOrigin: string;
+  trustProxy: string[];
 };
 
 const logLevels: Env["logLevel"][] = ["fatal", "error", "warn", "info", "debug", "trace"];
+
+// Адрес или диапазон CIDR: 10.0.0.1, 10.0.0.0/8, ::1, fd00::/8.
+function isIpOrCidr(entry: string) {
+  const [address = "", prefix, extra] = entry.split("/");
+  const version = isIP(address);
+  if (version === 0 || extra !== undefined) return false;
+  if (prefix === undefined) return true;
+  return /^\d+$/.test(prefix) && Number(prefix) <= (version === 4 ? 32 : 128);
+}
 
 // https везде, http — только для этого компьютера: по сети ключи и cookie шли бы открытым текстом.
 function parseSecureUrl(value: string | undefined) {
@@ -49,6 +61,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     );
   }
 
+  // Прокси, которым backend верит в X-Forwarded-For. По умолчанию никому: иначе любой клиент
+  // подставил бы в заголовок произвольный адрес и обошёл лимиты по IP.
+  const trustProxy = (source.TRUST_PROXY ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  for (const entry of trustProxy) {
+    if (!isIpOrCidr(entry)) {
+      throw new Error(`TRUST_PROXY must be a comma-separated list of IP addresses or CIDR ranges, got "${entry}"`);
+    }
+  }
+
   return {
     port,
     // Только этот компьютер: с 0.0.0.0 сервер был бы виден всей локальной сети.
@@ -57,5 +81,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     databaseUrl,
     sepoliaRpcUrl,
     appOrigin,
+    trustProxy,
   };
 }
