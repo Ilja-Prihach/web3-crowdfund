@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 
 import type { FastifyServerOptions } from "fastify";
-import { sql } from "drizzle-orm";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { type AppDeps, buildApp } from "../../app.ts";
@@ -87,24 +86,6 @@ describe("лимиты по адресу клиента", () => {
 });
 
 describe("лимиты, не зависящие от адреса", () => {
-  it("сверх потолка живых nonce отвечает 503 AUTH_BUSY, а после их истечения снова выдаёт", async () => {
-    const deps = testDeps(db, { authLimits: limits({ nonceCapacity: 2 }) });
-    await withApp(deps, {}, async (app) => {
-      const nonce = (remoteAddress: string) => app.inject({ method: "POST", url: "/v1/auth/nonce", remoteAddress });
-
-      assert.equal((await nonce("203.0.113.1")).statusCode, 201);
-      assert.equal((await nonce("203.0.113.2")).statusCode, 201);
-      const busy = await nonce("203.0.113.3");
-      assert.equal(busy.statusCode, 503);
-      assert.equal(errorCode(busy), "AUTH_BUSY");
-      assert.equal(busy.headers["retry-after"], "60");
-      assert.equal(await db.$count(authNonces), 2);
-
-      await db.update(authNonces).set({ expiresAt: sql`now() - interval '1 second'` });
-      assert.equal((await nonce("203.0.113.3")).statusCode, 201);
-    });
-  });
-
   it("бюджет проверок через RPC общий на сервер и не мешает обычным кошелькам", async () => {
     const { chain, calls } = createTestChain("rejects-signatures");
     const deps = testDeps(db, { chain, authLimits: limits({ rpcVerificationsPerMinute: 1 }) });

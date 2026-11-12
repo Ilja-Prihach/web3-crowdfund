@@ -3,7 +3,7 @@ import { Type } from "typebox";
 import { ApiErrorSchema } from "../../shared/errors.ts";
 
 export const nonceSchema = {
-  response: { 201: Type.Object({ nonce: Type.String({ pattern: "^[0-9a-f]{64}$" }) }), 503: ApiErrorSchema },
+  response: { 201: Type.Object({ nonce: Type.String({ pattern: "^[0-9a-f]{64}$" }) }) },
 };
 
 export const verifySchema = {
