@@ -18,7 +18,12 @@ function serializeArg(value: unknown) {
 
 // Читает события V2 в диапазоне блоков включительно и превращает их в строки chain_events.
 // strict: лог, который не разобрался по ABI, — ошибка, а не тихо пропущенное событие.
-export async function readContractEvents(chain: ChainClient, contract: IndexedContract, fromBlock: bigint, toBlock: bigint) {
+export async function readContractEvents(
+  chain: ChainClient,
+  contract: IndexedContract,
+  fromBlock: bigint,
+  toBlock: bigint,
+) {
   const logs = await chain.getContractEvents({
     address: contract.address,
     abi: crowdfunding.abi,
