@@ -22,6 +22,12 @@
   }
 }
 
+.avatarWrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
 // Градиент из оттенка адреса: узнаваемый, но без внешних библиотек.
 .avatar {
   flex: none;

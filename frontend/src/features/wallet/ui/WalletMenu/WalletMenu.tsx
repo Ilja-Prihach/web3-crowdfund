@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 
 import { supportedChain } from "@/shared/config/web3";
@@ -14,9 +14,13 @@ const panelId = "wallet-menu";
 
 type WalletMenuProps = {
   onSwitchWallet: () => void;
+  // Слоты для других фич: меню кошелька не знает о входе на сайт, его подставляет шапка.
+  accountPanel?: ReactNode;
+  triggerBadge?: ReactNode;
+  onDisconnect?: () => void;
 };
 
-export function WalletMenu({ onSwitchWallet }: WalletMenuProps) {
+export function WalletMenu({ onSwitchWallet, accountPanel, triggerBadge, onDisconnect }: WalletMenuProps) {
   const connection = useConnection();
   const disconnect = useDisconnect();
   const [isOpen, setIsOpen] = useState(false);
@@ -72,11 +76,14 @@ export function WalletMenu({ onSwitchWallet }: WalletMenuProps) {
         onClick={() => setIsOpen((open) => !open)}
         type="button"
       >
-        <span
-          aria-hidden="true"
-          className={styles.avatar}
-          style={{ "--avatar-hue": addressHue(address) } as CSSProperties}
-        />
+        <span className={styles.avatarWrap}>
+          <span
+            aria-hidden="true"
+            className={styles.avatar}
+            style={{ "--avatar-hue": addressHue(address) } as CSSProperties}
+          />
+          {triggerBadge}
+        </span>
         <span className={styles.address}>{shortenAddress(address)}</span>
         <span aria-hidden="true" className={styles.chevron} />
       </button>
@@ -86,6 +93,7 @@ export function WalletMenu({ onSwitchWallet }: WalletMenuProps) {
           Подключён через {connection.connector ? getWalletName(connection.connector) : "кошелёк"}
         </p>
         <p className={styles.fullAddress}>{address}</p>
+        {accountPanel}
         <button className={styles.item} onClick={copyAddress} type="button">
           {copyLabel}
         </button>
@@ -110,6 +118,7 @@ export function WalletMenu({ onSwitchWallet }: WalletMenuProps) {
         <button
           className={`${styles.item} ${styles.danger}`}
           onClick={() => {
+            onDisconnect?.();
             disconnect.mutate();
             setIsOpen(false);
           }}

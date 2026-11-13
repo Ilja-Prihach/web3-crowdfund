@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { type ComponentProps, useRef } from "react";
 import { useConnect, useConnection, useConnectors, useDisconnect } from "wagmi";
 
 import { Button } from "@/shared/ui/Button/Button";
@@ -12,7 +12,9 @@ import { WalletMenu } from "../WalletMenu/WalletMenu";
 import walletConnectImage from "./assets/wallet-connect.webp";
 import styles from "./ConnectWallet.module.scss";
 
-export function ConnectWallet() {
+type ConnectWalletProps = Pick<ComponentProps<typeof WalletMenu>, "accountPanel" | "triggerBadge" | "onDisconnect">;
+
+export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: ConnectWalletProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const connection = useConnection();
   const connectors = useConnectors();
@@ -51,7 +53,12 @@ export function ConnectWallet() {
     <>
       {/* Адрес известен и при «connected», и при «reconnecting» (сессия из cookie): показываем меню сразу. */}
       {connection.address ? (
-        <WalletMenu onSwitchWallet={openDialog} />
+        <WalletMenu
+          accountPanel={accountPanel}
+          onDisconnect={onDisconnect}
+          onSwitchWallet={openDialog}
+          triggerBadge={triggerBadge}
+        />
       ) : (
         <Button onClick={openDialog} size="compact">
           <span className={styles.labelFull}>Подключить кошелёк</span>
