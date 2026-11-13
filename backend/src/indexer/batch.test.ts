@@ -21,7 +21,7 @@ const finalityDepth = 64;
 
 const stand = useAnvil(async ({ client }) => {
   const campaign = await deployCrowdfunding(client, creator);
-  const deployBlock = await client.getBlockNumber();
+  const deployBlock = await client.getBlockNumber({ cacheTime: 0 });
   return { campaign, contract: { chainId: await client.getChainId(), address: campaign.address, deployBlock } };
 });
 
@@ -91,7 +91,8 @@ describe("indexNextBatch", () => {
     const { campaign, contract } = stand.context;
     await campaign.createCampaign(creator, { goal: parseEther("1") });
     await finalize();
-    await indexNextBatch(deps({ batchSize: 2n }));
+    // Пачка из одного блока: после неё до finalized остаётся непрочитанный блок с событием.
+    await indexNextBatch(deps({ batchSize: 1n }));
     const before = await readCheckpoint(db, contract);
 
     // Узел, который отвечает на всё, кроме eth_getLogs, — как 1rpc с -32029.
@@ -128,7 +129,7 @@ describe("indexNextBatch", () => {
   it("хранит отдельный checkpoint для каждого контракта", async () => {
     const { contract } = stand.context;
     const other = await deployCrowdfunding(stand.anvil.client, creator);
-    const otherContract = { ...contract, address: other.address, deployBlock: await stand.anvil.client.getBlockNumber() };
+    const otherContract = { ...contract, address: other.address, deployBlock: await stand.anvil.client.getBlockNumber({ cacheTime: 0 }) };
     await finalize();
 
     await indexUntilIdle(deps());

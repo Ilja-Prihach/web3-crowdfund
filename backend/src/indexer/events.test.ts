@@ -15,7 +15,7 @@ const stand = useAnvil(async ({ client }) => {
   const contract: IndexedContract = {
     chainId: await client.getChainId(),
     address: campaign.address,
-    deployBlock: await client.getBlockNumber(),
+    deployBlock: await client.getBlockNumber({ cacheTime: 0 }),
   };
   return { campaign, contract };
 });
