@@ -18,6 +18,8 @@ describe("loadEnv", () => {
       sepoliaRpcUrl,
       appOrigin,
       trustProxy: [],
+      indexerBatchSize: 50,
+      indexerPollIntervalMs: 12_000,
     });
   });
 
@@ -30,6 +32,8 @@ describe("loadEnv", () => {
       sepoliaRpcUrl,
       appOrigin,
       trustProxy: [],
+      indexerBatchSize: 50,
+      indexerPollIntervalMs: 12_000,
     });
   });
 
@@ -101,5 +105,16 @@ describe("loadEnv", () => {
     for (const TRUST_PROXY of ["true", "proxy.local", "10.0.0.0/33", "::/129", "10.0.0.1/8/1", "10.0.0.0/x"]) {
       assert.throws(() => loadEnv({ ...required, TRUST_PROXY }), /TRUST_PROXY must be/, TRUST_PROXY);
     }
+  });
+
+  it("читает настройки indexer и отклоняет значения вне диапазона", () => {
+    const env = loadEnv({ ...required, INDEXER_BATCH_SIZE: "20", INDEXER_POLL_INTERVAL_MS: "5000" });
+    assert.equal(env.indexerBatchSize, 20);
+    assert.equal(env.indexerPollIntervalMs, 5_000);
+
+    for (const INDEXER_BATCH_SIZE of ["0", "10001", "1.5", "abc"]) {
+      assert.throws(() => loadEnv({ ...required, INDEXER_BATCH_SIZE }), /INDEXER_BATCH_SIZE must be/, INDEXER_BATCH_SIZE);
+    }
+    assert.throws(() => loadEnv({ ...required, INDEXER_POLL_INTERVAL_MS: "500" }), /INDEXER_POLL_INTERVAL_MS must be/);
   });
 });

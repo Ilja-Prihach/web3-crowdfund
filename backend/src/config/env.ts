@@ -8,6 +8,8 @@ export type Env = {
   sepoliaRpcUrl: string;
   appOrigin: string;
   trustProxy: string[];
+  indexerBatchSize: number;
+  indexerPollIntervalMs: number;
 };
 
 const logLevels: Env["logLevel"][] = ["fatal", "error", "warn", "info", "debug", "trace"];
@@ -19,6 +21,14 @@ function isIpOrCidr(entry: string) {
   if (version === 0 || extra !== undefined) return false;
   if (prefix === undefined) return true;
   return /^\d+$/.test(prefix) && Number(prefix) <= (version === 4 ? 32 : 128);
+}
+
+function integerInRange(value: string | undefined, name: string, fallback: number, min: number, max: number) {
+  const number = Number(value ?? fallback);
+  if (!Number.isInteger(number) || number < min || number > max) {
+    throw new Error(`${name} must be an integer from ${min} to ${max}, got "${value}"`);
+  }
+  return number;
 }
 
 // https везде, http — только для этого компьютера: по сети ключи и cookie шли бы открытым текстом.
@@ -73,6 +83,17 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
   }
 
+  // Indexer: размер пачки eth_getLogs (1rpc отдаёт не больше 50 блоков) и пауза между опросами,
+  // когда indexer догнал finalized (Ethereum выпускает блок раз в 12 секунд).
+  const indexerBatchSize = integerInRange(source.INDEXER_BATCH_SIZE, "INDEXER_BATCH_SIZE", 50, 1, 10_000);
+  const indexerPollIntervalMs = integerInRange(
+    source.INDEXER_POLL_INTERVAL_MS,
+    "INDEXER_POLL_INTERVAL_MS",
+    12_000,
+    1_000,
+    3_600_000,
+  );
+
   return {
     port,
     // Только этот компьютер: с 0.0.0.0 сервер был бы виден всей локальной сети.
@@ -82,5 +103,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     sepoliaRpcUrl,
     appOrigin,
     trustProxy,
+    indexerBatchSize,
+    indexerPollIntervalMs,
   };
 }
