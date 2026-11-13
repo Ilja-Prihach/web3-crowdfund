@@ -42,6 +42,7 @@
 | [backend-api-is-versioned-rest](#backend-api-is-versioned-rest) | API — REST/JSON под `/v1` со схемами TypeBox; финансовые данные frontend по-прежнему читает из контракта |
 | [campaign-media-is-reencoded-on-upload](#campaign-media-is-reencoded-on-upload) | Обложки принимаются как JPEG/PNG/WebP до 5 МБ, пережимаются в WebP 1200×675 и хранятся за интерфейсом `MediaStorage` |
 | [backend-tests-use-real-postgresql](#backend-tests-use-real-postgresql) | Тесты backend идут на `node:test` с настоящим PostgreSQL, а indexer проверяется на Anvil |
+| [indexer-reads-history-from-public-1rpc](#indexer-reads-history-from-public-1rpc) | Пока проект не опубликован, indexer читает историю через публичный `1rpc.io/sepolia` без ключа: пачки по 50 блоков и повтор при `-32029`; ключ провайдера — перед публикацией |
 | [frontend-and-backend-share-one-origin](#frontend-and-backend-share-one-origin) | Браузер ходит в backend по `/api` своего источника; в продакшене маршрутизирует внешний reverse proxy, backend доверяет `X-Forwarded-For` только от него |
 
 ## Действующие решения
@@ -450,6 +451,23 @@ Backend принимает обложку только в форматах JPEG,
 Следствие: для локального запуска тестов backend нужен Docker с PostgreSQL и установленный Foundry.
 
 Связано: [`frontend-unit-tests-use-node-test`](#frontend-unit-tests-use-node-test), [`database-is-postgresql-with-drizzle`](#database-is-postgresql-with-drizzle).
+
+### indexer-reads-history-from-public-1rpc
+
+**Статус:** принято 13 ноября 2026 года (#71).
+
+Пока проект не опубликован, indexer читает события контракта через публичный узел `https://1rpc.io/sepolia` без ключа и регистрации. Это значение `SEPOLIA_RPC_URL` в `backend/.env.example`. Размер пачки `eth_getLogs` — 50 блоков: больше узел не отдаёт (`eth_getLogs is limited to 0 - 50 blocks range`). Ответ `-32029 Too Many Requests` — не отказ, а повод повторить запрос с нарастающей паузой.
+
+Причина: indexer должен прочитать историю с блока deploy V2 `12014545`, а бесплатные публичные узлы с этим справляются по-разному, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history). Publicnode хранит около 2,7 дня истории, Tenderly с 6 ноября 2026 года отвечает `403`, а 1rpc историю хранит. 13 ноября 2026 года он отдал события из блока deploy, а при запросах раз в 0,5–3 секунды примерно каждый десятый ответ был `-32029`. Узел с ключом (Alchemy, Infura и подобные) надёжнее, но требует аккаунта, а для учебной разработки работающего бесплатного узла достаточно.
+
+Следствие:
+
+- первичная догрузка около 115 000 блоков — порядка 2 300 запросов, примерно 40 минут с повторами; дальше каждый опрос — один запрос;
+- indexer при старте проверяет, что узел отдаёт логи с блока deploy и что `eth_chainId` равен `11155111`, и с понятной ошибкой останавливается, если нет (#54);
+- 1rpc — такой же бесплатный публичный узел, как закрывшийся Tenderly. Если он закроется или ужесточит лимиты, меняется только `SEPOLIA_RPC_URL`, код indexer от провайдера не зависит;
+- перед публикацией (#64) основным узлом становится провайдер с ключом в серверном `.env`, а 1rpc остаётся запасным.
+
+Связано: [`indexer-reads-finalized-logs`](#indexer-reads-finalized-logs), [`backend-signs-in-with-siwe-sessions`](#backend-signs-in-with-siwe-sessions).
 
 ### frontend-and-backend-share-one-origin
 
