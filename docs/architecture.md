@@ -92,6 +92,18 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Правило срока «целое число дней от 1 до 365» лежит в `entities/campaign/lib/duration`, его используют и создание, и смена срока: одна feature не импортирует другую. Новый срок контракт отсчитывает от блока подтверждения (`block.timestamp + days`), а не от прежнего дедлайна, поэтому форма предупреждает, что срок может и сократиться, и показывает примерную дату.
 
+## Вход подписью frontend
+
+Вход на сайт живёт в меню кошелька. `features/auth` ничего не знает о меню, а `features/wallet` — о входе: `WalletMenu` принимает слоты `accountPanel`, `triggerBadge` и `onDisconnect`, а заполняет их клиентский `widgets/AppHeader/HeaderWallet`. Там же один раз подключён `useSessionAccountGuard`.
+
+- `api/authApi` ходит на относительный `/api/v1/auth/*` своего источника с `credentials: "same-origin"`: cookie сессии — first-party, CORS не нужен. В разработке `/api/*` проксируют `rewrites` из `next.config.ts` на `BACKEND_URL` (по умолчанию `http://127.0.0.1:4000`), в продакшене — reverse proxy, см. [`DECISIONS.md#frontend-and-backend-share-one-origin`](DECISIONS.md#frontend-and-backend-share-one-origin). Ошибки превращаются в `AuthApiError(status, code)`, `401` на `/session` — в `null`.
+- `lib/signInMessage` собирает EIP-4361 через `createSiweMessage`: домен и URI — `location` текущего сайта (backend сверяет их с `APP_ORIGIN`), адрес через `getAddress` (кошельки отдают его строчными буквами), chain ID Sepolia, `statement` на английском — стандарт допускает только ASCII.
+- `model/useAuth`: `useSession` — `useQuery` на `/session`; `useSignIn` — nonce у backend, подпись `useSignMessage` (не транзакция, газ не нужен), `verify`, ответ сразу в кэш; `useSignOut` — `logout` и `null` в кэше. Текст ошибки считается в `onError`: только frontend знает, сколько прошло с выдачи nonce, и отличает истёкший nonce от прочих `SIWE_INVALID`.
+- `lib/sessionGuard` — сессия завершается, только когда кошелёк `connected` к другому адресу. Пока он подключается или переподключается после загрузки страницы, адреса нет, и сессию не трогаем. Отключение кошелька кнопкой «Отключить» тоже завершает вход.
+- `ui/SignInPanel` показывает «Проверяем вход…», «Вы вошли» со сроком и выходом, «Не выполнен» с объяснением и кнопкой (только в Sepolia) и ошибку с `role="alert"`; `SignedInMark` — точка на аватаре кнопки кошелька.
+
+Идентификатор сессии и подпись в JavaScript не хранятся: сессия — `httpOnly`-cookie, а frontend знает только ответ `/session`.
+
 ## Backend
 
 Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас, подключение к PostgreSQL и модуль `chain`: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.

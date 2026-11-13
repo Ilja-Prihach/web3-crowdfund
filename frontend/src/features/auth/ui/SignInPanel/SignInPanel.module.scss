@@ -1,0 +1,49 @@
+.panel {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+  font-weight: 700;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
+.signedInDot {
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: var(--radius-round);
+  background: var(--color-forest);
+}
+
+// Точка в правом нижнем углу аватара: хвойный — «вошли», обводка цвета поверхности отделяет её от градиента.
+.signedInMark {
+  position: absolute;
+  right: -0.1rem;
+  bottom: -0.1rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-round);
+  background: var(--color-forest);
+}

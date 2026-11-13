@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 import { ThemeToggle } from "@/features/theme/ui/ThemeToggle/ThemeToggle";
-import { ConnectWallet } from "@/features/wallet/ui/ConnectWallet/ConnectWallet";
 import { NetworkBadge } from "@/features/wallet/ui/NetworkBadge/NetworkBadge";
 import { contractExplorerUrl } from "@/shared/config/web3";
 import { BrandMark } from "@/shared/ui/BrandMark/BrandMark";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import styles from "./AppHeader.module.scss";
+import { HeaderWallet } from "./HeaderWallet";
 import { MobileMenu } from "./MobileMenu";
 import { navigationLinks } from "./navigation";
 
@@ -48,7 +48,7 @@ export function AppHeader() {
           <div className={styles.theme}>
             <ThemeToggle />
           </div>
-          <ConnectWallet />
+          <HeaderWallet />
           <MobileMenu />
         </div>
       </div>
