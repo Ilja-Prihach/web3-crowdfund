@@ -17,3 +17,5 @@ export function createDatabase(url: string, { onIdleError, applicationName = "op
 }
 
 export type Database = ReturnType<typeof createDatabase>["db"];
+// Транзакция Drizzle: функции, которые пишут внутри чужой транзакции, принимают её вместо пула.
+export type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

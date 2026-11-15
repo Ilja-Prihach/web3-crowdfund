@@ -10,6 +10,7 @@
     "dev": "node --env-file-if-exists=.env --watch src/server.ts",
     "start": "node --env-file-if-exists=.env src/server.ts",
     "indexer": "node --env-file-if-exists=.env src/indexer.ts",
+    "indexer:rebuild": "node --env-file-if-exists=.env src/rebuild.ts",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "pretest": "forge build --root ../contracts --quiet",

@@ -4,7 +4,15 @@ import { after, beforeEach, describe, it } from "node:test";
 import { sql } from "drizzle-orm";
 
 import { createTestDatabase, postgresErrorCode, resetTestDatabase } from "../test/database.ts";
-import { authNonces, authSessions, chainEvents, indexerCheckpoints } from "./schema.ts";
+import {
+  authNonces,
+  authSessions,
+  campaignMetadata,
+  campaigns,
+  chainEvents,
+  contributions,
+  indexerCheckpoints,
+} from "./schema.ts";
 
 const { db, pool } = createTestDatabase();
 after(() => pool.end());
@@ -37,7 +45,15 @@ describe("схема indexer", () => {
     );
     assert.deepEqual(
       result.rows.map((row) => row.table_name),
-      ["auth_nonces", "auth_sessions", "chain_events", "indexer_checkpoints"],
+      [
+        "auth_nonces",
+        "auth_sessions",
+        "campaign_metadata",
+        "campaigns",
+        "chain_events",
+        "contributions",
+        "indexer_checkpoints",
+      ],
     );
   });
 
@@ -82,6 +98,64 @@ describe("схема indexer", () => {
 
     const rows = await db.select().from(indexerCheckpoints);
     assert.equal(rows.length, 3);
+  });
+});
+
+describe("схема проекций", () => {
+  const key = { chainId: sepolia, contractAddress: contract, campaignId: 7n };
+  const metadata = { ...key, fundingMode: "fixed_deadline" as const, title: "Открытый лекторий", description: "Сбор на зал" };
+  const campaign = {
+    ...key,
+    creator: "0x480ec361ebdd78465831eb555d3efcf650d2a217",
+    goal: 10n ** 18n,
+    deadline: 1_795_000_000n,
+    totalRaised: 0n,
+    cancelled: false,
+    fundsWithdrawn: false,
+    createdBlock: 12_050_000n,
+    updatedBlock: 12_050_000n,
+  };
+  const contribution = { ...key, donor: donation.args.donor, amount: 10n ** 15n, updatedBlock: 12_050_137n };
+
+  it("ограничивает название и описание в байтах UTF-8, как контракт", async () => {
+    await db.insert(campaignMetadata).values({ ...metadata, title: "a".repeat(100) });
+    // 51 кириллическая буква — 102 байта: больше MAX_TITLE_LENGTH, хотя символов меньше 100.
+    await rejectsWith("23514", db.insert(campaignMetadata).values({ ...metadata, campaignId: 8n, title: "я".repeat(51) }));
+    await rejectsWith("23514", db.insert(campaignMetadata).values({ ...metadata, campaignId: 8n, title: "" }));
+    await rejectsWith("23514", db.insert(campaignMetadata).values({ ...metadata, campaignId: 8n, description: "a".repeat(1001) }));
+  });
+
+  it("принимает только режимы сбора из контракта", async () => {
+    await rejectsWith(
+      "23514",
+      db.insert(campaignMetadata).values({ ...metadata, fundingMode: "flexible" as unknown as "open_ended" }),
+    );
+  });
+
+  it("не создаёт кампанию без метаданных и вклад без кампании", async () => {
+    await rejectsWith("23503", db.insert(campaigns).values(campaign));
+    await db.insert(campaignMetadata).values(metadata);
+    await rejectsWith("23503", db.insert(contributions).values(contribution));
+  });
+
+  it("отклоняет отрицательные суммы, нулевую цель и адрес не в нижнем регистре", async () => {
+    await db.insert(campaignMetadata).values(metadata);
+    await rejectsWith("23514", db.insert(campaigns).values({ ...campaign, totalRaised: -1n }));
+    await rejectsWith("23514", db.insert(campaigns).values({ ...campaign, goal: 0n }));
+    await rejectsWith("23514", db.insert(campaigns).values({ ...campaign, creator: campaign.creator.toUpperCase() }));
+    await db.insert(campaigns).values(campaign);
+    await rejectsWith("23514", db.insert(contributions).values({ ...contribution, amount: -1n }));
+  });
+
+  it("удаляет вклады вместе с кампанией, а метаданные оставляет", async () => {
+    await db.insert(campaignMetadata).values(metadata);
+    await db.insert(campaigns).values(campaign);
+    await db.insert(contributions).values(contribution);
+
+    await db.delete(campaigns);
+
+    assert.equal(await db.$count(contributions), 0);
+    assert.equal(await db.$count(campaignMetadata), 1);
   });
 });
 

@@ -5,7 +5,7 @@ import { createPublicClient, custom, http, parseEther } from "viem";
 
 import { createChainClient } from "../chain/client.ts";
 import { crowdfunding } from "../chain/contract.ts";
-import { chainEvents, indexerCheckpoints } from "../db/schema.ts";
+import { campaignMetadata, campaigns, chainEvents, contributions, indexerCheckpoints } from "../db/schema.ts";
 import { anvilAccounts, useAnvil } from "../test/anvil.ts";
 import { deployCrowdfunding } from "../test/crowdfunding.ts";
 import { createTestDatabase, resetTestDatabase } from "../test/database.ts";
@@ -34,6 +34,71 @@ const deps = (overrides: Partial<IndexerDeps> = {}): IndexerDeps => ({
 });
 
 const finalize = () => stand.anvil.client.mine({ blocks: finalityDepth });
+
+// Сверяет проекции с контрактом поле за полем: так проверяется, что indexer пересказал события верно.
+async function assertProjectionMatchesContract() {
+  const { client } = stand.anvil;
+  const { address } = stand.context.contract;
+  const onChain = await client.readContract({ address, abi: crowdfunding.abi, functionName: "getCampaigns", args: [0n, 20n] });
+  const rows = (await db.select().from(campaigns)).toSorted((left, right) => Number(left.campaignId - right.campaignId));
+  const titles = new Map((await db.select().from(campaignMetadata)).map((row) => [row.campaignId, row.title]));
+
+  assert.equal(rows.length, onChain.length, "число кампаний");
+  for (const [index, { id, campaign }] of onChain.entries()) {
+    const row = rows[index];
+    assert.deepEqual(
+      row && {
+        id: row.campaignId,
+        creator: row.creator,
+        title: titles.get(row.campaignId),
+        goal: row.goal,
+        deadline: row.deadline,
+        totalRaised: row.totalRaised,
+        cancelled: row.cancelled,
+        fundsWithdrawn: row.fundsWithdrawn,
+      },
+      {
+        id,
+        creator: campaign.creator.toLowerCase(),
+        title: campaign.title,
+        goal: campaign.goal,
+        deadline: campaign.deadline,
+        totalRaised: campaign.totalRaised,
+        cancelled: campaign.cancelled,
+        fundsWithdrawn: campaign.fundsWithdrawn,
+      },
+      `кампания ${id}`,
+    );
+  }
+  for (const row of await db.select().from(contributions)) {
+    const amount = await client.readContract({
+      address,
+      abi: crowdfunding.abi,
+      functionName: "contributions",
+      args: [row.campaignId, row.donor as `0x${string}`],
+    });
+    assert.equal(row.amount, amount, `вклад ${row.donor} в кампанию ${row.campaignId}`);
+  }
+}
+
+// Все виды событий V2: смена срока, вклады, отмена с возвратом, вывод и возврат после провала.
+async function createEveryEvent() {
+  const { campaign } = stand.context;
+  const cancelled = await campaign.createCampaign(creator, { goal: parseEther("1"), days: 7, title: "Отменённая" });
+  await campaign.updateDeadline(creator, cancelled.campaignId, 10);
+  await campaign.donate(donor, cancelled.campaignId, parseEther("0.4"));
+  await campaign.cancel(creator, cancelled.campaignId);
+  await campaign.refund(donor, cancelled.campaignId);
+  const funded = await campaign.createCampaign(creator, { goal: parseEther("0.5"), mode: "open", title: "Собранная" });
+  await campaign.donate(donor, funded.campaignId, parseEther("0.2"));
+  await campaign.donate(creator, funded.campaignId, parseEther("0.3"));
+  await campaign.withdraw(creator, funded.campaignId);
+  const failed = await campaign.createCampaign(creator, { goal: parseEther("1"), days: 1, title: "Проваленная" });
+  await campaign.donate(donor, failed.campaignId, parseEther("0.1"));
+  await campaign.donate(creator, failed.campaignId, parseEther("0.2"));
+  await campaign.passDays(2);
+  await campaign.refund(donor, failed.campaignId);
+}
 
 // Прогоняет пачки, пока indexer не догонит finalized.
 async function indexUntilIdle(indexerDeps: IndexerDeps) {
@@ -73,10 +138,18 @@ describe("indexNextBatch", () => {
     assert.equal(await db.$count(chainEvents), 5);
   });
 
-  it("повторный проход тех же блоков не создаёт дублей", async () => {
-    const { campaign } = stand.context;
-    const { campaignId } = await campaign.createCampaign(creator, { goal: parseEther("1") });
-    await campaign.donate(donor, campaignId, parseEther("0.1"));
+  it("строит проекции из всех видов событий так, что они совпадают с контрактом", async () => {
+    await createEveryEvent();
+    await finalize();
+
+    await indexUntilIdle(deps({ batchSize: 7n }));
+
+    await assertProjectionMatchesContract();
+    assert.equal(await db.$count(campaignMetadata), 3);
+  });
+
+  it("повторный проход тех же блоков не создаёт дублей и не удваивает суммы", async () => {
+    await createEveryEvent();
     await finalize();
     await indexUntilIdle(deps());
 
@@ -84,7 +157,43 @@ describe("indexNextBatch", () => {
     await db.delete(indexerCheckpoints);
     await indexUntilIdle(deps());
 
-    assert.equal(await db.$count(chainEvents), 2);
+    assert.equal(await db.$count(chainEvents), 13);
+    await assertProjectionMatchesContract();
+  });
+
+  it("ошибка проекции откатывает всю пачку: ни событий, ни метаданных, ни checkpoint", async () => {
+    const { campaign, contract } = stand.context;
+    await campaign.createCampaign(creator, { goal: parseEther("1") });
+    await finalize();
+    // Чужая строка в проекции: CampaignCreated для кампании 0 упрётся в первичный ключ.
+    const key = { chainId: contract.chainId, contractAddress: contract.address.toLowerCase(), campaignId: 0n };
+    await db.insert(campaignMetadata).values({ ...key, fundingMode: "open_ended", title: "x", description: "x" });
+    await db.insert(campaigns).values({
+      ...key,
+      creator: donor.address.toLowerCase(),
+      goal: 1n,
+      deadline: 0n,
+      totalRaised: 0n,
+      cancelled: false,
+      fundsWithdrawn: false,
+      createdBlock: 1n,
+      updatedBlock: 1n,
+    });
+
+    await assert.rejects(indexNextBatch(deps()));
+
+    assert.equal(await db.$count(chainEvents), 0);
+    assert.equal(await readCheckpoint(db, contract), null);
+  });
+
+  it("два indexer над одними блоками одновременно не удваивают суммы", async () => {
+    await createEveryEvent();
+    await finalize();
+
+    await Promise.all([indexUntilIdle(deps({ batchSize: 5n })), indexUntilIdle(deps({ batchSize: 3n }))]);
+
+    assert.equal(await db.$count(chainEvents), 13);
+    await assertProjectionMatchesContract();
   });
 
   it("ошибка чтения не двигает checkpoint, а следующий запуск продолжает с него", async () => {
