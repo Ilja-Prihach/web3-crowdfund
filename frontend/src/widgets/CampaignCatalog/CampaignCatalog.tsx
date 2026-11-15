@@ -3,10 +3,16 @@
 import { useRef, useState } from "react";
 
 import { CampaignCard } from "@/entities/campaign/CampaignCard/CampaignCard";
-import type { CatalogOrder } from "@/entities/campaign/lib/pagination";
-import type { FundingMode } from "@/entities/campaign/model/campaign";
-import { useCampaignCatalog } from "@/entities/campaign/model/useCampaignCatalog";
+import type { CatalogSort } from "@/entities/campaign/api/catalogApi";
+import {
+  type CatalogFilters,
+  defaultCatalogFilters,
+  type ModeFilter,
+  type StatusFilter,
+} from "@/entities/campaign/lib/catalogFilters";
+import { useCatalog } from "@/entities/campaign/model/useCatalog";
 import { pluralize } from "@/shared/lib/plural";
+import { useDebouncedValue } from "@/shared/lib/useDebouncedValue";
 import { Button } from "@/shared/ui/Button/Button";
 import { EmptyState } from "@/shared/ui/EmptyState/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
@@ -14,9 +20,6 @@ import { Select } from "@/shared/ui/Select/Select";
 import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
 import styles from "./CampaignCatalog.module.scss";
-
-type StatusFilter = "all" | "active" | "finished";
-type ModeFilter = "all" | FundingMode;
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Все" },
@@ -30,43 +33,50 @@ const modeFilters: { value: ModeFilter; label: string }[] = [
   { value: "openEnded", label: "Без срока" },
 ];
 
-const orderOptions: { value: CatalogOrder; label: string }[] = [
+const sortOptions: { value: CatalogSort; label: string }[] = [
   { value: "newest", label: "Сначала новые" },
   { value: "oldest", label: "Сначала старые" },
+  { value: "raised", label: "Больше собрано" },
 ];
+
+// У контракта нет сортировки по сумме: без backend этот пункт не предлагается.
+const contractSortOptions = sortOptions.filter((option) => option.value !== "raised");
+
+const searchDelayMs = 300;
+const blockFormat = new Intl.NumberFormat("ru-RU");
 
 export function CampaignCatalog() {
   const [page, setPage] = useState(0);
-  const [order, setOrder] = useState<CatalogOrder>("newest");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [modeFilter, setModeFilter] = useState<ModeFilter>("all");
+  const [filters, setFilters] = useState<CatalogFilters>(defaultCatalogFilters);
   // Время фиксируется при открытии страницы: «осталось 4 дня» не должно прыгать при каждом рендере.
   const [nowSeconds] = useState(() => Math.floor(Date.now() / 1000));
   const sectionRef = useRef<HTMLElement>(null);
 
-  const catalog = useCampaignCatalog(page, order);
+  // В запрос уходит поиск после паузы в наборе, остальные фильтры — сразу.
+  const query = useDebouncedValue(filters.query, searchDelayMs);
+  const catalog = useCatalog({ ...filters, query }, page);
+  const fromBackend = catalog.source === "backend";
+  const searching = query.trim() !== "";
 
-  // Фильтры работают только по загруженной странице: без индексатора глобального поиска нет.
-  const visibleCampaigns = catalog.campaigns.filter(
-    (campaign) =>
-      (statusFilter === "all" ||
-        (statusFilter === "active" ? campaign.status === "active" : campaign.status !== "active")) &&
-      (modeFilter === "all" || campaign.fundingMode === modeFilter),
-  );
-
-  const resetFilters = () => {
-    setStatusFilter("all");
-    setModeFilter("all");
+  // Любой новый фильтр — снова первая страница: прошлая могла кончиться раньше.
+  const updateFilters = (changes: Partial<CatalogFilters>) => {
+    setFilters((current) => ({ ...current, ...changes }));
+    setPage(0);
   };
+
+  const resetFilters = () => updateFilters(defaultCatalogFilters);
 
   const goToPage = (nextPage: number) => {
     setPage(nextPage);
     sectionRef.current?.scrollIntoView({ block: "start" });
   };
 
-  const total = catalog.total === undefined ? undefined : Number(catalog.total);
+  const total = catalog.total;
+  const filtersActive =
+    filters.query.trim() !== "" || filters.status !== "all" || filters.mode !== "all";
   const hasCampaigns = catalog.campaigns.length > 0;
-  const filtersActive = statusFilter !== "all" || modeFilter !== "all";
+  // Панель фильтров нужна, если есть что фильтровать или фильтр уже что-то скрыл.
+  const showToolbar = (total !== undefined && total > 0) || filtersActive;
 
   return (
     <section aria-labelledby="catalog-title" className={styles.catalog} ref={sectionRef}>
@@ -84,54 +94,85 @@ export function CampaignCatalog() {
             ? catalog.isError
               ? "Контракт V2 · Ethereum Sepolia"
               : "Загружаем кампании…"
-            : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · Ethereum Sepolia`}
+            : fromBackend && filtersActive
+              ? `Найдено: ${total} ${pluralize(total, ["сбор", "сбора", "сборов"])}`
+              : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · Ethereum Sepolia`}
         </p>
+        {/* Каталог backend отстаёт до finalized-блока: говорим об этом, а суммы на странице кампании — из контракта. */}
+        {fromBackend && catalog.finalizedBlock !== null ? (
+          <p className={styles.freshness}>
+            Каталог обновляется с задержкой до 15 минут · данные на блоке{" "}
+            {blockFormat.format(catalog.finalizedBlock)}
+          </p>
+        ) : null}
       </header>
 
-      {hasCampaigns ? (
+      {showToolbar ? (
         <div className={styles.toolbar}>
-          <div aria-label="Состояние кампании" className={styles.statusTabs} role="group">
-            {statusFilters.map((filter) => (
-              <button
-                aria-pressed={statusFilter === filter.value}
-                className={styles.statusTab}
-                key={filter.value}
-                onClick={() => setStatusFilter(filter.value)}
-                type="button"
-              >
-                {filter.label}
-              </button>
-            ))}
+          <label className={styles.search}>
+            <span aria-hidden="true" className={styles.searchIcon}>
+              ⌕
+            </span>
+            <input
+              aria-label="Поиск кампаний"
+              className={styles.searchInput}
+              disabled={catalog.source === "contract"}
+              maxLength={100}
+              onChange={(event) => updateFilters({ query: event.target.value })}
+              placeholder="Поиск по названию или описанию"
+              type="search"
+              value={filters.query}
+            />
+          </label>
+
+          <div className={styles.filterRow}>
+            <div aria-label="Состояние кампании" className={styles.statusTabs} role="group">
+              {statusFilters.map((filter) => (
+                <button
+                  aria-pressed={filters.status === filter.value}
+                  className={styles.statusTab}
+                  key={filter.value}
+                  onClick={() => updateFilters({ status: filter.value })}
+                  type="button"
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.filterControls}>
+              <Select
+                ariaLabel="Тип сбора"
+                className={styles.filterSelect}
+                onChange={(mode) => updateFilters({ mode })}
+                options={modeFilters}
+                value={filters.mode}
+              />
+              <Select
+                ariaLabel="Сортировка"
+                className={styles.filterSelect}
+                onChange={(sort) => updateFilters({ sort })}
+                options={fromBackend ? sortOptions : contractSortOptions}
+                value={filters.sort}
+              />
+              {filtersActive ? (
+                <button className={styles.reset} onClick={resetFilters} type="button">
+                  Сбросить
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          <div className={styles.filterControls}>
-            <Select
-              ariaLabel="Тип сбора"
-              className={styles.filterSelect}
-              onChange={setModeFilter}
-              options={modeFilters}
-              value={modeFilter}
-            />
-            <Select
-              ariaLabel="Сортировка"
-              className={styles.filterSelect}
-              onChange={(nextOrder) => {
-                setOrder(nextOrder);
-                setPage(0);
-              }}
-              options={orderOptions}
-              value={order}
-            />
-            {filtersActive ? (
-              <button className={styles.reset} onClick={resetFilters} type="button">
-                Сбросить
+          {catalog.source === "contract" && !catalog.isError ? (
+            <div className={styles.fallback} role="status">
+              <p>
+                Поиск и сортировка по сумме временно недоступны: показываем кампании напрямую из контракта.
+                {catalog.pageCount > 1 ? " Фильтры применяются к этой странице." : null}
+              </p>
+              <button className={styles.reset} onClick={() => void catalog.retryBackend()} type="button">
+                Повторить поиск
               </button>
-            ) : null}
-          </div>
-
-          {/* Без indexer фильтры видят только загруженную страницу — говорим об этом прямо. */}
-          {catalog.pageCount > 1 ? (
-            <p className={styles.note}>Фильтры применяются к этой странице.</p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -159,21 +200,27 @@ export function CampaignCatalog() {
             </div>
           ))}
         </div>
+      ) : !hasCampaigns && filtersActive ? (
+        <div className={styles.filteredEmpty}>
+          <p>
+            {searching && fromBackend
+              ? `По запросу «${query.trim()}» ничего не найдено.`
+              : fromBackend
+                ? "Нет кампаний с такими фильтрами."
+                : "На этой странице нет кампаний с такими фильтрами."}
+          </p>
+          <Button onClick={resetFilters} size="compact" variant="secondary">
+            Сбросить фильтры
+          </Button>
+        </div>
       ) : !hasCampaigns ? (
         <EmptyState
           description="В контракте V2 ещё не создано ни одного сбора. Как только кто-то создаст кампанию, она появится здесь."
           title="Кампаний пока нет"
         />
-      ) : visibleCampaigns.length === 0 ? (
-        <div className={styles.filteredEmpty}>
-          <p>На этой странице нет кампаний с такими фильтрами.</p>
-          <Button onClick={resetFilters} size="compact" variant="secondary">
-            Сбросить фильтры
-          </Button>
-        </div>
       ) : (
-        <ul className={styles.grid}>
-          {visibleCampaigns.map((campaign) => (
+        <ul aria-busy={catalog.isUpdating || undefined} className={[styles.grid, catalog.isUpdating ? styles.updating : undefined].filter(Boolean).join(" ")}>
+          {catalog.campaigns.map((campaign) => (
             <li key={campaign.id.toString()}>
               <CampaignCard campaign={campaign} nowSeconds={nowSeconds} />
             </li>

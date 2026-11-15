@@ -190,7 +190,7 @@ Next.js App Router отвечает за маршруты, layouts, metadata и 
 
 ### frontend-reads-sepolia-directly
 
-**Статус:** действует во Frontend MVP. Providers, конфиг Sepolia и подключение injected-кошелька реализованы в PR 4; чтение каталога кампаний — в PR 5.
+**Статус:** действует во Frontend MVP. Providers, конфиг Sepolia и подключение injected-кошелька реализованы в PR 4; чтение каталога кампаний — в PR 5. Уточнено 15 ноября 2026 года (#60): каталог читает API backend, а прямое чтение контракта остаётся откатом при недоступном backend; суммы и действия на странице кампании по-прежнему из контракта.
 
 Frontend MVP использует wagmi, viem и TanStack Query для прямого чтения V2-контракта в Ethereum Sepolia и отправки транзакций через injected browser wallet. Backend, собственная финансовая база и WalletConnect не добавляются на этом этапе.
 

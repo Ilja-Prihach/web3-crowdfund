@@ -4,8 +4,9 @@ import { type CatalogOrder, getPageCount, getPageWindow } from "../lib/paginatio
 import { toCampaign } from "./campaign";
 import { crowdfundingContract } from "./contract";
 
-export function useCampaignCatalog(page: number, order: CatalogOrder) {
-  const total = useReadContract({ ...crowdfundingContract, functionName: "nextCampaignId" });
+// enabled: false — контракт не читается, пока каталог отдаёт backend: RPC-запросы не тратятся зря.
+export function useCampaignCatalog(page: number, order: CatalogOrder, enabled = true) {
+  const total = useReadContract({ ...crowdfundingContract, functionName: "nextCampaignId", query: { enabled } });
   const pageWindow = total.data === undefined ? null : getPageWindow(total.data, page, order);
 
   const campaigns = useReadContract({
@@ -13,7 +14,7 @@ export function useCampaignCatalog(page: number, order: CatalogOrder) {
     functionName: "getCampaigns",
     args: pageWindow ? [pageWindow.offset, pageWindow.limit] : undefined,
     query: {
-      enabled: pageWindow !== null,
+      enabled: enabled && pageWindow !== null,
       select: (views) => {
         const list = views.map(toCampaign);
         return order === "newest" ? list.reverse() : list;
