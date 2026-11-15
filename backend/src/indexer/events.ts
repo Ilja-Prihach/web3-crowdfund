@@ -9,6 +9,12 @@ export type ChainEventRow = typeof chainEvents.$inferInsert;
 // Какой контракт читает indexer. В приложении — V2 в Sepolia, в тестах — свежий контракт на Anvil.
 export type IndexedContract = { chainId: number; address: Address; deployBlock: bigint };
 
+export const sepoliaCrowdfunding: IndexedContract = {
+  chainId: crowdfunding.chain.id,
+  address: crowdfunding.address,
+  deployBlock: crowdfunding.deployBlock,
+};
+
 // Аргумент события → строка для jsonb: в JSON нет bigint, а адреса в базе хранятся строчными буквами.
 function serializeArg(value: unknown) {
   if (typeof value === "string" && isAddress(value)) return value.toLowerCase();

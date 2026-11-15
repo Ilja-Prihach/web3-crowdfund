@@ -1,11 +1,10 @@
 import { pino } from "pino";
 
 import { createChainClient } from "./chain/client.ts";
-import { crowdfunding } from "./chain/contract.ts";
 import { loadEnv } from "./config/env.ts";
 import { createDatabase } from "./db/client.ts";
 import { indexNextBatch } from "./indexer/batch.ts";
-import type { IndexedContract } from "./indexer/events.ts";
+import { sepoliaCrowdfunding } from "./indexer/events.ts";
 import { runIndexerLoop } from "./indexer/loop.ts";
 import { checkNode } from "./indexer/startup.ts";
 import { loggerOptions } from "./shared/logger.ts";
@@ -18,11 +17,7 @@ const { db, pool } = createDatabase(env.databaseUrl, {
   onIdleError: (error) => log.warn({ err: error }, "idle database connection failed"),
 });
 const chain = createChainClient(env.sepoliaRpcUrl);
-const contract: IndexedContract = {
-  chainId: crowdfunding.chain.id,
-  address: crowdfunding.address,
-  deployBlock: crowdfunding.deployBlock,
-};
+const contract = sepoliaCrowdfunding;
 const batchSize = BigInt(env.indexerBatchSize);
 
 // SIGINT/SIGTERM: текущая пачка дописывается, ожидание прерывается, пул закрывается.
