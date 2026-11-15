@@ -37,9 +37,16 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Подключённым считается кошелёк с известным адресом: и в статусе `connected`, и в статусе `reconnecting`, в котором wagmi восстанавливает сессию из cookie, см. [`gotchas.md#wagmi-restored-session-is-reconnecting`](gotchas.md#wagmi-restored-session-is-reconnecting). Сокращение адреса и оттенок аватара — чистые функции в `frontend/src/shared/lib/address.ts`; регистр EIP-55 при показе не меняется.
 
-## On-chain-каталог frontend
+## Каталог frontend
 
-Маршрут `/campaigns` (`frontend/src/app/campaigns/page.tsx`) рендерит клиентский виджет `widgets/CampaignCatalog`. Данные читаются напрямую из V2 без кошелька, см. [`DECISIONS.md#frontend-reads-sepolia-directly`](DECISIONS.md#frontend-reads-sepolia-directly).
+Маршрут `/campaigns` (`frontend/src/app/campaigns/page.tsx`) рендерит клиентский виджет `widgets/CampaignCatalog`. Каталог берёт данные из API backend (`/api/v1/campaigns`), а если backend недоступен — читает V2 напрямую без кошелька, как во Frontend MVP (#60), см. [`DECISIONS.md#frontend-reads-sepolia-directly`](DECISIONS.md#frontend-reads-sepolia-directly).
+
+- `api/catalogApi` — клиент API по образцу `authApi`: относительный путь своего источника, `CatalogApiError` со `status` и `code`. Запрос обрывается через 5 секунд (`AbortSignal.timeout`) и по отмене TanStack Query (`AbortSignal.any`); код ошибки различает `TIMEOUT`, `ABORTED` и `NETWORK_ERROR`. `fromCampaignJson` переводит ответ в ту же `Campaign`, что и чтение контракта: строки wei — в `bigint`, `deadline: null` — в `0n`, адрес создателя — с контрольной суммой EIP-55. Незнакомый статус, режим или адрес — ошибка ответа, а не тихо неверная карточка;
+- `lib/catalogFilters` переводит фильтры интерфейса в параметры API («Завершены» — четыре статуса), фильтрует страницу контракта при откате и выбирает источник чистой функцией `chooseCatalogSource`: ответ с `finalizedBlock` — backend; ошибка, таймаут или `finalizedBlock: null` (indexer ещё не запускался) — контракт;
+- `model/useCatalog` — `useQuery` к backend с `placeholderData: keepPreviousData` (при наборе текста остаётся прошлый список) и `retry: false` (откат сразу). Хук контракта вызывается всегда, но с `enabled` только при откате, поэтому пока backend отвечает, RPC-запросов нет. Виджет получает одну форму данных из любого источника;
+- поиск уходит в запрос после 300 мс паузы в наборе (`shared/lib/useDebouncedValue`), любой новый фильтр возвращает на первую страницу. Под заголовком — строка «Каталог обновляется с задержкой до 15 минут · данные на блоке N». При откате поле поиска неактивно, «Больше собрано» убирается из сортировки, а плашка объясняет причину и предлагает повторить запрос к backend.
+
+Суммы и действия на странице кампании по-прежнему читаются из контракта.
 
 Сущность кампании живёт в `frontend/src/entities/campaign`:
 
@@ -50,7 +57,7 @@ Frontend использует Next.js App Router. Корневой layout под
 - `lib/deadline` переводит Unix-дедлайн в «N дней» или «N ч»; время фиксируется при открытии страницы;
 - `CampaignCard`, `CampaignStatus`, `CampaignProgress` и `CampaignArtwork` — карточка одинакового размера с бейджем статуса, меткой срока, прогрессом, подсказкой о судьбе средств и автором. Ссылка на страницу кампании стоит на заголовке и растягивается на всю карточку через `::after`, поэтому в дереве доступности карточка остаётся одной ссылкой. Обложка — demo-иллюстрация для кампаний проекта или детерминированный узор по ID, см. [`DECISIONS.md#frontend-demo-campaigns-use-off-chain-covers`](DECISIONS.md#frontend-demo-campaigns-use-off-chain-covers).
 
-Фильтры «Идёт сбор / Завершены» и по типу сбора работают только по загруженной странице из не более чем 20 кампаний; при нескольких страницах интерфейс говорит об этом явно. Тип сбора и сортировка выбираются через `shared/ui/Select` — собственный выпадающий список с ролью `combobox`, навигацией стрелками, `Home`/`End`, `Escape` и закрытием по клику снаружи; переход между пунктами вынесен в чистую `selectNavigation` с unit-тестом. Каталог различает загрузку, пустой контракт, ошибку RPC с повтором и пустой результат фильтров.
+С backend фильтры «Идёт сбор / Завершены», тип сбора, поиск и сортировка по собранной сумме работают по всему каталогу. При откате на контракт фильтры видят только загруженную страницу из не более чем 20 кампаний, и при нескольких страницах плашка говорит об этом явно. Тип сбора и сортировка выбираются через `shared/ui/Select` — собственный выпадающий список с ролью `combobox`, навигацией стрелками, `Home`/`End`, `Escape` и закрытием по клику снаружи; переход между пунктами вынесен в чистую `selectNavigation` с unit-тестом. Каталог различает загрузку, пустой контракт, ошибку RPC с повтором, пустой результат фильтров и поиска и откат на контракт.
 
 Модули, которые загружают unit-тесты, импортируют соседей относительным путём с `.ts`: `node --test` не понимает псевдоним `@/`, см. [`gotchas.md#node-test-does-not-resolve-path-alias`](gotchas.md#node-test-does-not-resolve-path-alias). Для литералов `bigint` в `frontend/tsconfig.json` установлен `target: ES2020`; код для браузера собирает Next.js, а `tsc` только проверяет типы.
 
