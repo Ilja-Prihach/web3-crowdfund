@@ -6,6 +6,7 @@ import { createDatabase } from "./db/client.ts";
 import { indexNextBatch } from "./indexer/batch.ts";
 import { sepoliaCrowdfunding } from "./indexer/events.ts";
 import { runIndexerLoop } from "./indexer/loop.ts";
+import { createReconciler, reconcileProjections } from "./indexer/reconcile.ts";
 import { checkNode } from "./indexer/startup.ts";
 import { loggerOptions } from "./shared/logger.ts";
 
@@ -19,6 +20,12 @@ const { db, pool } = createDatabase(env.databaseUrl, {
 const chain = createChainClient(env.sepoliaRpcUrl);
 const contract = sepoliaCrowdfunding;
 const batchSize = BigInt(env.indexerBatchSize);
+// Сверка с контрактом: при первом догоне finalized и затем раз в час — около десятка eth_call за раз.
+const reconcile = createReconciler({
+  reconcile: () => reconcileProjections({ db, chain, contract }),
+  log,
+  intervalMs: 3_600_000,
+});
 
 // SIGINT/SIGTERM: текущая пачка дописывается, ожидание прерывается, пул закрывается.
 const stop = new AbortController();
@@ -40,6 +47,7 @@ try {
     log,
     signal: stop.signal,
     pollIntervalMs: env.indexerPollIntervalMs,
+    onIdle: reconcile,
   });
 } catch (error) {
   log.fatal({ err: error }, "indexer stopped");

@@ -54,6 +54,27 @@ describe("runIndexerLoop", () => {
     assert.equal(warnings.length, 4);
   });
 
+  it("на простое вызывает onIdle перед ожиданием, а во время догрузки — нет", async () => {
+    const stop = new AbortController();
+    const script = [indexed(1n, 50n), idle, indexed(51n, 60n), idle];
+    const timeline: string[] = [];
+
+    await runIndexerLoop({
+      indexBatch: () => {
+        const next = script.shift() ?? idle;
+        if (script.length === 0) stop.abort();
+        return Promise.resolve(next);
+      },
+      log: { info: () => {}, warn: () => {} },
+      signal: stop.signal,
+      pollIntervalMs: 12_000,
+      onIdle: () => Promise.resolve(void timeline.push("onIdle")),
+      sleep: (ms) => Promise.resolve(void timeline.push(`sleep ${ms}`)),
+    });
+
+    assert.deepEqual(timeline, ["sleep 1000", "onIdle", "sleep 12000", "sleep 1000", "onIdle", "sleep 12000"]);
+  });
+
   it("сразу выходит, если остановка пришла до первой пачки", async () => {
     const stop = new AbortController();
     stop.abort();

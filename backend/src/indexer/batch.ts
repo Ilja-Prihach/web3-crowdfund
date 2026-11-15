@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import type { ChainClient } from "../chain/client.ts";
-import type { Database } from "../db/client.ts";
+import type { Database, DatabaseTransaction } from "../db/client.ts";
 import { campaignMetadata, chainEvents, indexerCheckpoints } from "../db/schema.ts";
 import { type ChainEventRow, type IndexedContract, readContractEvents } from "./events.ts";
 import { type CampaignMetadataRow, readCampaignMetadata } from "./metadata.ts";
@@ -14,7 +14,7 @@ export type BatchResult =
   | { status: "idle"; finalized: bigint };
 
 // Последний полностью записанный блок или null, если indexer ещё не запускался.
-export async function readCheckpoint(db: Database, contract: IndexedContract) {
+export async function readCheckpoint(db: Database | DatabaseTransaction, contract: IndexedContract) {
   const [row] = await db
     .select({ lastBlock: indexerCheckpoints.lastBlock })
     .from(indexerCheckpoints)

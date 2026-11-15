@@ -12,6 +12,8 @@ export type LoopOptions = {
   pollIntervalMs: number;
   // Между пачками догрузки: не засыпать публичный узел запросами подряд.
   catchUpDelayMs?: number;
+  // Вызывается, когда indexer догнал finalized, перед ожиданием: здесь сверка проекций с контрактом.
+  onIdle?: () => Promise<void>;
   sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
 };
 
@@ -29,6 +31,7 @@ export async function runIndexerLoop({
   signal,
   pollIntervalMs,
   catchUpDelayMs = 1_000,
+  onIdle,
   sleep = abortableSleep,
 }: LoopOptions) {
   let failures = 0;
@@ -49,6 +52,7 @@ export async function runIndexerLoop({
         );
         await sleep(catchUpDelayMs, signal);
       } else {
+        await onIdle?.();
         await sleep(pollIntervalMs, signal);
       }
     } catch (error) {
