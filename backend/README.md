@@ -80,6 +80,14 @@ curl -i -X POST http://127.0.0.1:4000/v1/auth/nonce
 
 Ответ `201` с `{"nonce":"…"}` и `cache-control: no-store`. Подписанное сообщение собирает frontend (#59); правила проверки — в [`docs/architecture.md`](../docs/architecture.md#backend).
 
+## Каталог
+
+`GET /v1/campaigns` отдаёт каталог из проекций indexer: поиск `q`, фильтры `status` (можно повторять) и `mode`, сортировка `sort=newest|oldest|raised`, страницы `limit` (до 50) и `offset` (до 10 000). `GET /v1/campaigns/:id` — одна кампания. Оба ответа содержат `finalizedBlock` — блок, на котором основаны данные; полная схема — в [`docs/architecture.md`](../docs/architecture.md#backend). Проверка вручную:
+
+```sh
+curl -s 'http://127.0.0.1:4000/v1/campaigns?status=active&sort=raised&limit=3'
+```
+
 ## Миграции
 
 Схема таблиц описывается в `src/db/schema.ts`. `npm run db:generate -- --name <что_меняется>` превращает её изменения в SQL-файл в `drizzle/` с понятным именем, а `npm run db:migrate` применяет новые миграции к `DATABASE_URL`; обе команды сами читают `.env`. Миграции коммитятся; база меняется только ими. Уже применённые миграции Drizzle помнит в схеме `drizzle` и повторно не выполняет.
