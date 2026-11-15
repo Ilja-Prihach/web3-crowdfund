@@ -39,6 +39,9 @@ export const chainEvents = pgTable(
     chainId: integer("chain_id").notNull(),
     contractAddress: text("contract_address").notNull(),
     blockNumber: bigint("block_number", { mode: "bigint" }).notNull(),
+    // Время блока для ленты активности. null — событие записано до миграции 0003 и ещё не дочитано
+    // командой indexer:rebuild.
+    blockTimestamp: timestamp("block_timestamp", { withTimezone: true }),
     txHash: text("tx_hash").notNull(),
     logIndex: integer("log_index").notNull(),
     eventName: text("event_name").notNull(),
@@ -51,6 +54,14 @@ export const chainEvents = pgTable(
     primaryKey({ columns: [table.chainId, table.txHash, table.logIndex] }),
     // Порядок воспроизведения для проекций: блок, затем лог внутри блока.
     index("chain_events_replay_idx").on(table.chainId, table.contractAddress, table.blockNumber, table.logIndex),
+    // Лента одной кампании от новых к старым: фильтр по кампании и тот же порядок без сортировки в памяти.
+    index("chain_events_campaign_idx").on(
+      table.chainId,
+      table.contractAddress,
+      table.campaignId,
+      table.blockNumber,
+      table.logIndex,
+    ),
     check("chain_events_chain_id_positive", sql`${table.chainId} > 0`),
     check("chain_events_contract_address_format", sql`${table.contractAddress} ~ '^0x[0-9a-f]{40}$'`),
     check("chain_events_tx_hash_format", sql`${table.txHash} ~ '^0x[0-9a-f]{64}$'`),

@@ -1,0 +1,2 @@
+ALTER TABLE "chain_events" ADD COLUMN "block_timestamp" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "chain_events_campaign_idx" ON "chain_events" USING btree ("chain_id","contract_address","campaign_id","block_number","log_index");
