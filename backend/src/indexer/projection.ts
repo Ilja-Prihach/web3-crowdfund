@@ -10,6 +10,13 @@ export type ProjectedEvent = Pick<ChainEventRow, "blockNumber" | "logIndex" | "e
 type Executor = Database | DatabaseTransaction;
 type CampaignKey = { chainId: number; contractAddress: string; campaignId: bigint };
 
+// Одна транзакция на контракт в каждый момент: пачка indexer, второй indexer и пересборка проекций ждут друг друга.
+// Advisory lock — блокировка PostgreSQL по ключу приложения; xact-вариант снимается сам в конце транзакции.
+export async function lockContract(tx: DatabaseTransaction, contract: IndexedContract) {
+  const key = `projection:${contract.chainId}:${contract.address.toLowerCase()}`;
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+}
+
 // Порядок воспроизведения журнала: блок, затем лог внутри блока — как события шли в сети.
 export function compareEvents(left: ProjectedEvent, right: ProjectedEvent) {
   if (left.blockNumber !== right.blockNumber) return left.blockNumber < right.blockNumber ? -1 : 1;
