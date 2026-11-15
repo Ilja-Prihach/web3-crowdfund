@@ -8,13 +8,21 @@ import type { ChainClient } from "./chain/client.ts";
 import type { Database } from "./db/client.ts";
 import { authRoutes } from "./modules/auth/routes.ts";
 import { type AuthLimits, defaultAuthLimits } from "./modules/auth/service.ts";
+import { campaignRoutes } from "./modules/campaigns/routes.ts";
 import { healthRoutes } from "./modules/health/routes.ts";
 import { registerErrorHandlers } from "./shared/errors.ts";
 import { createFixedWindowLimiter } from "./shared/fixed-window.ts";
 
 // Внешние ресурсы передаются сюда, а не импортируются глобально: тест подставляет тестовую базу и узел без сети.
-// Лимиты по умолчанию — defaultAuthLimits; тест может уменьшить их, чтобы дойти до границы за несколько запросов.
-export type AppDeps = { db: Database; chain: ChainClient; appOrigin: string; authLimits?: AuthLimits };
+// Лимиты по умолчанию — defaultAuthLimits и 120 запросов каталога в минуту с адреса; тест может уменьшить их,
+// чтобы дойти до границы за несколько запросов.
+export type AppDeps = {
+  db: Database;
+  chain: ChainClient;
+  appOrigin: string;
+  authLimits?: AuthLimits;
+  catalogRequestsPerMinute?: number;
+};
 
 // Сборка приложения отдельно от запуска: тест создаёт app и шлёт запросы через inject без порта.
 export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
@@ -45,6 +53,11 @@ export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
     limits,
     allowRpcVerification: createFixedWindowLimiter(limits.rpcVerificationsPerMinute, 60_000),
     prefix: "/v1/auth",
+  });
+  void app.register(campaignRoutes, {
+    db: deps.db,
+    requestsPerMinute: deps.catalogRequestsPerMinute ?? 120,
+    prefix: "/v1/campaigns",
   });
 
   return app;
