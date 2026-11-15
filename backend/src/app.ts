@@ -1,4 +1,5 @@
 import fastifyCookie from "@fastify/cookie";
+import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyServerOptions } from "fastify";
@@ -20,6 +21,9 @@ export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
   // Type provider выводит типы параметров, тела и ответа из схем TypeBox: одна схема и проверяет данные, и задаёт тип.
   const app = Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
   registerErrorHandlers(app);
+  // Безопасные заголовки на всех ответах, включая ошибки: nosniff, CSP, HSTS и запрет встраивать ответы во фреймы.
+  // CORS не подключается: браузер ходит в backend через /api своего источника.
+  void app.register(fastifyHelmet);
   void app.register(fastifyCookie);
   // Лимиты по адресу клиента (request.ip) включаются только на маршрутах с config.rateLimit.
   // Плагин регистрируется раньше маршрутов, иначе он не увидит их настройки.
