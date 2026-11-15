@@ -18,7 +18,7 @@ describe("loadEnv", () => {
       sepoliaRpcUrl,
       appOrigin,
       trustProxy: [],
-      indexerBatchSize: 50,
+      indexerBatchSize: 2_000,
       indexerPollIntervalMs: 12_000,
     });
   });
@@ -32,7 +32,7 @@ describe("loadEnv", () => {
       sepoliaRpcUrl,
       appOrigin,
       trustProxy: [],
-      indexerBatchSize: 50,
+      indexerBatchSize: 2_000,
       indexerPollIntervalMs: 12_000,
     });
   });

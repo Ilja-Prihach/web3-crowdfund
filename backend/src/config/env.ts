@@ -83,9 +83,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
   }
 
-  // Indexer: размер пачки eth_getLogs (1rpc отдаёт не больше 50 блоков) и пауза между опросами,
+  // Indexer: размер пачки eth_getLogs (окно провайдера; Tenderly отдаёт всю историю одним запросом) и пауза между опросами,
   // когда indexer догнал finalized (Ethereum выпускает блок раз в 12 секунд).
-  const indexerBatchSize = integerInRange(source.INDEXER_BATCH_SIZE, "INDEXER_BATCH_SIZE", 50, 1, 10_000);
+  const indexerBatchSize = integerInRange(source.INDEXER_BATCH_SIZE, "INDEXER_BATCH_SIZE", 2_000, 1, 10_000);
   const indexerPollIntervalMs = integerInRange(
     source.INDEXER_POLL_INTERVAL_MS,
     "INDEXER_POLL_INTERVAL_MS",
