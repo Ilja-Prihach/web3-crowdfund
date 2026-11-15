@@ -106,7 +106,7 @@ Frontend использует Next.js App Router. Корневой layout под
 
 ## Backend
 
-Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас, подключение к PostgreSQL, модуль `chain`, вход подписью и indexer: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.
+Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас, подключение к PostgreSQL, модуль `chain`, вход подписью, indexer и API каталога: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.
 
 `config/env.ts` читает переменные окружения в одном месте и проверяет их при старте: неверный `PORT`, `LOG_LEVEL`, `DATABASE_URL` или `SEPOLIA_RPC_URL` останавливает процесс сразу; значения строк подключения в текст ошибки не попадают. По умолчанию сервер слушает только `127.0.0.1`. На `SIGINT` и `SIGTERM` вызывается `app.close()`: новые запросы не принимаются, текущие завершаются.
 
@@ -172,7 +172,16 @@ Indexer — второй процесс, `src/indexer.ts` (`npm run indexer`); A
 
 Интеграционные тесты работают на стенде Anvil (`src/test/anvil.ts`, `src/test/crowdfunding.ts`, подробности — в [`backend/README.md`](../backend/README.md#стенд-anvil)): локальный узел с chain ID Sepolia, свежий контракт V2 и снимок состояния на каждый тест. На нём проверены все шесть событий V2, разобранные backend-ABI, и вход смарт-кошельком: развёрнутый ERC-1271 и неразвёрнутый ERC-6492 (тестовые контракты `contracts/test/helpers/TestSmartWallet.sol`). viem не знает адреса валидатора ERC-6492 в Sepolia, поэтому проверка идёт «без развёртывания» — `eth_call` с байткодом валидатора — и одинаково работает в Sepolia и на Anvil.
 
-`buildApp` получает `{ db, chain, appOrigin, authLimits? }`: клиент цепочки создаёт `server.ts` из `SEPOLIA_RPC_URL`, а тесты подставляют узел без сети из `test/app.ts`, который отвечает на `eth_call` отказом или имитирует упавший RPC. Тип `ChainClient` — `PublicClient` для Sepolia без привязки к транспорту.
+`buildApp` регистрирует `@fastify/helmet` до маршрутов, поэтому безопасные заголовки (`Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`) стоят на каждом ответе, включая ошибки. CORS не подключается: браузер обращается к backend через `/api` своего источника, см. [`DECISIONS.md#frontend-and-backend-share-one-origin`](DECISIONS.md#frontend-and-backend-share-one-origin).
+
+`buildApp` получает `{ db, chain, appOrigin, authLimits?, catalogRequestsPerMinute? }`: клиент цепочки создаёт `server.ts` из `SEPOLIA_RPC_URL`, а тесты подставляют узел без сети из `test/app.ts`, который отвечает на `eth_call` отказом или имитирует упавший RPC. Тип `ChainClient` — `PublicClient` для Sepolia без привязки к транспорту.
+
+Модуль `modules/campaigns` — каталог V2 в Sepolia из проекций #53, маршруты под `/v1/campaigns` (#47):
+
+- `GET /v1/campaigns` — страница каталога. Параметры: `q` (поиск по названию и описанию через `ILIKE`, 1–100 символов; `%`, `_` и `\` экранируются и ищутся буквально), `status` (повторяемый: `active`, `successful`, `failed`, `withdrawn`, `cancelled`), `mode` (`fixed_deadline` или `open_ended`), `sort` (`newest`, `oldest`, `raised`), `limit` 1–50 (по умолчанию 20) и `offset` 0–10 000. Ответ — `{ items, total, limit, offset, finalizedBlock }`;
+- `GET /v1/campaigns/:id` — `{ campaign, finalizedBlock }` или `404 CAMPAIGN_NOT_FOUND`; id — десятичный uint256 без ведущих нулей.
+
+Суммы, цель, срок и блоки отдаются строками: в JSON нет `bigint`, а `Number` теряет точность после 2^53 wei. У сбора без срока `deadline: null`. Статус вычисляется в SQL при каждом запросе по правилам `_getCampaignStatus` (отменена → выведена → цель достигнута → без срока или `now < deadline` — идёт → иначе провалена), и фильтр по статусу применяется до пагинации. Сортировка вторым ключом всегда берёт `campaign_id`, чтобы при равных суммах кампании не перескакивали между страницами. Страница, `count(*)` и checkpoint читаются в одной транзакции `REPEATABLE READ READ ONLY`, поэтому `total` и `finalizedBlock` согласованы со страницей. `finalizedBlock` — checkpoint indexer, последний finalized-блок, до которого применены события. Лимит — 120 запросов в минуту с адреса клиента. Суммы и действия на странице кампании frontend по-прежнему читает из контракта.
 
 Модуль `modules/health` отвечает на два вопроса. `GET /health` — жив ли процесс; БД не трогает, потому что перезапуск сервера при упавшей базе не помогает. `GET /ready` — готов ли он обслуживать запросы: выполняет `select 1` и при недоступной базе отвечает `503 NOT_READY` без текста ошибки PostgreSQL.
 
