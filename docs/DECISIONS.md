@@ -42,7 +42,8 @@
 | [backend-api-is-versioned-rest](#backend-api-is-versioned-rest) | API — REST/JSON под `/v1` со схемами TypeBox; финансовые данные frontend по-прежнему читает из контракта |
 | [campaign-media-is-reencoded-on-upload](#campaign-media-is-reencoded-on-upload) | Обложки принимаются как JPEG/PNG/WebP до 5 МБ, пережимаются в WebP 1200×675 и хранятся за интерфейсом `MediaStorage` |
 | [backend-tests-use-real-postgresql](#backend-tests-use-real-postgresql) | Тесты backend идут на `node:test` с настоящим PostgreSQL, а indexer проверяется на Anvil |
-| [indexer-reads-history-from-public-1rpc](#indexer-reads-history-from-public-1rpc) | Пока проект не опубликован, indexer читает историю через публичный `1rpc.io/sepolia` без ключа: пачки по 50 блоков и повтор при `-32029`; ключ провайдера — перед публикацией |
+| [indexer-reads-history-from-public-1rpc](#indexer-reads-history-from-public-1rpc) | Заменено: indexer читал историю через публичный `1rpc.io/sepolia` пачками по 50 блоков |
+| [indexer-reads-history-from-public-tenderly](#indexer-reads-history-from-public-tenderly) | Пока проект не опубликован, indexer читает историю через публичный Tenderly без ключа пачками по 2 000 блоков; узел с ключом — перед публикацией или если Tenderly снова закроется |
 | [frontend-and-backend-share-one-origin](#frontend-and-backend-share-one-origin) | Браузер ходит в backend по `/api` своего источника; в продакшене маршрутизирует внешний reverse proxy, backend доверяет `X-Forwarded-For` только от него |
 
 ## Действующие решения
@@ -454,7 +455,7 @@ Backend принимает обложку только в форматах JPEG,
 
 ### indexer-reads-history-from-public-1rpc
 
-**Статус:** принято 13 ноября 2026 года (#71).
+**Статус:** принято 13 ноября 2026 года (#71), заменено 15 ноября 2026 года решением [`indexer-reads-history-from-public-tenderly`](#indexer-reads-history-from-public-tenderly) (#89).
 
 Пока проект не опубликован, indexer читает события контракта через публичный узел `https://1rpc.io/sepolia` без ключа и регистрации. Это значение `SEPOLIA_RPC_URL` в `backend/.env.example`. Размер пачки `eth_getLogs` — 50 блоков: больше узел не отдаёт (`eth_getLogs is limited to 0 - 50 blocks range`). Ответ `-32029 Too Many Requests` — не отказ, а повод повторить запрос с нарастающей паузой.
 
@@ -469,6 +470,23 @@ Backend принимает обложку только в форматах JPEG,
 - перед публикацией (#64) основным узлом становится провайдер с ключом в серверном `.env`, а 1rpc остаётся запасным.
 
 Связано: [`indexer-reads-finalized-logs`](#indexer-reads-finalized-logs), [`backend-signs-in-with-siwe-sessions`](#backend-signs-in-with-siwe-sessions).
+
+### indexer-reads-history-from-public-tenderly
+
+**Статус:** принято 15 ноября 2026 года (#89).
+
+Пока проект не опубликован, indexer читает события контракта через публичный узел `https://sepolia.gateway.tenderly.co` без ключа и регистрации. Это значение `SEPOLIA_RPC_URL` в `backend/.env.example`. Размер пачки `eth_getLogs` по умолчанию — 2 000 блоков.
+
+Причина: 1rpc не выдержал полной догрузки. За 22 часа indexer прочитал через него около 10 000 блоков из 113 000, после чего 1rpc стал отвечать `-32001 You've reached the usage limit` на любой запрос. Получить ключ у провайдера не удалось: Infura требует анкету организации, dRPC не даёт Sepolia на бесплатном тарифе, Alchemy два дня не присылал код подтверждения. 15 ноября 2026 года публичный Tenderly снова отвечал и прошёл все проверки, а publicnode — нет, см. [`gotchas.md#public-rpc-prunes-log-history`](gotchas.md#public-rpc-prunes-log-history). В тот же день indexer догрузил через Tenderly оставшиеся около 116 000 блоков за 82 секунды: 58 пачек, ни одной ошибки, в `chain_events` 25 событий — столько же, сколько узел отдаёт одним запросом по всей истории.
+
+Следствие:
+
+- с 6 ноября 2026 года этот же адрес какое-то время отвечал `403`, и это может повториться. Тогда indexer не теряет данные: проверка истории при старте останавливает его с понятной ошибкой, а во время работы пачка повторяется с паузой до 60 секунд, checkpoint на месте;
+- если Tenderly закроется надолго, меняется только `SEPOLIA_RPC_URL` (и `INDEXER_BATCH_SIZE` под окно нового провайдера), код indexer от провайдера не зависит;
+- узел, который на старые блоки вернул бы пустой список вместо ошибки, потерял бы события молча; защита — сверка проекций с контрактом (#53);
+- перед публикацией (#64) основным узлом становится провайдер с ключом в серверном `.env`.
+
+Связано: [`indexer-reads-finalized-logs`](#indexer-reads-finalized-logs), [`indexer-reads-history-from-public-1rpc`](#indexer-reads-history-from-public-1rpc).
 
 ### frontend-and-backend-share-one-origin
 
