@@ -59,7 +59,7 @@ describe("fromCampaignJson", () => {
   it("превращает ответ backend в ту же Campaign, что из контракта", () => {
     assert.deepEqual(fromCampaignJson(openEnded), {
       id: 3n,
-      creator: openEnded.creator,
+      creator: "0x012E40523eAca6BEd2e8205A05eC7e6281dB5Ef5",
       title: "Библиотека инструментов",
       description: "Открытый сбор",
       goal: 2n ** 200n + 1n,
@@ -71,8 +71,9 @@ describe("fromCampaignJson", () => {
     assert.equal(fromCampaignJson({ ...openEnded, fundingMode: "fixed_deadline", deadline: "1796042148" }).deadline, 1_796_042_148n);
   });
 
-  it("отклоняет незнакомый статус и режим", () => {
+  it("отклоняет незнакомый статус, режим и кривой адрес", () => {
     assert.throws(() => fromCampaignJson({ ...openEnded, status: "paused" }), CatalogApiError);
+    assert.throws(() => fromCampaignJson({ ...openEnded, creator: "0x123" }), CatalogApiError);
     assert.throws(() => fromCampaignJson({ ...openEnded, fundingMode: "flexible" as "open_ended" }), CatalogApiError);
   });
 });

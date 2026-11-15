@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+import { getAddress, isAddress } from "viem";
 
 import { type Campaign, type CampaignStatus, campaignStatuses, type FundingMode } from "../model/campaign.ts";
 
@@ -69,12 +69,16 @@ export function catalogSearchParams({ query, statuses, mode, sort, page, pageSiz
 export function fromCampaignJson(json: CampaignJson): Campaign {
   const status = campaignStatuses.find((known) => known === json.status);
   if (!status) throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `status ${json.status}` });
+  if (!isAddress(json.creator, { strict: false })) {
+    throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `creator ${json.creator}` });
+  }
   if (json.fundingMode !== "fixed_deadline" && json.fundingMode !== "open_ended") {
     throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `funding mode ${String(json.fundingMode)}` });
   }
   return {
     id: BigInt(json.id),
-    creator: json.creator as Address,
+    // Backend хранит адреса строчными, контракт отдаёт с контрольной суммой EIP-55: карточки показывают одинаково.
+    creator: getAddress(json.creator),
     title: json.title,
     description: json.description,
     goal: BigInt(json.goal),
