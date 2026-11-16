@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 
 import type { Database } from "../../db/client.ts";
-import { campaignMetadata, campaigns, type fundingModes } from "../../db/schema.ts";
+import { campaignMetadata, campaigns, contributions, type fundingModes } from "../../db/schema.ts";
 import { readCheckpoint } from "../../indexer/batch.ts";
 import type { IndexedContract } from "../../indexer/events.ts";
 
@@ -55,6 +55,14 @@ function selection(nowSeconds: number) {
     totalRaised: campaigns.totalRaised,
     status: statusAt(nowSeconds),
     createdBlock: campaigns.createdBlock,
+    // Участники — адреса с текущим вкладом: полностью вернувшие деньги не считаются.
+    donors: sql<number>`(
+      select count(*)::int from ${contributions}
+      where ${contributions.chainId} = ${campaigns.chainId}
+        and ${contributions.contractAddress} = ${campaigns.contractAddress}
+        and ${contributions.campaignId} = ${campaigns.campaignId}
+        and ${contributions.amount} > 0
+    )`,
   };
 }
 
@@ -69,7 +77,7 @@ const ofContract = (contract: IndexedContract) =>
 
 // Страница, общее число и checkpoint читаются из одного снимка базы (REPEATABLE READ):
 // пачка indexer между запросами не сделает total несогласованным со страницей.
-const snapshot = { isolationLevel: "repeatable read", accessMode: "read only" } as const;
+export const snapshot = { isolationLevel: "repeatable read", accessMode: "read only" } as const;
 
 export async function listCampaigns(db: Database, contract: IndexedContract, query: CatalogQuery) {
   const filters = [ofContract(contract)];

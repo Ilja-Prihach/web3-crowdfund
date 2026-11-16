@@ -60,7 +60,7 @@ describe("rebuildProjections", () => {
     await db.delete(contributions);
     const result = await rebuildProjections(deps());
 
-    assert.deepEqual(result, { events: 8, fetchedMetadata: 0 });
+    assert.deepEqual(result, { events: 8, fetchedMetadata: 0, fetchedBlockTimes: 0 });
     assert.deepEqual(await snapshot(), built);
   });
 
@@ -73,9 +73,21 @@ describe("rebuildProjections", () => {
 
     const result = await rebuildProjections(deps());
 
-    assert.deepEqual(result, { events: 8, fetchedMetadata: 2 });
+    assert.deepEqual(result, { events: 8, fetchedMetadata: 2, fetchedBlockTimes: 0 });
     assert.deepEqual(await snapshot(), built);
     assert.equal(await db.$count(campaignMetadata), 2);
+  });
+
+  it("дочитывает время блока у событий, записанных до миграции 0003", async () => {
+    await indexUntilIdle();
+    const timed = await db.select().from(chainEvents);
+    await db.update(chainEvents).set({ blockTimestamp: null });
+
+    const result = await rebuildProjections(deps());
+
+    // Восемь событий лежат в восьми разных блоках: Anvil майнит блок на каждую транзакцию.
+    assert.equal(result.fetchedBlockTimes, 8);
+    assert.deepEqual(await db.select().from(chainEvents), timed);
   });
 
   it("не меняет журнал событий", async () => {
@@ -85,6 +97,7 @@ describe("rebuildProjections", () => {
     await rebuildProjections(deps());
 
     assert.deepEqual(await db.select().from(chainEvents), journal);
+    assert.ok(journal.every((row) => row.blockTimestamp instanceof Date), "indexer сразу пишет время блока");
   });
 
   it("одновременно с indexer даёт ту же проекцию, что и пересборка в тишине", async () => {

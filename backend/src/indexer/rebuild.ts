@@ -10,8 +10,9 @@ import { applyEvents, lockContract } from "./projection.ts";
 
 type RebuildDeps = { db: Database; chain: ChainClient; contract: IndexedContract };
 
-// Стирает проекции контракта и заново воспроизводит весь журнал chain_events. Сам журнал не меняется.
-// Сеть нужна только для метаданных, которых нет в базе: так бывает с событиями, записанными до появления проекций.
+// Стирает проекции контракта и заново воспроизводит весь журнал chain_events. События журнала не меняются.
+// Сеть нужна только для того, чего нет в базе: метаданных и времени блока у событий, записанных до миграций
+// 0002 и 0003. Время блока дописывается в журнал — это такие же сырые данные сети.
 export async function rebuildProjections({ db, chain, contract }: RebuildDeps) {
   const contractKey = and(
     eq(chainEvents.chainId, contract.chainId),
@@ -42,10 +43,26 @@ export async function rebuildProjections({ db, chain, contract }: RebuildDeps) {
         )
       : [];
 
+  const untimed = await db
+    .selectDistinct({ blockNumber: chainEvents.blockNumber })
+    .from(chainEvents)
+    .where(and(contractKey, isNull(chainEvents.blockTimestamp)));
+  const times: { blockNumber: bigint; blockTimestamp: Date }[] = [];
+  for (const { blockNumber } of untimed) {
+    const { timestamp } = await chain.getBlock({ blockNumber });
+    times.push({ blockNumber, blockTimestamp: new Date(Number(timestamp) * 1000) });
+  }
+
   return db.transaction(async (tx) => {
     // Пачка indexer ждёт, пока пересборка не закончится, и наоборот.
     await lockContract(tx, contract);
     if (metadata.length > 0) await tx.insert(campaignMetadata).values(metadata).onConflictDoNothing();
+    for (const { blockNumber, blockTimestamp } of times) {
+      await tx
+        .update(chainEvents)
+        .set({ blockTimestamp })
+        .where(and(contractKey, eq(chainEvents.blockNumber, blockNumber), isNull(chainEvents.blockTimestamp)));
+    }
     // Вклады удаляются каскадом вместе с кампаниями.
     await tx
       .delete(campaigns)
@@ -56,6 +73,6 @@ export async function rebuildProjections({ db, chain, contract }: RebuildDeps) {
       .where(contractKey)
       .orderBy(asc(chainEvents.blockNumber), asc(chainEvents.logIndex));
     await applyEvents(tx, contract, events);
-    return { events: events.length, fetchedMetadata: metadata.length };
+    return { events: events.length, fetchedMetadata: metadata.length, fetchedBlockTimes: times.length };
   });
 }

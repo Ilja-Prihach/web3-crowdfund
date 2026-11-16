@@ -68,7 +68,7 @@ npm run indexer
 npm run indexer:rebuild
 ```
 
-Команда безопасна при работающем indexer: они ждут друг друга. Её нужно запустить один раз после миграции `0002`, если в базе уже были события: иначе первое событие старой кампании остановит пачку ошибкой `campaign is not in the projection`. Ещё её запускают после исправления причины расхождения.
+Команда безопасна при работающем indexer: они ждут друг друга. Её нужно запустить один раз после миграции `0002`, если в базе уже были события: иначе первое событие старой кампании остановит пачку ошибкой `campaign is not in the projection`. После миграции `0003` она же дочитывает время блока у уже записанных событий (`fetchedBlockTimes` в логе): без этого в ленте у них `blockTimestamp: null`. Ещё её запускают после исправления причины расхождения.
 
 ## Вход подписью
 
@@ -82,10 +82,12 @@ curl -i -X POST http://127.0.0.1:4000/v1/auth/nonce
 
 ## Каталог
 
-`GET /v1/campaigns` отдаёт каталог из проекций indexer: поиск `q`, фильтры `status` (можно повторять) и `mode`, сортировка `sort=newest|oldest|raised`, страницы `limit` (до 50) и `offset` (до 10 000). `GET /v1/campaigns/:id` — одна кампания. Оба ответа содержат `finalizedBlock` — блок, на котором основаны данные; полная схема — в [`docs/architecture.md`](../docs/architecture.md#backend). Проверка вручную:
+`GET /v1/campaigns` отдаёт каталог из проекций indexer: поиск `q`, фильтры `status` (можно повторять) и `mode`, сортировка `sort=newest|oldest|raised`, страницы `limit` (до 50) и `offset` (до 10 000). `GET /v1/campaigns/:id` — одна кампания, у каждой есть `donors` — число текущих донатеров. `GET /v1/campaigns/:id/activity` — лента событий кампании от новых к старым, следующая страница — `?before=<nextCursor>`. `GET /v1/campaigns/:id/donors` — донатеры по убыванию вклада, с суммой внесённого, возвращённого и числом вкладов. Все ответы содержат `finalizedBlock` — блок, на котором основаны данные; полная схема — в [`docs/architecture.md`](../docs/architecture.md#backend). Проверка вручную:
 
 ```sh
 curl -s 'http://127.0.0.1:4000/v1/campaigns?status=active&sort=raised&limit=3'
+curl -s 'http://127.0.0.1:4000/v1/campaigns/1/activity?limit=2'
+curl -s 'http://127.0.0.1:4000/v1/campaigns/1/donors'
 ```
 
 ## Миграции
@@ -95,7 +97,9 @@ curl -s 'http://127.0.0.1:4000/v1/campaigns?status=active&sort=raised&limit=3'
 Миграции:
 
 - `0000_chain_events_and_checkpoints.sql` — журнал событий контракта и checkpoint indexer;
-- `0001_auth_nonces_and_sessions.sql` — nonce и сессии входа подписью.
+- `0001_auth_nonces_and_sessions.sql` — nonce и сессии входа подписью;
+- `0002_campaign_projections.sql` — проекции indexer: метаданные, кампании и вклады;
+- `0003_event_block_time.sql` — время блока у событий и индекс ленты кампании.
 
 Подробности — в [`docs/architecture.md`](../docs/architecture.md#backend).
 
