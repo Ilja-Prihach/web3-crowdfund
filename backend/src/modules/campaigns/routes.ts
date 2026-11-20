@@ -5,6 +5,7 @@ import type { Database } from "../../db/client.ts";
 import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { type EventPosition, listActivity, listDonors, toActivityItem } from "./activity.ts";
+import { coverUrl } from "./details.ts";
 import { findCampaign, listCampaigns } from "./repository.ts";
 import {
   type ActivityItemJson,
@@ -33,6 +34,8 @@ function toJson(row: CampaignRow): CampaignJson {
     status: row.status,
     createdBlock: row.createdBlock.toString(),
     donors: row.donors,
+    category: row.category,
+    coverUrl: coverUrl(row.coverKey),
   };
 }
 
@@ -67,13 +70,14 @@ export const campaignRoutes: FastifyPluginCallbackTypebox<CampaignRoutesDeps> = 
   const config = { rateLimit: { max: deps.requestsPerMinute, timeWindow: 60_000 } };
 
   app.get("/", { schema: listCampaignsSchema, config }, async (request) => {
-    const { q, status, mode, sort = "newest", limit = 20, offset = 0 } = request.query;
+    const { q, status, mode, category, sort = "newest", limit = 20, offset = 0 } = request.query;
     // Строка из одних пробелов — не поиск.
     const search = q?.trim() || undefined;
     const result = await listCampaigns(deps.db, sepoliaCrowdfunding, {
       q: search,
       statuses: status,
       mode,
+      category,
       sort,
       limit,
       offset,

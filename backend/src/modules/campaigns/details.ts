@@ -8,6 +8,9 @@ export type CampaignDetailsRow = typeof campaignDetails.$inferSelect;
 // Тексты и категория, которые создатель сохраняет одной формой; обложка меняется отдельно.
 export type DetailsFields = Pick<CampaignDetailsRow, "category" | "story" | "budget" | "plan" | "risks">;
 
+// Адрес файла от корня API: ключ covers/<sha256>.webp отдаёт маршрут /v1/media/covers/:file.
+export const coverUrl = (coverKey: string | null) => (coverKey === null ? null : `/v1/media/${coverKey}`);
+
 const keyOf = (contract: IndexedContract, campaignId: bigint) => ({
   chainId: contract.chainId,
   contractAddress: contract.address.toLowerCase(),

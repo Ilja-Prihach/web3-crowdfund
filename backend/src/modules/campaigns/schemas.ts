@@ -23,6 +23,10 @@ export const CampaignSchema = Type.Object({
   createdBlock: Uint,
   // Участники: адреса с текущим вкладом больше нуля.
   donors: Type.Integer({ minimum: 0 }),
+  // Из деталей создателя (#49); null — не заполнено.
+  category: Type.Union([Type.Enum(campaignCategories), Type.Null()]),
+  // Путь от корня API: /v1/media/covers/<sha256>.webp; null — обложки нет.
+  coverUrl: Type.Union([Type.String(), Type.Null()]),
 });
 export type CampaignJson = Static<typeof CampaignSchema>;
 
@@ -39,6 +43,7 @@ export const listCampaignsSchema = {
     // Повторяемый параметр: ?status=successful&status=failed. Одно значение Fastify превращает в массив сам.
     status: Type.Optional(Type.Array(Type.Enum(campaignStatuses), { maxItems: campaignStatuses.length })),
     mode: Type.Optional(Type.Enum(fundingModes)),
+    category: Type.Optional(Type.Enum(campaignCategories)),
     sort: Type.Optional(Type.Enum(catalogSorts, { default: "newest" })),
     limit: Type.Optional(Limit),
     offset: Type.Optional(Offset),

@@ -11,7 +11,7 @@ import type { ApiError } from "../../shared/errors.ts";
 import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
 import { rejectForeignOrigin } from "../../shared/origin.ts";
 import { requireSession } from "../auth/session.ts";
-import { type CampaignDetailsRow, findDetails, replaceCover, saveDetails } from "./details.ts";
+import { type CampaignDetailsRow, coverUrl, findDetails, replaceCover, saveDetails } from "./details.ts";
 import {
   deleteCoverSchema,
   type DetailsInput,
@@ -33,8 +33,6 @@ export type DetailsRoutesDeps = {
   // Общий бюджет чтений creator из RPC на процесс: сессию может получить любой ключ, а квота RPC одна.
   creatorReadsPerMinute: number;
 };
-
-export const coverUrl = (coverKey: string | null) => (coverKey === null ? null : `/v1/${coverKey.replace(/^covers\//, "media/covers/")}`);
 
 function toJson(row: CampaignDetailsRow | undefined): DetailsJson {
   return {
