@@ -57,18 +57,14 @@
 }
 
 .donorAmount {
-  display: grid;
-  justify-items: end;
-  gap: 0.125rem;
-  text-align: right;
-
-  strong {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
+// Своя строка под адресом: длинная история в колонке суммы сжимала бы адрес на mobile.
 .donorHistory {
+  grid-column: 2 / -1;
+  margin-top: calc(var(--space-2) * -1);
   color: var(--color-text-muted);
   font-size: 0.75rem;
 }

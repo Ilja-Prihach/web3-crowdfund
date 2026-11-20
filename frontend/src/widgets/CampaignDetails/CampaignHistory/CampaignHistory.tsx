@@ -123,15 +123,16 @@ function DonorRow({ donor, isOwn: own, place }: { donor: Donor; isOwn: boolean; 
         {place}
       </span>
       <Actor address={donor.donor} isOwn={own} />
-      <span className={styles.donorAmount}>
-        <strong>{formatEth(donor.amount)}</strong>
-        {hasHistory ? (
-          <span className={styles.donorHistory}>
-            {donor.donations} {pluralize(donor.donations, ["вклад", "вклада", "вкладов"])}
-            {donor.refunded > 0n ? ` · возвращено ${formatEth(donor.refunded)}` : null}
-          </span>
-        ) : null}
-      </span>
+      <strong className={styles.donorAmount}>{formatEth(donor.amount)}</strong>
+      {hasHistory ? (
+        <span className={styles.donorHistory}>
+          {donor.donations} {pluralize(donor.donations, ["вклад", "вклада", "вкладов"])}
+          {/* Без возвратов «внесено» совпадает с текущим вкладом и только повторило бы его. */}
+          {donor.refunded > 0n
+            ? ` · внесено ${formatEth(donor.donated)} · возвращено ${formatEth(donor.refunded)}`
+            : null}
+        </span>
+      ) : null}
     </li>
   );
 }
