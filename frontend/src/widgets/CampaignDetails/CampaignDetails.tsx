@@ -8,8 +8,9 @@ import { CampaignStatus } from "@/entities/campaign/CampaignStatus/CampaignStatu
 import { getAvailableActions } from "@/entities/campaign/lib/actions";
 import { formatDeadlineDate, formatTimeLeft } from "@/entities/campaign/lib/deadline";
 import { formatEth, getProgressPercent } from "@/entities/campaign/lib/money";
-import { type Campaign, fundingModeLabels } from "@/entities/campaign/model/campaign";
+import { type Campaign, campaignCategoryLabels, fundingModeLabels } from "@/entities/campaign/model/campaign";
 import { useCampaign } from "@/entities/campaign/model/useCampaign";
+import { useCampaignDetails } from "@/entities/campaign/model/useCampaignDetails";
 import { CampaignActions } from "@/features/campaign-actions/ui/CampaignActions/CampaignActions";
 import { DonateForm } from "@/features/campaign-donate/ui/DonateForm/DonateForm";
 import { contractExplorerUrl, supportedChain } from "@/shared/config/web3";
@@ -20,6 +21,7 @@ import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
 import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
 import { CampaignHistory } from "./CampaignHistory/CampaignHistory";
+import { CampaignStory } from "./CampaignStory/CampaignStory";
 import styles from "./CampaignDetails.module.scss";
 
 // Почему у кампании нет действий для этого посетителя.
@@ -106,6 +108,8 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
   const isFixed = campaign.fundingMode === "fixedDeadline";
   const timeLeft = isFixed && campaign.status === "active" ? formatTimeLeft(campaign.deadline, nowSeconds) : null;
   const isClosedWithoutSuccess = campaign.status === "failed" || campaign.status === "cancelled";
+  // Обложка, категория и разделы создателя — из backend; без него страница остаётся такой, как из контракта.
+  const details = useCampaignDetails(campaign.id);
 
   return (
     <div className={styles.page}>
@@ -119,6 +123,7 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
         <header className={styles.head}>
           <div className={styles.cover}>
             <CampaignArtwork
+              coverUrl={details?.coverUrl}
               fundingMode={campaign.fundingMode}
               id={campaign.id}
               muted={isClosedWithoutSuccess}
@@ -134,6 +139,9 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               {isFixed ? `до ${formatDeadlineDate(campaign.deadline)}` : "Без срока"}
             </li>
             <li className={[styles.chip, styles.chipOutline].join(" ")}>{fundingModeLabels[campaign.fundingMode]}</li>
+            {details?.category ? (
+              <li className={[styles.chip, styles.chipOutline].join(" ")}>{campaignCategoryLabels[details.category]}</li>
+            ) : null}
           </ul>
 
           <h1 className={styles.title}>{campaign.title}</h1>
@@ -220,6 +228,8 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               </span>
             </p>
           </section>
+
+          <CampaignStory details={details} goal={campaign.goal} />
 
           <CampaignHistory account={account} contribution={contribution} id={campaign.id} />
 
