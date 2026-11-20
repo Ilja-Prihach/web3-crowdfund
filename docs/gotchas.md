@@ -22,6 +22,7 @@
 | [public-rpc-prunes-log-history](#public-rpc-prunes-log-history) | Публичные Sepolia RPC не отдают логи с блока deploy V2, поэтому indexer не может прочитать историю |
 | [pg-pool-idle-error-crashes-process](#pg-pool-idle-error-crashes-process) | Без слушателя `error` у `pg.Pool` перезапуск PostgreSQL роняет весь backend |
 | [next-rewrites-forward-client-x-forwarded-for](#next-rewrites-forward-client-x-forwarded-for) | Прокси `rewrites` Next.js не сообщает backend адрес клиента и пропускает подделанный `X-Forwarded-For` |
+| [fastify-drops-unknown-body-fields](#fastify-drops-unknown-body-fields) | Поле тела вне схемы Fastify молча удаляет, а не отвечает `400` |
 | [viem-siwe-nonce-is-predictable](#viem-siwe-nonce-is-predictable) | `generateSiweNonce()` из viem выдаёт nonce, почти целиком предсказуемый по предыдущему |
 
 ## Карточки
@@ -206,3 +207,11 @@ cd backend && node -e 'import("viem/siwe").then(({ generateSiweNonce: g }) => { 
 **Правило.** Если backend не доверяет заголовку, за `rewrites` у всех пользователей один адрес и общий лимит по IP; если доверяет — клиент подставляет любой адрес. Поэтому `rewrites` используются только в разработке, `TRUST_PROXY` никогда не указывает на сервер Next.js, а в продакшене `/api` маршрутизирует reverse proxy, перезаписывающий `X-Forwarded-For` (#64). Проверка: эхо-сервер за `rewrites` и два запроса `curl` — без заголовка и с `-H 'X-Forwarded-For: 6.6.6.6'`; в ответе эхо-сервера видно, что именно дошло.
 
 Связано: [`DECISIONS.md#frontend-and-backend-share-one-origin`](DECISIONS.md#frontend-and-backend-share-one-origin).
+
+### fastify-drops-unknown-body-fields
+
+**Симптом.** 20 ноября 2026 года тест `PUT /v1/campaigns/:id/details` с лишним полем `owner` ожидал `400`, а получил `200`, хотя схема TypeBox объявлена с `additionalProperties: false` (#49).
+
+**Причина.** Fastify проверяет тело через ajv с настройкой по умолчанию `removeAdditional: true`: поле вне схемы удаляется из `request.body` до обработчика, и запрос считается корректным. `additionalProperties: false` в этом режиме значит «отбросить», а не «отклонить».
+
+**Проверка.** Отправить тело с лишним полем и убедиться, что оно не попало ни в ответ, ни в базу: так проверяет тест «лишние поля отбрасывает, а не сохраняет» в `details-routes.test.ts`. Если поле нужно именно отклонять, это делается своей проверкой, а не надеждой на `additionalProperties`.
