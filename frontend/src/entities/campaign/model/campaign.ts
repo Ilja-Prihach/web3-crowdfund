@@ -22,6 +22,18 @@ export const fundingModeLabels: Record<FundingMode, string> = {
   openEnded: "Открытая цель",
 };
 
+// Категории из backend (#49): в контракте их нет, выбирает создатель. Порядок — порядок фильтра каталога.
+export const campaignCategories = ["open_source", "education", "creative", "apps", "community"] as const;
+export type CampaignCategory = (typeof campaignCategories)[number];
+
+export const campaignCategoryLabels: Record<CampaignCategory, string> = {
+  open_source: "Open source",
+  education: "Образование",
+  creative: "Творчество и игры",
+  apps: "Приложения",
+  community: "Сообщества",
+};
+
 export function toCampaignStatus(value: number): CampaignStatus {
   const status = campaignStatuses[value];
   if (!status) throw new Error(`Unknown campaign status: ${value}`);
@@ -51,5 +63,10 @@ export function toCampaign({ id, campaign, status }: CampaignView) {
   };
 }
 
-// donors — число участников: его знает только backend, при чтении контракта поля нет.
-export type Campaign = ReturnType<typeof toCampaign> & { donors?: number };
+// Поля, которые знает только backend; при чтении контракта их нет.
+// donors — число участников, category и coverUrl — из деталей создателя (null — не заполнено).
+export type Campaign = ReturnType<typeof toCampaign> & {
+  donors?: number;
+  category?: CampaignCategory | null;
+  coverUrl?: string | null;
+};

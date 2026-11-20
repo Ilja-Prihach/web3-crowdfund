@@ -29,7 +29,7 @@
 | [frontend-theme-follows-system-and-persists-choice](#frontend-theme-follows-system-and-persists-choice) | Тема начинает с системной, а явный выбор хранится локально без вспышки |
 | [frontend-wallet-state-hydrates-from-cookie](#frontend-wallet-state-hydrates-from-cookie) | Подключение кошелька восстанавливается из cookie на сервере ценой динамического рендера |
 | [frontend-unit-tests-use-node-test](#frontend-unit-tests-use-node-test) | Чистые функции frontend тестируются встроенным `node:test` без Jest и Vitest |
-| [frontend-demo-campaigns-use-off-chain-covers](#frontend-demo-campaigns-use-off-chain-covers) | Demo-кампании Sepolia получают обложки из таблицы по ID, остальные — детерминированный узор |
+| [frontend-demo-campaigns-use-off-chain-covers](#frontend-demo-campaigns-use-off-chain-covers) | Заменено: demo-кампании Sepolia получали обложки из таблицы по ID; теперь обложки любых кампаний хранит backend |
 | [frontend-simulates-transactions-before-signing](#frontend-simulates-transactions-before-signing) | Транзакция сначала прогоняется через `eth_call`, и подписывается ровно проверенный запрос |
 | [pull-requests-attach-acceptance-screenshots](#pull-requests-attach-acceptance-screenshots) | Визуальные PR содержат скриншоты из релиза `acceptance-screens`, а не из Git |
 | [campaign-media-lives-in-backend](#campaign-media-lives-in-backend) | Обложки и расширенные метаданные кампаний хранит будущий backend, а не контракт и не IPFS |
@@ -301,7 +301,9 @@ Wagmi хранит состояние подключения в cookie (`ssr: tr
 
 ### frontend-demo-campaigns-use-off-chain-covers
 
-**Статус:** действует во Frontend MVP, принято 31 октября 2026 года.
+**Статус:** заменено 20 ноября 2026 года (#98) решением [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend); принято 31 октября 2026 года.
+
+Замена: таблица `demoCovers.ts` и её картинки удалены. Обложки кампаний 3–8 перенесены в backend командой оператора `npm run media:import-cover` с теми же файлами (исходники — в истории git, коммит `cba8bca`), и frontend показывает обложку любой кампании из `coverUrl` API. Ниже — решение в том виде, в каком оно действовало.
 
 Контракт V2 не хранит изображений. Для demo-кампаний, которые автор проекта создал в Sepolia (ID 3–8, см. [`deployments.md`](deployments.md#демо-кампании-каталога)), frontend показывает WebP-обложки 1200×675 из таблицы `frontend/src/entities/campaign/CampaignArtwork/demoCovers.ts`, где ключ — ID кампании в текущем контракте. Все остальные кампании, включая будущие кампании других создателей, получают детерминированный CSS/SVG-узор по ID и мотив режима финансирования.
 
@@ -337,7 +339,7 @@ PR, меняющий визуал frontend, содержит в описании
 
 ### campaign-media-lives-in-backend
 
-**Статус:** принято как направление 2 ноября 2026 года; backend реализован в #49 (20 ноября 2026 года), показ во frontend и удаление таблицы demo-обложек — #98.
+**Статус:** принято как направление 2 ноября 2026 года; backend реализован в #49, показ во frontend и удаление таблицы demo-обложек — в #98 (оба 20 ноября 2026 года); форма загрузки для создателя — #62.
 
 Обложки кампаний и расширенные метаданные — длинная история, бюджет, план, риски и обновления создателя — хранит будущий backend. Создатель загружает их после входа подписью кошелька; backend принимает файл только от адреса, совпадающего с `creator` кампании в контракте, и отдаёт его каталогу и странице кампании. Контракт V2 не меняется. IPFS не выбран основным хранилищем и остаётся возможной поздней альтернативой.
 

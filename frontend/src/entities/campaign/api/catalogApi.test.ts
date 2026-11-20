@@ -31,6 +31,8 @@ const openEnded = {
   status: "active",
   createdBlock: "12034567",
   donors: 2,
+  category: "community",
+  coverUrl: `/v1/media/covers/${"b4".repeat(32)}.webp`,
 } as const;
 
 const params = { sort: "newest", page: 0, pageSize: 20 } as const;
@@ -41,6 +43,7 @@ describe("catalogSearchParams", () => {
       query: "  датчики  ",
       statuses: ["successful", "failed"],
       mode: "openEnded",
+      category: "education",
       sort: "raised",
       page: 2,
       pageSize: 20,
@@ -48,7 +51,7 @@ describe("catalogSearchParams", () => {
 
     assert.equal(
       search.toString(),
-      "q=%D0%B4%D0%B0%D1%82%D1%87%D0%B8%D0%BA%D0%B8&status=successful&status=failed&mode=open_ended&sort=raised&limit=20&offset=40",
+      "q=%D0%B4%D0%B0%D1%82%D1%87%D0%B8%D0%BA%D0%B8&status=successful&status=failed&mode=open_ended&category=education&sort=raised&limit=20&offset=40",
     );
   });
 
@@ -70,6 +73,9 @@ describe("fromCampaignJson", () => {
       fundingMode: "openEnded",
       status: "active",
       donors: 2,
+      category: "community",
+      // Путь от корня API → адрес через /api своего источника.
+      coverUrl: `/api/v1/media/covers/${"b4".repeat(32)}.webp`,
     });
     assert.equal(fromCampaignJson({ ...openEnded, fundingMode: "fixed_deadline", deadline: "1796042148" }).deadline, 1_796_042_148n);
   });
@@ -78,6 +84,7 @@ describe("fromCampaignJson", () => {
     assert.throws(() => fromCampaignJson({ ...openEnded, status: "paused" }), BackendApiError);
     assert.throws(() => fromCampaignJson({ ...openEnded, creator: "0x123" }), BackendApiError);
     assert.throws(() => fromCampaignJson({ ...openEnded, fundingMode: "flexible" as "open_ended" }), BackendApiError);
+    assert.throws(() => fromCampaignJson({ ...openEnded, category: "games" }), BackendApiError);
   });
 });
 

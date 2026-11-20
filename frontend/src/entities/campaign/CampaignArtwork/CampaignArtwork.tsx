@@ -1,12 +1,13 @@
+"use client";
+
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import type { FundingMode } from "../model/campaign";
 import styles from "./CampaignArtwork.module.scss";
-import { getDemoCover } from "./demoCovers";
 
-// У кампаний в контракте нет изображений: обложка — demo-иллюстрация, если она есть,
-// иначе абстрактный узор, выбранный по ID. Одна и та же кампания всегда выглядит одинаково.
+// В контракте изображений нет: обложку загружает создатель в backend (#49). Под ней всегда лежит
+// абстрактный узор, выбранный по ID: он виден, пока картинка грузится, если её нет или файл не отдался.
 const patterns: { tone: string; art: ReactNode }[] = [
   {
     tone: styles.mint,
@@ -89,53 +90,50 @@ const patterns: { tone: string; art: ReactNode }[] = [
 type CampaignArtworkProps = {
   fundingMode: FundingMode;
   id: bigint;
+  // Адрес обложки из backend; null или undefined — только узор.
+  coverUrl?: string | null;
   muted?: boolean;
-  // Карточка каталога по умолчанию; крупная обложка страницы передаёт свои размеры и приоритет.
-  sizes?: string;
+  // Крупная обложка страницы грузится сразу, а не лениво.
   priority?: boolean;
   children?: ReactNode;
 };
 
-export function CampaignArtwork({
-  children,
-  fundingMode,
-  id,
-  muted = false,
-  priority = false,
-  sizes = "(max-width: 639px) calc(100vw - 2rem), (max-width: 959px) 50vw, 460px",
-}: CampaignArtworkProps) {
+export function CampaignArtwork({ children, coverUrl, fundingMode, id, muted = false, priority = false }: CampaignArtworkProps) {
   const pattern = patterns[Number(id % BigInt(patterns.length))];
-  const cover = getDemoCover(id);
+  // Адрес, который не загрузился: картинка прячется, и остаётся узор. Новый адрес пробует снова.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const cover = coverUrl && coverUrl !== failedUrl ? coverUrl : null;
 
   return (
     <div className={styles.artwork}>
       <div className={[styles.canvas, pattern.tone, muted ? styles.muted : undefined].filter(Boolean).join(" ")}>
+        <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
+          {fundingMode === "fixedDeadline" ? (
+            <g className={styles.fixedMotif}>
+              <circle cx="326" cy="58" r="34" />
+              <path d="M326 38v22l15 10" />
+            </g>
+          ) : (
+            <g className={styles.openMotif}>
+              <path d="M38 188 C105 118 168 214 236 142 S338 94 386 58" />
+              <circle cx="386" cy="58" r="6" />
+            </g>
+          )}
+          {pattern.art}
+        </svg>
         {cover ? (
+          // unoptimized: backend уже отдаёт WebP 1200×675, второй раз пережимать в Next нечего.
+          // alt пустой: обложка — оформление, название кампании стоит рядом текстом.
           <Image
             alt=""
             className={styles.cover}
             fill
-            placeholder="blur"
+            onError={() => setFailedUrl(cover)}
             priority={priority}
-            sizes={sizes}
             src={cover}
+            unoptimized
           />
-        ) : (
-          <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 225">
-            {fundingMode === "fixedDeadline" ? (
-              <g className={styles.fixedMotif}>
-                <circle cx="326" cy="58" r="34" />
-                <path d="M326 38v22l15 10" />
-              </g>
-            ) : (
-              <g className={styles.openMotif}>
-                <path d="M38 188 C105 118 168 214 236 142 S338 94 386 58" />
-                <circle cx="386" cy="58" r="6" />
-              </g>
-            )}
-            {pattern.art}
-          </svg>
-        )}
+        ) : null}
       </div>
       {children}
     </div>

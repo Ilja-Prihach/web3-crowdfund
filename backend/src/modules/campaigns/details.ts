@@ -79,3 +79,21 @@ export async function replaceCover(
     return { row, orphanedKey: stillUsed === 0 ? previous : null };
   });
 }
+
+// Меняет только категорию, не трогая тексты и обложку. Первая запись создаёт строку.
+export async function saveCategory(
+  db: Database,
+  contract: IndexedContract,
+  campaignId: bigint,
+  category: CampaignDetailsRow["category"],
+  updatedBy: string,
+) {
+  const changes = { category, updatedBy: updatedBy.toLowerCase(), updatedAt: new Date() };
+  const [row] = await db
+    .insert(campaignDetails)
+    .values({ ...keyOf(contract, campaignId), ...changes })
+    .onConflictDoUpdate({ target: [campaignDetails.chainId, campaignDetails.contractAddress, campaignDetails.campaignId], set: changes })
+    .returning();
+  if (!row) throw new Error(`campaign_details ${campaignId} was not saved`);
+  return row;
+}

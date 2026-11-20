@@ -71,6 +71,25 @@ npm run indexer:rebuild
 
 Команда безопасна при работающем indexer: они ждут друг друга. Её нужно запустить один раз после миграции `0002`, если в базе уже были события: иначе первое событие старой кампании остановит пачку ошибкой `campaign is not in the projection`. После миграции `0003` она же дочитывает время блока у уже записанных событий (`fetchedBlockTimes` в логе): без этого в ленте у них `blockTimestamp: null`. Ещё её запускают после исправления причины расхождения.
 
+## Обложки кампаний
+
+Загруженные обложки лежат в `MEDIA_DIR` (по умолчанию `backend/storage/media`, в `.gitignore`). Восстановить их из блокчейна нельзя: папку нужно копировать в бэкап вместе с базой.
+
+Пока у создателя нет формы загрузки (#62), обложку и категорию ставит оператор:
+
+```sh
+npm run media:import-cover -- <campaignId> <file> [--category open_source|education|creative|apps|community]
+```
+
+Команда пережимает файл тем же `processCover`, что и маршрут загрузки, а в `updated_by` пишет создателя кампании из контракта. Проверки сессии нет: у оператора и так доступ к базе. Обложки demo-кампаний 3–8 перенесены так 20 ноября 2026 года (#98); исходные файлы — в истории git, папка `frontend/src/entities/campaign/CampaignArtwork/assets` в коммите `cba8bca`:
+
+```sh
+git show cba8bca:frontend/src/entities/campaign/CampaignArtwork/assets/tool-library.webp > /tmp/tool-library.webp
+npm run media:import-cover -- 3 /tmp/tool-library.webp --category community
+```
+
+Категории demo-кампаний: 3 и 8 — `community`, 4 — `creative`, 5 и 6 — `open_source`, 7 — `education`.
+
 ## Вход подписью
 
 Маршруты: `POST /v1/auth/nonce` — одноразовый nonce, `POST /v1/auth/verify` — сообщение EIP-4361 с подписью, ставит cookie сессии, `GET /v1/auth/session` — текущая сессия, `POST /v1/auth/logout` — выход. Маршрут, которому нужен вход, подключает `preHandler: requireSession(db)` и читает `request.session`. Лимиты: 10 nonce и 10 проверок в минуту с одного адреса (IPv6 — с подсети `/64`), бюджет проверок через RPC и порог предупреждения о числе живых nonce — `defaultAuthLimits` в `src/modules/auth/service.ts`. Проверка вручную:
