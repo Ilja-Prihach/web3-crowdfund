@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { addressHue, shortenAddress } from "@/shared/lib/address";
+import { pluralize } from "@/shared/lib/plural";
 
 import { CampaignArtwork } from "../CampaignArtwork/CampaignArtwork";
 import { CampaignProgress } from "../CampaignProgress/CampaignProgress";
@@ -46,7 +47,13 @@ export function CampaignCard({ campaign, nowSeconds }: CampaignCardProps) {
       </CampaignArtwork>
 
       <div className={styles.body}>
-        <p className={styles.mode}>{fundingModeLabels[campaign.fundingMode]}</p>
+        <p className={styles.mode}>
+          {fundingModeLabels[campaign.fundingMode]}
+          {/* Число участников знает только backend: при чтении контракта строки нет. */}
+          {campaign.donors !== undefined && campaign.donors > 0
+            ? ` · ${campaign.donors} ${pluralize(campaign.donors, ["участник", "участника", "участников"])}`
+            : null}
+        </p>
         <h3 className={styles.title}>
           {/* Ссылка растягивается на всю карточку через ::after, но в дереве доступности остаётся одной. */}
           <Link className={styles.link} href={`/campaigns/${campaign.id}`}>

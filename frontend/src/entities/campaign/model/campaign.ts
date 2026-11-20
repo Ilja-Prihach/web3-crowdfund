@@ -51,4 +51,5 @@ export function toCampaign({ id, campaign, status }: CampaignView) {
   };
 }
 
-export type Campaign = ReturnType<typeof toCampaign>;
+// donors — число участников: его знает только backend, при чтении контракта поля нет.
+export type Campaign = ReturnType<typeof toCampaign> & { donors?: number };

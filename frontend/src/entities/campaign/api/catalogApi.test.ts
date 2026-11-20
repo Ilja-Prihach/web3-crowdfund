@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { CatalogApiError, catalogSearchParams, fetchCatalog, fromCampaignJson } from "./catalogApi.ts";
+import { BackendApiError } from "../../../shared/api/backend.ts";
+import { catalogSearchParams, fetchCatalog, fromCampaignJson } from "./catalogApi.ts";
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -29,6 +30,7 @@ const openEnded = {
   totalRaised: "6000000000000000",
   status: "active",
   createdBlock: "12034567",
+  donors: 2,
 } as const;
 
 const params = { sort: "newest", page: 0, pageSize: 20 } as const;
@@ -67,14 +69,15 @@ describe("fromCampaignJson", () => {
       totalRaised: 6_000_000_000_000_000n,
       fundingMode: "openEnded",
       status: "active",
+      donors: 2,
     });
     assert.equal(fromCampaignJson({ ...openEnded, fundingMode: "fixed_deadline", deadline: "1796042148" }).deadline, 1_796_042_148n);
   });
 
   it("отклоняет незнакомый статус, режим и кривой адрес", () => {
-    assert.throws(() => fromCampaignJson({ ...openEnded, status: "paused" }), CatalogApiError);
-    assert.throws(() => fromCampaignJson({ ...openEnded, creator: "0x123" }), CatalogApiError);
-    assert.throws(() => fromCampaignJson({ ...openEnded, fundingMode: "flexible" as "open_ended" }), CatalogApiError);
+    assert.throws(() => fromCampaignJson({ ...openEnded, status: "paused" }), BackendApiError);
+    assert.throws(() => fromCampaignJson({ ...openEnded, creator: "0x123" }), BackendApiError);
+    assert.throws(() => fromCampaignJson({ ...openEnded, fundingMode: "flexible" as "open_ended" }), BackendApiError);
   });
 });
 
@@ -96,16 +99,16 @@ describe("fetchCatalog", () => {
     assert.equal((await fetchCatalog(params)).finalizedBlock, null);
   });
 
-  it("ошибка backend — CatalogApiError с его кодом, недоступность — NETWORK_ERROR", async () => {
+  it("ошибка backend — BackendApiError с его кодом, недоступность — NETWORK_ERROR", async () => {
     mockFetch(429, { error: { code: "RATE_LIMITED", message: "Rate limit exceeded" } });
-    await assert.rejects(fetchCatalog(params), (error) => error instanceof CatalogApiError && error.code === "RATE_LIMITED");
+    await assert.rejects(fetchCatalog(params), (error) => error instanceof BackendApiError && error.code === "RATE_LIMITED");
 
     // Прокси Next без backend отвечает 500 с HTML: тело не JSON.
     globalThis.fetch = () => Promise.resolve(new Response("<html>Internal Server Error</html>", { status: 500 }));
-    await assert.rejects(fetchCatalog(params), (error) => error instanceof CatalogApiError && error.status === 500);
+    await assert.rejects(fetchCatalog(params), (error) => error instanceof BackendApiError && error.status === 500);
 
     globalThis.fetch = () => Promise.reject(new TypeError("Failed to fetch"));
-    await assert.rejects(fetchCatalog(params), (error) => error instanceof CatalogApiError && error.code === "NETWORK_ERROR");
+    await assert.rejects(fetchCatalog(params), (error) => error instanceof BackendApiError && error.code === "NETWORK_ERROR");
   });
 
   it("обрывает зависший запрос по таймауту", async () => {
@@ -113,7 +116,7 @@ describe("fetchCatalog", () => {
     globalThis.fetch = (_url, init) =>
       new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
 
-    await assert.rejects(fetchCatalog(params, undefined, 20), (error) => error instanceof CatalogApiError && error.code === "TIMEOUT");
+    await assert.rejects(fetchCatalog(params, undefined, 20), (error) => error instanceof BackendApiError && error.code === "TIMEOUT");
   });
 
   it("отмена снаружи — ABORTED, а не таймаут", async () => {
@@ -124,6 +127,6 @@ describe("fetchCatalog", () => {
     const request = fetchCatalog(params, controller.signal, 5_000);
     controller.abort();
 
-    await assert.rejects(request, (error) => error instanceof CatalogApiError && error.code === "ABORTED");
+    await assert.rejects(request, (error) => error instanceof BackendApiError && error.code === "ABORTED");
   });
 });

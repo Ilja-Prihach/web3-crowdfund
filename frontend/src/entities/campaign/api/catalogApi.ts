@@ -1,11 +1,7 @@
 import { getAddress, isAddress } from "viem";
 
+import { BackendApiError, parseFinalizedBlock, requestBackend } from "../../../shared/api/backend.ts";
 import { type Campaign, type CampaignStatus, campaignStatuses, type FundingMode } from "../model/campaign.ts";
-
-// Относительный путь: backend на том же источнике, CORS не нужен.
-const catalogBase = "/api/v1/campaigns";
-// Сколько ждать backend, прежде чем перейти на чтение контракта.
-export const catalogTimeoutMs = 5_000;
 
 export type CatalogSort = "newest" | "oldest" | "raised";
 
@@ -30,21 +26,10 @@ type CampaignJson = {
   totalRaised: string;
   status: string;
   createdBlock: string;
+  // Участники: адреса с текущим вкладом больше нуля.
+  donors: number;
 };
 type CatalogJson = { items: CampaignJson[]; total: number; finalizedBlock: string | null };
-
-// Ошибка каталога: status 0 — сеть, таймаут или отмена; code — машинный код backend или собственный.
-export class CatalogApiError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(status: number, code: string, options?: ErrorOptions) {
-    super(`Catalog API ${status} ${code}`, options);
-    this.name = "CatalogApiError";
-    this.status = status;
-    this.code = code;
-  }
-}
 
 const apiModes: Record<FundingMode, CampaignJson["fundingMode"]> = {
   fixedDeadline: "fixed_deadline",
@@ -68,12 +53,12 @@ export function catalogSearchParams({ query, statuses, mode, sort, page, pageSiz
 // Незнакомое значение — ошибка ответа, а не тихо неверная карточка.
 export function fromCampaignJson(json: CampaignJson): Campaign {
   const status = campaignStatuses.find((known) => known === json.status);
-  if (!status) throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `status ${json.status}` });
+  if (!status) throw new BackendApiError(200, "INVALID_RESPONSE", { cause: `status ${json.status}` });
   if (!isAddress(json.creator, { strict: false })) {
-    throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `creator ${json.creator}` });
+    throw new BackendApiError(200, "INVALID_RESPONSE", { cause: `creator ${json.creator}` });
   }
   if (json.fundingMode !== "fixed_deadline" && json.fundingMode !== "open_ended") {
-    throw new CatalogApiError(200, "INVALID_RESPONSE", { cause: `funding mode ${String(json.fundingMode)}` });
+    throw new BackendApiError(200, "INVALID_RESPONSE", { cause: `funding mode ${String(json.fundingMode)}` });
   }
   return {
     id: BigInt(json.id),
@@ -87,30 +72,17 @@ export function fromCampaignJson(json: CampaignJson): Campaign {
     totalRaised: BigInt(json.totalRaised),
     fundingMode: json.fundingMode === "open_ended" ? "openEnded" : "fixedDeadline",
     status,
+    donors: json.donors,
   };
 }
 
-export async function fetchCatalog(params: CatalogParams, signal?: AbortSignal, timeoutMs = catalogTimeoutMs) {
-  // Запрос обрывается и по отмене TanStack Query (ушли со страницы, сменили фильтр), и по таймауту.
-  const timeout = AbortSignal.timeout(timeoutMs);
-  let response: Response;
-  try {
-    response = await fetch(`${catalogBase}?${catalogSearchParams(params).toString()}`, {
-      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-    });
-  } catch (cause) {
-    const code = timeout.aborted ? "TIMEOUT" : signal?.aborted ? "ABORTED" : "NETWORK_ERROR";
-    throw new CatalogApiError(0, code, { cause });
-  }
-
-  const body = (await response.json().catch(() => null)) as (CatalogJson & { error?: { code?: string } }) | null;
-  if (!response.ok) throw new CatalogApiError(response.status, body?.error?.code ?? "UNKNOWN_ERROR");
-  if (!body || !Array.isArray(body.items)) throw new CatalogApiError(response.status, "INVALID_RESPONSE");
+export async function fetchCatalog(params: CatalogParams, signal?: AbortSignal, timeoutMs?: number) {
+  const body = (await requestBackend(`/campaigns?${catalogSearchParams(params).toString()}`, { signal, timeoutMs })) as CatalogJson;
+  if (!Array.isArray(body.items)) throw new BackendApiError(200, "INVALID_RESPONSE");
 
   return {
     campaigns: body.items.map(fromCampaignJson),
     total: body.total,
-    // Последний finalized-блок, до которого indexer применил события; null — indexer ещё не запускался.
-    finalizedBlock: body.finalizedBlock === null ? null : BigInt(body.finalizedBlock),
+    finalizedBlock: parseFinalizedBlock(body.finalizedBlock),
   };
 }

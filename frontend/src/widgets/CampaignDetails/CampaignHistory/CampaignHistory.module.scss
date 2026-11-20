@@ -1,0 +1,212 @@
+.section {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-subheading);
+}
+
+.count {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-round);
+  color: var(--color-link);
+  background: var(--color-forest-tint);
+  font-family: var(--font-interface), sans-serif;
+  font-size: var(--font-size-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+// Список в стиле таблиц страницы: одна карточка, строки разделены линией.
+.donors,
+.feed {
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  list-style: none;
+
+  > li + li {
+    border-top: var(--border-width) solid var(--color-border-soft);
+  }
+}
+
+.donor {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.own {
+  background: var(--color-forest-tint);
+}
+
+.place {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.donorAmount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// Своя строка под адресом: длинная история в колонке суммы сжимала бы адрес на mobile.
+.donorHistory {
+  grid-column: 2 / -1;
+  margin-top: calc(var(--space-2) * -1);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.actor {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  vertical-align: middle;
+}
+
+.avatar {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-round);
+  background: conic-gradient(
+    from 40deg,
+    hsl(var(--avatar-hue) 55% 32%),
+    hsl(calc(var(--avatar-hue) + 90) 55% 72%),
+    hsl(calc(var(--avatar-hue) + 200) 65% 52%),
+    hsl(var(--avatar-hue) 55% 32%)
+  );
+}
+
+.address {
+  color: var(--color-text);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--font-size-label);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--color-link);
+  }
+}
+
+.you {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  color: var(--color-on-solid);
+  background: var(--color-forest);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+// Точка слева: цвет говорит, куда движутся деньги.
+.event {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 1.25rem);
+
+  &::before {
+    position: absolute;
+    top: calc(var(--space-3) + 0.5rem);
+    left: var(--space-4);
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--radius-round);
+    background: var(--tone);
+    content: "";
+  }
+}
+
+.toneNeutral {
+  --tone: var(--color-border);
+}
+
+.toneIn {
+  --tone: var(--color-forest);
+}
+
+.toneBack {
+  --tone: var(--color-cinnabar);
+}
+
+.toneOut {
+  --tone: var(--color-live);
+}
+
+.toneMuted {
+  --tone: var(--color-text-muted);
+}
+
+.eventText {
+  color: var(--color-text-soft);
+  overflow-wrap: anywhere;
+}
+
+.eventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+
+  a {
+    display: inline-flex;
+    // Минимальная цель касания WCAG 2.2 — 24 px.
+    min-height: 1.5rem;
+    align-items: center;
+    color: var(--color-link);
+    font-weight: 700;
+  }
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+}
+
+.empty,
+.freshness {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.pending {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-amber-text);
+  background: var(--color-amber-tint);
+  font-size: var(--font-size-small);
+}
+
+.problem {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-soft);
+  font-size: var(--font-size-small);
+}
+
+.loading {
+  display: grid;
+  gap: var(--space-2);
+}
