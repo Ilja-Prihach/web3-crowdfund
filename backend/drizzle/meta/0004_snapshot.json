@@ -1,5 +1,5 @@
 {
-  "id": "524d003a-df35-4998-8f14-780603eea6fb",
+  "id": "efc67b5c-0704-445a-bb21-e6117516a22b",
   "prevId": "08c00259-b014-485a-bb76-819e53dea522",
   "version": "7",
   "dialect": "postgresql",
@@ -240,9 +240,9 @@
           "name": "campaign_details_contract_address_format",
           "value": "\"campaign_details\".\"contract_address\" ~ '^0x[0-9a-f]{40}$'"
         },
-        "campaign_details_campaign_id_positive": {
-          "name": "campaign_details_campaign_id_positive",
-          "value": "\"campaign_details\".\"campaign_id\" > 0"
+        "campaign_details_campaign_id_non_negative": {
+          "name": "campaign_details_campaign_id_non_negative",
+          "value": "\"campaign_details\".\"campaign_id\" >= 0"
         },
         "campaign_details_category_known": {
           "name": "campaign_details_category_known",

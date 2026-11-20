@@ -13,7 +13,7 @@ CREATE TABLE "campaign_details" (
 	CONSTRAINT "campaign_details_chain_id_contract_address_campaign_id_pk" PRIMARY KEY("chain_id","contract_address","campaign_id"),
 	CONSTRAINT "campaign_details_chain_id_positive" CHECK ("campaign_details"."chain_id" > 0),
 	CONSTRAINT "campaign_details_contract_address_format" CHECK ("campaign_details"."contract_address" ~ '^0x[0-9a-f]{40}$'),
-	CONSTRAINT "campaign_details_campaign_id_positive" CHECK ("campaign_details"."campaign_id" > 0),
+	CONSTRAINT "campaign_details_campaign_id_non_negative" CHECK ("campaign_details"."campaign_id" >= 0),
 	CONSTRAINT "campaign_details_category_known" CHECK ("campaign_details"."category" in ('open_source', 'education', 'creative', 'apps', 'community')),
 	CONSTRAINT "campaign_details_story_length" CHECK (char_length("campaign_details"."story") between 1 and 10000),
 	CONSTRAINT "campaign_details_risks_length" CHECK (char_length("campaign_details"."risks") between 1 and 2000),

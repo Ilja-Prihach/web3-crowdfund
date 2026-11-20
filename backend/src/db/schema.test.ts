@@ -208,8 +208,10 @@ describe("схема деталей кампании", () => {
     await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, updatedBy: donation.args.donor.toUpperCase() }));
   });
 
-  it("отклоняет нулевой ID кампании", async () => {
-    await rejectsWith("23514", db.insert(campaignDetails).values({ ...details, campaignId: 0n }));
+  it("принимает кампанию №0 и отклоняет отрицательный ID", async () => {
+    // nextCampaignId в V2 начинается с нуля: первая кампания контракта — №0.
+    await db.insert(campaignDetails).values({ ...details, campaignId: 0n });
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...details, campaignId: -1n }));
   });
 });
 

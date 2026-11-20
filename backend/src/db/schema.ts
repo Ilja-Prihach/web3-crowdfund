@@ -214,7 +214,8 @@ export const campaignDetails = pgTable(
     index("campaign_details_category_idx").on(table.chainId, table.contractAddress, table.category),
     check("campaign_details_chain_id_positive", sql`${table.chainId} > 0`),
     check("campaign_details_contract_address_format", sql`${table.contractAddress} ~ '^0x[0-9a-f]{40}$'`),
-    check("campaign_details_campaign_id_positive", sql`${table.campaignId} > 0`),
+    // ID кампаний V2 начинаются с 0: nextCampaignId в контракте стартует с нуля.
+    check("campaign_details_campaign_id_non_negative", sql`${table.campaignId} >= 0`),
     check("campaign_details_category_known", oneOf(table.category, campaignCategories)),
     // Пустой текст и пустой список хранятся как null: у «не заполнено» одно представление.
     check("campaign_details_story_length", sql`char_length(${table.story}) between 1 and ${literal(maxStory)}`),
