@@ -6,10 +6,12 @@ import { CampaignCard } from "@/entities/campaign/CampaignCard/CampaignCard";
 import type { CatalogSort } from "@/entities/campaign/api/catalogApi";
 import {
   type CatalogFilters,
+  type CategoryFilter,
   defaultCatalogFilters,
   type ModeFilter,
   type StatusFilter,
 } from "@/entities/campaign/lib/catalogFilters";
+import { campaignCategories, campaignCategoryLabels } from "@/entities/campaign/model/campaign";
 import { useCatalog } from "@/entities/campaign/model/useCatalog";
 import { pluralize } from "@/shared/lib/plural";
 import { useDebouncedValue } from "@/shared/lib/useDebouncedValue";
@@ -31,6 +33,11 @@ const modeFilters: { value: ModeFilter; label: string }[] = [
   { value: "all", label: "Любой тип" },
   { value: "fixedDeadline", label: "К сроку" },
   { value: "openEnded", label: "Без срока" },
+];
+
+const categoryFilters: { value: CategoryFilter; label: string }[] = [
+  { value: "all", label: "Все категории" },
+  ...campaignCategories.map((category) => ({ value: category, label: campaignCategoryLabels[category] })),
 ];
 
 const sortOptions: { value: CatalogSort; label: string }[] = [
@@ -73,7 +80,7 @@ export function CampaignCatalog() {
 
   const total = catalog.total;
   const filtersActive =
-    filters.query.trim() !== "" || filters.status !== "all" || filters.mode !== "all";
+    filters.query.trim() !== "" || filters.status !== "all" || filters.mode !== "all" || filters.category !== "all";
   const hasCampaigns = catalog.campaigns.length > 0;
   // Панель фильтров нужна, если есть что фильтровать или фильтр уже что-то скрыл.
   const showToolbar = (total !== undefined && total > 0) || filtersActive;
@@ -141,6 +148,16 @@ export function CampaignCatalog() {
             </div>
 
             <div className={styles.filterControls}>
+              {/* Категории знает только backend: при откате на контракт фильтр не предлагается, как «Больше собрано». */}
+              {fromBackend ? (
+                <Select
+                  ariaLabel="Категория"
+                  className={[styles.filterSelect, styles.categorySelect].join(" ")}
+                  onChange={(category) => updateFilters({ category })}
+                  options={categoryFilters}
+                  value={filters.category}
+                />
+              ) : null}
               <Select
                 ariaLabel="Тип сбора"
                 className={styles.filterSelect}
@@ -166,7 +183,7 @@ export function CampaignCatalog() {
           {catalog.source === "contract" && !catalog.isError ? (
             <div className={styles.fallback} role="status">
               <p>
-                Поиск и сортировка по сумме временно недоступны: показываем кампании напрямую из контракта.
+                Поиск, категории и сортировка по сумме временно недоступны: показываем кампании напрямую из контракта.
                 {catalog.pageCount > 1 ? " Фильтры применяются к этой странице." : null}
               </p>
               <button className={styles.reset} onClick={() => void catalog.retryBackend()} type="button">
