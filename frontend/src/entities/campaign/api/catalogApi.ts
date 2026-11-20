@@ -1,7 +1,14 @@
 import { getAddress, isAddress } from "viem";
 
 import { BackendApiError, parseFinalizedBlock, requestBackend } from "../../../shared/api/backend.ts";
-import { type Campaign, type CampaignStatus, campaignStatuses, type FundingMode } from "../model/campaign.ts";
+import {
+  type Campaign,
+  type CampaignCategory,
+  type CampaignStatus,
+  campaignStatuses,
+  type FundingMode,
+} from "../model/campaign.ts";
+import { parseCategory, parseCoverUrl } from "./detailsApi.ts";
 
 export type CatalogSort = "newest" | "oldest" | "raised";
 
@@ -9,6 +16,7 @@ export type CatalogParams = {
   query?: string;
   statuses?: readonly CampaignStatus[];
   mode?: FundingMode;
+  category?: CampaignCategory;
   sort: CatalogSort;
   page: number;
   pageSize: number;
@@ -28,6 +36,9 @@ type CampaignJson = {
   createdBlock: string;
   // Участники: адреса с текущим вкладом больше нуля.
   donors: number;
+  // Из деталей создателя (#49); null — не заполнено.
+  category: string | null;
+  coverUrl: string | null;
 };
 type CatalogJson = { items: CampaignJson[]; total: number; finalizedBlock: string | null };
 
@@ -37,12 +48,13 @@ const apiModes: Record<FundingMode, CampaignJson["fundingMode"]> = {
 };
 
 // Параметры запроса: пустой поиск не отправляется, статусы — повторяемым параметром.
-export function catalogSearchParams({ query, statuses, mode, sort, page, pageSize }: CatalogParams) {
+export function catalogSearchParams({ query, statuses, mode, category, sort, page, pageSize }: CatalogParams) {
   const params = new URLSearchParams();
   const search = query?.trim();
   if (search) params.set("q", search);
   for (const status of statuses ?? []) params.append("status", status);
   if (mode) params.set("mode", apiModes[mode]);
+  if (category) params.set("category", category);
   params.set("sort", sort);
   params.set("limit", String(pageSize));
   params.set("offset", String(page * pageSize));
@@ -73,6 +85,8 @@ export function fromCampaignJson(json: CampaignJson): Campaign {
     fundingMode: json.fundingMode === "open_ended" ? "openEnded" : "fixedDeadline",
     status,
     donors: json.donors,
+    category: parseCategory(json.category),
+    coverUrl: parseCoverUrl(json.coverUrl),
   };
 }
 
