@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
 
 import { loadEnv } from "./env.ts";
@@ -20,6 +21,7 @@ describe("loadEnv", () => {
       trustProxy: [],
       indexerBatchSize: 2_000,
       indexerPollIntervalMs: 12_000,
+      mediaDir: resolve("storage/media"),
     });
   });
 
@@ -34,6 +36,7 @@ describe("loadEnv", () => {
       trustProxy: [],
       indexerBatchSize: 2_000,
       indexerPollIntervalMs: 12_000,
+      mediaDir: resolve("storage/media"),
     });
   });
 
@@ -116,5 +119,10 @@ describe("loadEnv", () => {
       assert.throws(() => loadEnv({ ...required, INDEXER_BATCH_SIZE }), /INDEXER_BATCH_SIZE must be/, INDEXER_BATCH_SIZE);
     }
     assert.throws(() => loadEnv({ ...required, INDEXER_POLL_INTERVAL_MS: "500" }), /INDEXER_POLL_INTERVAL_MS must be/);
+  });
+
+  it("переводит MEDIA_DIR в абсолютный путь: папка не зависит от того, откуда запущен процесс позже", () => {
+    assert.equal(loadEnv({ ...required, MEDIA_DIR: "/var/openfund/media" }).mediaDir, "/var/openfund/media");
+    assert.equal(loadEnv({ ...required, MEDIA_DIR: "uploads" }).mediaDir, resolve("uploads"));
   });
 });

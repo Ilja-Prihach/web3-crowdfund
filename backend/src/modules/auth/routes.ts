@@ -4,6 +4,7 @@ import type { Hex } from "viem";
 
 import type { ApiError } from "../../shared/errors.ts";
 import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
+import { rejectForeignOrigin } from "../../shared/origin.ts";
 import { countNonces, deleteSession } from "./repository.ts";
 import { logoutSchema, nonceSchema, sessionSchema, verifySchema } from "./schemas.ts";
 import { AuthBusyError, type AuthDeps, hashSessionId, issueNonce, SignInError, signIn } from "./service.ts";
@@ -24,14 +25,7 @@ export const authRoutes: FastifyPluginCallbackTypebox<AuthDeps> = (app, deps, do
   // Подсчёт живых nonce — полный проход по таблице, поэтому не чаще раза в минуту: под атакой он сам не стал бы нагрузкой.
   const allowNonceCount = createFixedWindowLimiter(1, 60_000);
 
-  // Защита от CSRF сверх SameSite=Lax: браузер всегда присылает Origin с POST, и он должен быть нашим.
-  // Запрос без Origin — не из браузера, а значит, и без cookie жертвы; такой запрос пропускается.
-  app.addHook("onRequest", async (request, reply) => {
-    const { origin } = request.headers;
-    if (request.method !== "POST" || origin === undefined || origin === deps.appOrigin) return;
-    const body: ApiError = { error: { code: "ORIGIN_FORBIDDEN", message: "Request origin is not allowed" } };
-    return reply.code(403).send(body);
-  });
+  app.addHook("onRequest", rejectForeignOrigin(deps.appOrigin));
 
   // POST, а не GET: запрос создаёт строку в базе, а GET по правилам HTTP не должен ничего менять.
   app.post("/nonce", { schema: nonceSchema, config: perMinute(perIp.nonce) }, async (request, reply) => {

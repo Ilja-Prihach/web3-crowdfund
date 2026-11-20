@@ -2,6 +2,7 @@ import { buildApp } from "./app.ts";
 import { createChainClient } from "./chain/client.ts";
 import { loadEnv } from "./config/env.ts";
 import { createDatabase } from "./db/client.ts";
+import { createLocalMediaStorage } from "./media/storage.ts";
 import { loggerOptions } from "./shared/logger.ts";
 
 const env = loadEnv();
@@ -11,7 +12,7 @@ const { db, pool } = createDatabase(env.databaseUrl, {
 });
 const chain = createChainClient(env.sepoliaRpcUrl);
 const app = buildApp(
-  { db, chain, appOrigin: env.appOrigin },
+  { db, chain, appOrigin: env.appOrigin, media: createLocalMediaStorage(env.mediaDir) },
   // Без TRUST_PROXY request.ip — адрес соединения; с ним — адрес клиента из X-Forwarded-For доверенного прокси.
   { logger: loggerOptions(env.logLevel), trustProxy: env.trustProxy.length > 0 ? env.trustProxy : false },
 );

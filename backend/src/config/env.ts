@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { resolve } from "node:path";
 
 export type Env = {
   port: number;
@@ -10,6 +11,7 @@ export type Env = {
   trustProxy: string[];
   indexerBatchSize: number;
   indexerPollIntervalMs: number;
+  mediaDir: string;
 };
 
 const logLevels: Env["logLevel"][] = ["fatal", "error", "warn", "info", "debug", "trace"];
@@ -105,5 +107,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     trustProxy,
     indexerBatchSize,
     indexerPollIntervalMs,
+    // Папка загруженных обложек. Их нельзя восстановить из блокчейна: папке нужны бэкапы.
+    mediaDir: resolve(source.MEDIA_DIR || "storage/media"),
   };
 }
