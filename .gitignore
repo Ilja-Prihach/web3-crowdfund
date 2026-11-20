@@ -12,6 +12,9 @@ cache/
 broadcast/
 coverage/
 
+# Uploaded campaign covers (backend MEDIA_DIR)
+/backend/storage/
+
 # Frontend build output
 .next/
 dist/

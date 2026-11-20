@@ -45,6 +45,7 @@
 | [indexer-reads-history-from-public-1rpc](#indexer-reads-history-from-public-1rpc) | Заменено: indexer читал историю через публичный `1rpc.io/sepolia` пачками по 50 блоков |
 | [indexer-projections-apply-each-event-once](#indexer-projections-apply-each-event-once) | Проекции `campaigns` и `contributions` выводятся только из журнала: каждое событие применяется один раз через `INSERT … RETURNING`, метаданные хранятся отдельно, статус не хранится, сверка с контрактом — на блоке checkpoint |
 | [indexer-reads-history-from-public-tenderly](#indexer-reads-history-from-public-tenderly) | Пока проект не опубликован, indexer читает историю через публичный Tenderly без ключа пачками по 2 000 блоков; узел с ключом — перед публикацией или если Tenderly снова закроется |
+| [campaign-categories-are-a-fixed-list](#campaign-categories-are-a-fixed-list) | Категорию кампании выбирает создатель из пяти значений `product-vision.md`; хранит её backend, фильтр каталога — через API |
 | [frontend-and-backend-share-one-origin](#frontend-and-backend-share-one-origin) | Браузер ходит в backend по `/api` своего источника; в продакшене маршрутизирует внешний reverse proxy, backend доверяет `X-Forwarded-For` только от него |
 
 ## Действующие решения
@@ -336,7 +337,7 @@ PR, меняющий визуал frontend, содержит в описании
 
 ### campaign-media-lives-in-backend
 
-**Статус:** принято как направление 2 ноября 2026 года; реализация — этап 5 [`roadmap.md`](roadmap.md#этап-5-backend-и-blockchain-indexer).
+**Статус:** принято как направление 2 ноября 2026 года; backend реализован в #49 (20 ноября 2026 года), показ во frontend и удаление таблицы demo-обложек — #98.
 
 Обложки кампаний и расширенные метаданные — длинная история, бюджет, план, риски и обновления создателя — хранит будущий backend. Создатель загружает их после входа подписью кошелька; backend принимает файл только от адреса, совпадающего с `creator` кампании в контракте, и отдаёт его каталогу и странице кампании. Контракт V2 не меняется. IPFS не выбран основным хранилищем и остаётся возможной поздней альтернативой.
 
@@ -523,3 +524,15 @@ Indexer строит проекции `campaigns` и `contributions` в той �
 Следствие: схема хостинга (#64) обязана включать reverse proxy, перезаписывающий `X-Forwarded-For`. Квоту RPC защищает бюджет проверок подписи, не зависящий от IP. Общих потолков, которые закрывали бы вход для всех, нет: рост таблицы nonce ограничен лимитом на адрес (#83). `TRUST_PROXY` никогда не указывает на сервер Next.js. CORS не подключается: первый маршрут для браузера, каталог (#47), получил только `@fastify/helmet`.
 
 Связано: [`backend-signs-in-with-siwe-sessions`](#backend-signs-in-with-siwe-sessions), [`security.md#backend-и-вход-подписью`](security.md#backend-и-вход-подписью).
+
+### campaign-categories-are-a-fixed-list
+
+**Статус:** принято 20 ноября 2026 года (#49).
+
+Категория кампании — одно из пяти значений по типам проектов из [`product-vision.md#идея`](product-vision.md#идея): `open_source` (инструменты и библиотеки), `education` (курсы и материалы), `creative` (инди-игры и творческие проекты), `apps` (приложения и прототипы), `community` (локальные и общественные инициативы). Её выбирает создатель вместе с расширенным описанием, хранит `campaign_details`, а список задан в коде (`campaignCategories`) и в CHECK базы. Каталог фильтрует по ней параметром `?category=`.
+
+Причина: в контракте V2 категорий нет, а свободный ввод дал бы разнобой написаний, по которому нельзя фильтровать. Пять значений покрывают задуманные типы проектов и укладываются в одну строку фильтра на mobile.
+
+Следствие: новая категория — это миграция с новым CHECK и правка схемы API, а не настройка. Кампания без деталей не имеет категории и в фильтре по категории не видна, но остаётся в каталоге без фильтра. При откате каталога на контракт фильтр по категории недоступен, как поиск.
+
+Связано: [`campaign-media-lives-in-backend`](#campaign-media-lives-in-backend), [`backend-api-is-versioned-rest`](#backend-api-is-versioned-rest).

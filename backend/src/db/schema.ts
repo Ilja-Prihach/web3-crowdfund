@@ -173,6 +173,66 @@ export const contributions = pgTable(
   ],
 );
 
+// Категории кампаний из product-vision.md: в контракте их нет, выбирает создатель.
+export const campaignCategories = ["open_source", "education", "creative", "apps", "community"] as const;
+
+// Границы текстов создателя. Схема API проверяет ещё и форму строк бюджета и плана, база — типы, число строк и длины.
+export const campaignDetailsLimits = { story: 10_000, risks: 2_000, budgetRows: 12, planSteps: 12 } as const;
+const { story: maxStory, risks: maxRisks, budgetRows: maxBudgetRows, planSteps: maxPlanSteps } = campaignDetailsLimits;
+// Число в текст CHECK: параметры запроса в DDL не допускаются.
+const literal = (value: number) => sql.raw(String(value));
+// CHECK «null или массив JSON из 1..max элементов». CASE, а не AND: PostgreSQL не обещает порядок вычисления условий,
+// и jsonb_array_length на объекте бросила бы ошибку вместо нарушения CHECK. Null пропускается явно:
+// иначе его поймала бы ветка else.
+const jsonArrayOfLength = (column: AnyPgColumn, max: number) =>
+  sql`case when ${column} is null then true when jsonb_typeof(${column}) = 'array' then jsonb_array_length(${column}) between 1 and ${literal(max)} else false end`;
+
+// Обложка и расширенное описание от создателя кампании. Это данные пользователей, а не проекция:
+// из событий их не восстановить, поэтому пересборка их не трогает и им нужны бэкапы.
+// Внешнего ключа на campaigns нет: создатель может заполнить описание раньше, чем indexer дочитает кампанию.
+export const campaignDetails = pgTable(
+  "campaign_details",
+  {
+    chainId: integer("chain_id").notNull(),
+    contractAddress: text("contract_address").notNull(),
+    campaignId: uint256("campaign_id").notNull(),
+    category: text("category", { enum: campaignCategories }),
+    story: text("story"),
+    // [{ label, amount }] — amount в wei десятичной строкой, как суммы в API.
+    budget: jsonb("budget").$type<{ label: string; amount: string }[]>(),
+    // [{ period, task }] — этапы в порядке выполнения.
+    plan: jsonb("plan").$type<{ period: string; task: string }[]>(),
+    risks: text("risks"),
+    // Ключ файла в MediaStorage: sha256 пережатого WebP, поэтому путь нельзя подобрать.
+    coverKey: text("cover_key"),
+    updatedBy: text("updated_by").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.chainId, table.contractAddress, table.campaignId] }),
+    // Фильтр каталога по категории.
+    index("campaign_details_category_idx").on(table.chainId, table.contractAddress, table.category),
+    check("campaign_details_chain_id_positive", sql`${table.chainId} > 0`),
+    check("campaign_details_contract_address_format", sql`${table.contractAddress} ~ '^0x[0-9a-f]{40}$'`),
+    // ID кампаний V2 начинаются с 0: nextCampaignId в контракте стартует с нуля.
+    check("campaign_details_campaign_id_non_negative", sql`${table.campaignId} >= 0`),
+    check("campaign_details_category_known", oneOf(table.category, campaignCategories)),
+    // Пустой текст и пустой список хранятся как null: у «не заполнено» одно представление.
+    check("campaign_details_story_length", sql`char_length(${table.story}) between 1 and ${literal(maxStory)}`),
+    check("campaign_details_risks_length", sql`char_length(${table.risks}) between 1 and ${literal(maxRisks)}`),
+    check(
+      "campaign_details_budget_rows",
+      jsonArrayOfLength(table.budget, maxBudgetRows),
+    ),
+    check(
+      "campaign_details_plan_steps",
+      jsonArrayOfLength(table.plan, maxPlanSteps),
+    ),
+    check("campaign_details_cover_key_format", sql`${table.coverKey} ~ '^covers/[0-9a-f]{64}[.]webp$'`),
+    check("campaign_details_updated_by_format", sql`${table.updatedBy} ~ '^0x[0-9a-f]{40}$'`),
+  ],
+);
+
 // Одноразовые nonce входа SIWE. Строка удаляется при входе, а просроченные чистятся попутно.
 export const authNonces = pgTable(
   "auth_nonces",

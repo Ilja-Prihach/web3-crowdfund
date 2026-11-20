@@ -1,7 +1,14 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 
 import type { Database } from "../../db/client.ts";
-import { campaignMetadata, campaigns, contributions, type fundingModes } from "../../db/schema.ts";
+import {
+  type campaignCategories,
+  campaignDetails,
+  campaignMetadata,
+  campaigns,
+  contributions,
+  type fundingModes,
+} from "../../db/schema.ts";
 import { readCheckpoint } from "../../indexer/batch.ts";
 import type { IndexedContract } from "../../indexer/events.ts";
 
@@ -15,6 +22,7 @@ export type CatalogQuery = {
   q?: string;
   statuses?: CampaignStatus[];
   mode?: (typeof fundingModes)[number];
+  category?: (typeof campaignCategories)[number];
   sort: CatalogSort;
   limit: number;
   offset: number;
@@ -55,6 +63,9 @@ function selection(nowSeconds: number) {
     totalRaised: campaigns.totalRaised,
     status: statusAt(nowSeconds),
     createdBlock: campaigns.createdBlock,
+    // Из деталей создателя; null, если он их не заполнял.
+    category: campaignDetails.category,
+    coverKey: campaignDetails.coverKey,
     // Участники — адреса с текущим вкладом: полностью вернувшие деньги не считаются.
     donors: sql<number>`(
       select count(*)::int from ${contributions}
@@ -72,6 +83,13 @@ const metadataJoin = and(
   eq(campaignMetadata.campaignId, campaigns.campaignId),
 );
 
+// LEFT JOIN: кампания без деталей создателя остаётся в каталоге с category и coverKey = null.
+const detailsJoin = and(
+  eq(campaignDetails.chainId, campaigns.chainId),
+  eq(campaignDetails.contractAddress, campaigns.contractAddress),
+  eq(campaignDetails.campaignId, campaigns.campaignId),
+);
+
 const ofContract = (contract: IndexedContract) =>
   and(eq(campaigns.chainId, contract.chainId), eq(campaigns.contractAddress, contract.address.toLowerCase()));
 
@@ -86,6 +104,7 @@ export async function listCampaigns(db: Database, contract: IndexedContract, que
     filters.push(or(ilike(campaignMetadata.title, pattern), ilike(campaignMetadata.description, pattern)));
   }
   if (query.mode) filters.push(eq(campaignMetadata.fundingMode, query.mode));
+  if (query.category) filters.push(eq(campaignDetails.category, query.category));
   // Фильтр по статусу — в SQL до пагинации, иначе total и страницы не совпали бы с отбором.
   if (query.statuses?.length) filters.push(inArray(statusAt(query.nowSeconds), query.statuses));
   const where = and(...filters);
@@ -95,6 +114,7 @@ export async function listCampaigns(db: Database, contract: IndexedContract, que
       .select(selection(query.nowSeconds))
       .from(campaigns)
       .innerJoin(campaignMetadata, metadataJoin)
+      .leftJoin(campaignDetails, detailsJoin)
       .where(where)
       .orderBy(...orderBy[query.sort])
       .limit(query.limit)
@@ -103,6 +123,7 @@ export async function listCampaigns(db: Database, contract: IndexedContract, que
       .select({ total: count() })
       .from(campaigns)
       .innerJoin(campaignMetadata, metadataJoin)
+      .leftJoin(campaignDetails, detailsJoin)
       .where(where);
     return { items, total: totals?.total ?? 0, finalizedBlock: await readCheckpoint(tx, contract) };
   }, snapshot);
@@ -114,6 +135,7 @@ export async function findCampaign(db: Database, contract: IndexedContract, camp
       .select(selection(nowSeconds))
       .from(campaigns)
       .innerJoin(campaignMetadata, metadataJoin)
+      .leftJoin(campaignDetails, detailsJoin)
       .where(and(ofContract(contract), eq(campaigns.campaignId, campaignId)));
     return { campaign: campaign ?? null, finalizedBlock: await readCheckpoint(tx, contract) };
   }, snapshot);

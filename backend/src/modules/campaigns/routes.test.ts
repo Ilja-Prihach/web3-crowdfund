@@ -4,7 +4,14 @@ import { after, beforeEach, describe, it } from "node:test";
 import { parseEther } from "viem";
 
 import { buildApp } from "../../app.ts";
-import { campaignMetadata, campaigns, chainEvents, contributions, indexerCheckpoints } from "../../db/schema.ts";
+import {
+  campaignDetails,
+  campaignMetadata,
+  campaigns,
+  chainEvents,
+  contributions,
+  indexerCheckpoints,
+} from "../../db/schema.ts";
 import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { testDeps } from "../../test/app.ts";
@@ -91,6 +98,8 @@ describe("GET /v1/campaigns", () => {
       status: "active",
       createdBlock: "101",
       donors: 0,
+      category: null,
+      coverUrl: null,
     });
     assert.equal(body.items[1]?.donors, 2);
     assert.equal(body.items[1]?.deadline, inAWeek.toString());
@@ -121,6 +130,7 @@ describe("GET /v1/campaigns", () => {
       "sort=popular",
       "status=paused",
       "mode=flexible",
+      "category=games",
       "q=",
       `q=${"a".repeat(101)}`,
     ]) {
@@ -139,6 +149,35 @@ describe("GET /v1/campaigns", () => {
     } finally {
       await app.close();
     }
+  });
+});
+
+describe("категория и обложка в каталоге", () => {
+  const cover = `covers/${"c".repeat(64)}.webp`;
+  beforeEach(() =>
+    db.insert(campaignDetails).values({ ...key, campaignId: 0n, category: "education", coverKey: cover, updatedBy: creator }),
+  );
+
+  it("отдаёт категорию и адрес обложки, а кампанию без деталей оставляет с null", async () => {
+    const items = (await get("/v1/campaigns?sort=oldest")).json<ListBody>().items;
+
+    assert.deepEqual(
+      items.map(({ id, category, coverUrl }) => ({ id, category, coverUrl })),
+      [
+        { id: "0", category: "education", coverUrl: `/v1/media/${cover}` },
+        { id: "1", category: null, coverUrl: null },
+      ],
+    );
+    const one = (await get("/v1/campaigns/0")).json<{ campaign: CampaignJson }>().campaign;
+    assert.equal(one.category, "education");
+  });
+
+  it("фильтрует по категории до пагинации: total совпадает с отбором", async () => {
+    const education = (await get("/v1/campaigns?category=education")).json<ListBody>();
+    const community = (await get("/v1/campaigns?category=community")).json<ListBody>();
+
+    assert.deepEqual([education.items.map((item) => item.id), education.total], [["0"], 1]);
+    assert.deepEqual([community.items, community.total], [[], 0]);
   });
 });
 

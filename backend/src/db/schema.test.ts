@@ -7,6 +7,8 @@ import { createTestDatabase, postgresErrorCode, resetTestDatabase } from "../tes
 import {
   authNonces,
   authSessions,
+  campaignDetails,
+  campaignDetailsLimits,
   campaignMetadata,
   campaigns,
   chainEvents,
@@ -48,6 +50,7 @@ describe("схема indexer", () => {
       [
         "auth_nonces",
         "auth_sessions",
+        "campaign_details",
         "campaign_metadata",
         "campaigns",
         "chain_events",
@@ -156,6 +159,59 @@ describe("схема проекций", () => {
 
     assert.equal(await db.$count(contributions), 0);
     assert.equal(await db.$count(campaignMetadata), 1);
+  });
+});
+
+describe("схема деталей кампании", () => {
+  const key = { chainId: sepolia, contractAddress: contract, campaignId: 7n };
+  const details = { ...key, updatedBy: donation.args.donor };
+
+  it("хранит детали без кампании в проекции и переживает пересборку проекций", async () => {
+    // indexer ещё не дочитал кампанию, а создатель уже заполнил описание.
+    await db.insert(campaignDetails).values({ ...details, category: "education", story: "История" });
+    await db.delete(campaigns);
+
+    assert.equal(await db.$count(campaignDetails), 1);
+  });
+
+  it("принимает только категории из списка", async () => {
+    await rejectsWith(
+      "23514",
+      db.insert(campaignDetails).values({ ...details, category: "games" as unknown as "creative" }),
+    );
+  });
+
+  it("хранит пустое как null и ограничивает длину текстов", async () => {
+    await db.insert(campaignDetails).values({ ...details, story: "я".repeat(campaignDetailsLimits.story) });
+    const other = { ...details, campaignId: 8n };
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, story: "" }));
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, story: "a".repeat(campaignDetailsLimits.story + 1) }));
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, risks: "a".repeat(campaignDetailsLimits.risks + 1) }));
+  });
+
+  it("принимает бюджет и план только непустым массивом в пределах лимита", async () => {
+    const row = { label: "Аренда зала", amount: "100000000000000000" };
+    await db.insert(campaignDetails).values({ ...details, budget: Array(campaignDetailsLimits.budgetRows).fill(row) });
+    const other = { ...details, campaignId: 8n };
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, budget: [] }));
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, budget: Array(campaignDetailsLimits.budgetRows + 1).fill(row) }));
+    // Объект вместо массива — нарушение CHECK, а не ошибка jsonb_array_length.
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, plan: { period: "май" } as unknown as [] }));
+  });
+
+  it("принимает ключ обложки только как sha256 файла WebP и автора правки в нижнем регистре", async () => {
+    await db.insert(campaignDetails).values({ ...details, coverKey: `covers/${"a".repeat(64)}.webp` });
+    const other = { ...details, campaignId: 8n };
+    for (const bad of ["covers/../../etc/passwd", `covers/${"a".repeat(64)}.png`, `${"a".repeat(64)}.webp`, `covers/${"A".repeat(64)}.webp`]) {
+      await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, coverKey: bad }));
+    }
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...other, updatedBy: donation.args.donor.toUpperCase() }));
+  });
+
+  it("принимает кампанию №0 и отклоняет отрицательный ID", async () => {
+    // nextCampaignId в V2 начинается с нуля: первая кампания контракта — №0.
+    await db.insert(campaignDetails).values({ ...details, campaignId: 0n });
+    await rejectsWith("23514", db.insert(campaignDetails).values({ ...details, campaignId: -1n }));
   });
 });
 

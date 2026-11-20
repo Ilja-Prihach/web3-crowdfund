@@ -1,0 +1,839 @@
+{
+  "id": "efc67b5c-0704-445a-bb21-e6117516a22b",
+  "prevId": "08c00259-b014-485a-bb76-819e53dea522",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.auth_nonces": {
+      "name": "auth_nonces",
+      "schema": "",
+      "columns": {
+        "nonce": {
+          "name": "nonce",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "auth_nonces_expires_at_idx": {
+          "name": "auth_nonces_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "auth_nonces_nonce_format": {
+          "name": "auth_nonces_nonce_format",
+          "value": "\"auth_nonces\".\"nonce\" ~ '^[0-9a-f]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.auth_sessions": {
+      "name": "auth_sessions",
+      "schema": "",
+      "columns": {
+        "id_hash": {
+          "name": "id_hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "auth_sessions_expires_at_idx": {
+          "name": "auth_sessions_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "auth_sessions_id_hash_format": {
+          "name": "auth_sessions_id_hash_format",
+          "value": "\"auth_sessions\".\"id_hash\" ~ '^[0-9a-f]{64}$'"
+        },
+        "auth_sessions_address_format": {
+          "name": "auth_sessions_address_format",
+          "value": "\"auth_sessions\".\"address\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "auth_sessions_expires_after_created": {
+          "name": "auth_sessions_expires_after_created",
+          "value": "\"auth_sessions\".\"expires_at\" > \"auth_sessions\".\"created_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.campaign_details": {
+      "name": "campaign_details",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "story": {
+          "name": "story",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "budget": {
+          "name": "budget",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plan": {
+          "name": "plan",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risks": {
+          "name": "risks",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_key": {
+          "name": "cover_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "campaign_details_category_idx": {
+          "name": "campaign_details_category_idx",
+          "columns": [
+            {
+              "expression": "chain_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contract_address",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "campaign_details_chain_id_contract_address_campaign_id_pk": {
+          "name": "campaign_details_chain_id_contract_address_campaign_id_pk",
+          "columns": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "campaign_details_chain_id_positive": {
+          "name": "campaign_details_chain_id_positive",
+          "value": "\"campaign_details\".\"chain_id\" > 0"
+        },
+        "campaign_details_contract_address_format": {
+          "name": "campaign_details_contract_address_format",
+          "value": "\"campaign_details\".\"contract_address\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "campaign_details_campaign_id_non_negative": {
+          "name": "campaign_details_campaign_id_non_negative",
+          "value": "\"campaign_details\".\"campaign_id\" >= 0"
+        },
+        "campaign_details_category_known": {
+          "name": "campaign_details_category_known",
+          "value": "\"campaign_details\".\"category\" in ('open_source', 'education', 'creative', 'apps', 'community')"
+        },
+        "campaign_details_story_length": {
+          "name": "campaign_details_story_length",
+          "value": "char_length(\"campaign_details\".\"story\") between 1 and 10000"
+        },
+        "campaign_details_risks_length": {
+          "name": "campaign_details_risks_length",
+          "value": "char_length(\"campaign_details\".\"risks\") between 1 and 2000"
+        },
+        "campaign_details_budget_rows": {
+          "name": "campaign_details_budget_rows",
+          "value": "case when \"campaign_details\".\"budget\" is null then true when jsonb_typeof(\"campaign_details\".\"budget\") = 'array' then jsonb_array_length(\"campaign_details\".\"budget\") between 1 and 12 else false end"
+        },
+        "campaign_details_plan_steps": {
+          "name": "campaign_details_plan_steps",
+          "value": "case when \"campaign_details\".\"plan\" is null then true when jsonb_typeof(\"campaign_details\".\"plan\") = 'array' then jsonb_array_length(\"campaign_details\".\"plan\") between 1 and 12 else false end"
+        },
+        "campaign_details_cover_key_format": {
+          "name": "campaign_details_cover_key_format",
+          "value": "\"campaign_details\".\"cover_key\" ~ '^covers/[0-9a-f]{64}[.]webp$'"
+        },
+        "campaign_details_updated_by_format": {
+          "name": "campaign_details_updated_by_format",
+          "value": "\"campaign_details\".\"updated_by\" ~ '^0x[0-9a-f]{40}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.campaign_metadata": {
+      "name": "campaign_metadata",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funding_mode": {
+          "name": "funding_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "campaign_metadata_chain_id_contract_address_campaign_id_pk": {
+          "name": "campaign_metadata_chain_id_contract_address_campaign_id_pk",
+          "columns": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "campaign_metadata_chain_id_positive": {
+          "name": "campaign_metadata_chain_id_positive",
+          "value": "\"campaign_metadata\".\"chain_id\" > 0"
+        },
+        "campaign_metadata_contract_address_format": {
+          "name": "campaign_metadata_contract_address_format",
+          "value": "\"campaign_metadata\".\"contract_address\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "campaign_metadata_funding_mode_known": {
+          "name": "campaign_metadata_funding_mode_known",
+          "value": "\"campaign_metadata\".\"funding_mode\" in ('fixed_deadline', 'open_ended')"
+        },
+        "campaign_metadata_title_length": {
+          "name": "campaign_metadata_title_length",
+          "value": "octet_length(\"campaign_metadata\".\"title\") between 1 and 100"
+        },
+        "campaign_metadata_description_length": {
+          "name": "campaign_metadata_description_length",
+          "value": "octet_length(\"campaign_metadata\".\"description\") between 1 and 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.campaigns": {
+      "name": "campaigns",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "creator": {
+          "name": "creator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "goal": {
+          "name": "goal",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_raised": {
+          "name": "total_raised",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled": {
+          "name": "cancelled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funds_withdrawn": {
+          "name": "funds_withdrawn",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_block": {
+          "name": "created_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_block": {
+          "name": "updated_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "campaigns_metadata_fk": {
+          "name": "campaigns_metadata_fk",
+          "tableFrom": "campaigns",
+          "tableTo": "campaign_metadata",
+          "columnsFrom": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "campaigns_chain_id_contract_address_campaign_id_pk": {
+          "name": "campaigns_chain_id_contract_address_campaign_id_pk",
+          "columns": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "campaigns_creator_format": {
+          "name": "campaigns_creator_format",
+          "value": "\"campaigns\".\"creator\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "campaigns_goal_positive": {
+          "name": "campaigns_goal_positive",
+          "value": "\"campaigns\".\"goal\" > 0"
+        },
+        "campaigns_deadline_non_negative": {
+          "name": "campaigns_deadline_non_negative",
+          "value": "\"campaigns\".\"deadline\" >= 0"
+        },
+        "campaigns_total_raised_non_negative": {
+          "name": "campaigns_total_raised_non_negative",
+          "value": "\"campaigns\".\"total_raised\" >= 0"
+        },
+        "campaigns_updated_after_created": {
+          "name": "campaigns_updated_after_created",
+          "value": "\"campaigns\".\"updated_block\" >= \"campaigns\".\"created_block\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.chain_events": {
+      "name": "chain_events",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_number": {
+          "name": "block_number",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_timestamp": {
+          "name": "block_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tx_hash": {
+          "name": "tx_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "log_index": {
+          "name": "log_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_name": {
+          "name": "event_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "args": {
+          "name": "args",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "chain_events_replay_idx": {
+          "name": "chain_events_replay_idx",
+          "columns": [
+            {
+              "expression": "chain_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contract_address",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "block_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "log_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "chain_events_campaign_idx": {
+          "name": "chain_events_campaign_idx",
+          "columns": [
+            {
+              "expression": "chain_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contract_address",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "campaign_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "block_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "log_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "chain_events_chain_id_tx_hash_log_index_pk": {
+          "name": "chain_events_chain_id_tx_hash_log_index_pk",
+          "columns": [
+            "chain_id",
+            "tx_hash",
+            "log_index"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chain_events_chain_id_positive": {
+          "name": "chain_events_chain_id_positive",
+          "value": "\"chain_events\".\"chain_id\" > 0"
+        },
+        "chain_events_contract_address_format": {
+          "name": "chain_events_contract_address_format",
+          "value": "\"chain_events\".\"contract_address\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "chain_events_tx_hash_format": {
+          "name": "chain_events_tx_hash_format",
+          "value": "\"chain_events\".\"tx_hash\" ~ '^0x[0-9a-f]{64}$'"
+        },
+        "chain_events_log_index_non_negative": {
+          "name": "chain_events_log_index_non_negative",
+          "value": "\"chain_events\".\"log_index\" >= 0"
+        },
+        "chain_events_event_name_known": {
+          "name": "chain_events_event_name_known",
+          "value": "\"chain_events\".\"event_name\" in ('CampaignCreated', 'CampaignDeadlineUpdated', 'DonationMade', 'CampaignCancelled', 'RefundClaimed', 'FundsWithdrawn')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.contributions": {
+      "name": "contributions",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor": {
+          "name": "donor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_block": {
+          "name": "updated_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "contributions_donor_idx": {
+          "name": "contributions_donor_idx",
+          "columns": [
+            {
+              "expression": "chain_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contract_address",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "donor",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contributions_campaign_fk": {
+          "name": "contributions_campaign_fk",
+          "tableFrom": "contributions",
+          "tableTo": "campaigns",
+          "columnsFrom": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "chain_id",
+            "contract_address",
+            "campaign_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "contributions_chain_id_contract_address_campaign_id_donor_pk": {
+          "name": "contributions_chain_id_contract_address_campaign_id_donor_pk",
+          "columns": [
+            "chain_id",
+            "contract_address",
+            "campaign_id",
+            "donor"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "contributions_donor_format": {
+          "name": "contributions_donor_format",
+          "value": "\"contributions\".\"donor\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "contributions_amount_non_negative": {
+          "name": "contributions_amount_non_negative",
+          "value": "\"contributions\".\"amount\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.indexer_checkpoints": {
+      "name": "indexer_checkpoints",
+      "schema": "",
+      "columns": {
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_address": {
+          "name": "contract_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_block": {
+          "name": "last_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "indexer_checkpoints_chain_id_contract_address_pk": {
+          "name": "indexer_checkpoints_chain_id_contract_address_pk",
+          "columns": [
+            "chain_id",
+            "contract_address"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "indexer_checkpoints_chain_id_positive": {
+          "name": "indexer_checkpoints_chain_id_positive",
+          "value": "\"indexer_checkpoints\".\"chain_id\" > 0"
+        },
+        "indexer_checkpoints_contract_address_format": {
+          "name": "indexer_checkpoints_contract_address_format",
+          "value": "\"indexer_checkpoints\".\"contract_address\" ~ '^0x[0-9a-f]{40}$'"
+        },
+        "indexer_checkpoints_last_block_non_negative": {
+          "name": "indexer_checkpoints_last_block_non_negative",
+          "value": "\"indexer_checkpoints\".\"last_block\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
