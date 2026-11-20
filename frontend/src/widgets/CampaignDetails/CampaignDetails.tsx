@@ -19,6 +19,7 @@ import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
 import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
+import { CampaignHistory } from "./CampaignHistory/CampaignHistory";
 import styles from "./CampaignDetails.module.scss";
 
 // Почему у кампании нет действий для этого посетителя.
@@ -220,6 +221,8 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               </span>
             </p>
           </section>
+
+          <CampaignHistory account={account} contribution={contribution} id={campaign.id} />
 
           <section aria-labelledby="rules-title" className={styles.detailsSection}>
             <h2 id="rules-title">Правила этого сбора</h2>
