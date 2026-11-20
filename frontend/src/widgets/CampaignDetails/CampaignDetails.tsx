@@ -123,7 +123,6 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               id={campaign.id}
               muted={isClosedWithoutSuccess}
               priority
-              sizes="(max-width: 959px) calc(100vw - 2rem), 760px"
             />
           </div>
 

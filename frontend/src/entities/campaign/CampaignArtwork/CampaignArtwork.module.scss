@@ -42,6 +42,7 @@
 }
 
 .cover {
+  // Над узором (z-index 2 у svg), под затемнением ::after (3).
   z-index: 2;
   object-fit: cover;
 }
