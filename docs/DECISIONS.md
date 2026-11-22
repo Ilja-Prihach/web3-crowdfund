@@ -33,6 +33,7 @@
 | [frontend-simulates-transactions-before-signing](#frontend-simulates-transactions-before-signing) | Транзакция сначала прогоняется через `eth_call`, и подписывается ровно проверенный запрос |
 | [pull-requests-attach-acceptance-screenshots](#pull-requests-attach-acceptance-screenshots) | Визуальные PR содержат скриншоты из релиза `acceptance-screens`, а не из Git |
 | [campaign-media-lives-in-backend](#campaign-media-lives-in-backend) | Обложки и расширенные метаданные кампаний хранит будущий backend, а не контракт и не IPFS |
+| [campaign-details-freeze-after-first-donation](#campaign-details-freeze-after-first-donation) | Обложка и расширенные метаданные навсегда блокируются после первого пожертвования |
 | [demo-mode-is-deferred](#demo-mode-is-deferred) | Локальный demo-режим отложен; вход подписью, профили и Anvil-seed переходят в этап backend |
 | [backend-uses-fastify-on-node](#backend-uses-fastify-on-node) | Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify; API и indexer — два процесса |
 | [database-is-postgresql-with-drizzle](#database-is-postgresql-with-drizzle) | Данные backend хранит PostgreSQL, схема и миграции ведутся через Drizzle в виде SQL-файлов |
@@ -348,6 +349,18 @@ PR, меняющий визуал frontend, содержит в описании
 Следствие: метаданные из backend — не финансовая истина. Без on-chain-хэша (кандидат V3) пользователь доверяет backend в том, что обложка и описание не подменены; финансовые поля по-прежнему читаются из контракта. В отличие от индексируемых таблиц, загруженные файлы и тексты нельзя восстановить повторным чтением событий, поэтому им нужно резервное копирование. После реализации таблица demo-обложек по ID удаляется, а [`frontend-demo-campaigns-use-off-chain-covers`](#frontend-demo-campaigns-use-off-chain-covers) получает статус «Заменено».
 
 Связано: [`product-vision.md#границы-данных`](product-vision.md#границы-данных), [`backend-is-a-rebuildable-projection`](#backend-is-a-rebuildable-projection).
+
+### campaign-details-freeze-after-first-donation
+
+**Статус:** действует, принято 22 ноября 2026 года в #62.
+
+Создатель может менять категорию, историю, бюджет, план, риски и обложку только пока у кампании не было ни одного пожертвования. После первого `DonationMade` эти данные блокируются навсегда, включая случай полного возврата вклада. Backend перед каждой записью сверяет адрес создателя и текущий `totalRaised` с контрактом, а факт прежнего пожертвования — с неизменяемым журналом `chain_events`. Тот же запрет действует для операторской команды импорта.
+
+Причина: участник принимает решение по странице кампании; после передачи ETH создатель не должен незаметно переписать обещания. Текущий `totalRaised` закрывает окно сразу после свежего доната, а журнал нужен потому, что V2 уменьшает сумму при возврате до нуля. Frontend заранее скрывает редактирование и объясняет блокировку, но окончательно разрешает запись backend.
+
+Ограничение V2: контракт не хранит отдельный необратимый флаг первого пожертвования, а PostgreSQL и Ethereum не имеют общей транзакции. Между полным возвратом ещё не финализированного пожертвования и обработкой события indexer остаётся узкое окно. Абсолютную on-chain-гарантию можно дать только изменением контракта V3; backend при недоступной сети запись запрещает.
+
+Связано: [`security.md#backend-и-вход-подписью`](security.md#backend-и-вход-подписью), [`roadmap.md#кандидат-для-контракта-v3-off-chain-метаданные-с-хэшем-on-chain`](roadmap.md#кандидат-для-контракта-v3-off-chain-метаданные-с-хэшем-on-chain).
 
 ### demo-mode-is-deferred
 
