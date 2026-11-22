@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  experimental: { agentUpgrade: "security" },
   reactStrictMode: true,
   // Backend на том же источнике: браузер ходит в /api/*, а сервер Next передаёт запрос backend.
   // Только для разработки: в продакшене /api маршрутизирует reverse proxy, потому что прокси Next
