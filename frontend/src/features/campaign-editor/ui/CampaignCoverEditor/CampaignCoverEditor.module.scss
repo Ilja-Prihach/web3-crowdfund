@@ -1,0 +1,132 @@
+@use "../../../../shared/styles/mixins";
+
+.card {
+  display: grid;
+  max-width: 58rem;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+
+  @include mixins.from-small {
+    padding: var(--space-6);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  h2 {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-subheading);
+  }
+
+  > span {
+    flex: none;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-round);
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+    font-size: var(--font-size-small);
+  }
+}
+
+.kicker {
+  @include mixins.eyebrow;
+  font-size: 0.72rem;
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-5);
+
+  @include mixins.from-medium {
+    grid-template-columns: minmax(18rem, 1.05fr) minmax(17rem, 0.95fr);
+    align-items: start;
+  }
+}
+
+.preview {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.controls {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+
+  > p:first-child {
+    color: var(--color-text-soft);
+    font-size: var(--font-size-label);
+  }
+}
+
+.fileInput {
+  @include mixins.visually-hidden;
+}
+
+.fileButton {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-forest);
+  border-radius: var(--radius-round);
+  color: var(--color-on-solid);
+  background: var(--color-forest);
+  cursor: pointer;
+  font-size: var(--font-size-label);
+  font-weight: 800;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  &:has(+ .fileInput:focus-visible) {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+.fileName {
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  background: var(--color-danger-surface);
+  font-size: var(--font-size-small);
+}
+
+.error,
+.success {
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.success {
+  color: var(--color-link);
+}

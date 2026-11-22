@@ -19,6 +19,7 @@ import {
 } from "@/features/campaign-editor/lib/campaignDetailsDraft";
 import { getCampaignEditorErrorMessage } from "@/features/campaign-editor/lib/campaignEditorErrors";
 import { useSaveCampaignDetails } from "@/features/campaign-editor/model/useCampaignEditor";
+import { CampaignCoverEditor } from "@/features/campaign-editor/ui/CampaignCoverEditor/CampaignCoverEditor";
 import { Button } from "@/shared/ui/Button/Button";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 import { ErrorState } from "@/shared/ui/ErrorState/ErrorState";
@@ -165,6 +166,8 @@ function CampaignDetailsForm({ campaign, initial }: { campaign: Campaign; initia
           Эти данные хранит backend OpenFund. Изменить их можно только до первого пожертвования; финансовые условия остаются в контракте.
         </p>
       </header>
+
+      <CampaignCoverEditor campaign={campaign} details={initial} />
 
       <form className={styles.form} noValidate onSubmit={submit}>
         <section aria-labelledby="editor-story" className={styles.card}>
