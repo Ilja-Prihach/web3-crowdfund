@@ -27,11 +27,14 @@ describe("toCatalogParams", () => {
     assert.deepEqual(params("finished"), ["successful", "failed", "withdrawn", "cancelled"]);
   });
 
-  it("передаёт поиск, режим, сортировку и страницу", () => {
-    assert.deepEqual(toCatalogParams({ query: "датчики", status: "all", mode: "fixedDeadline", sort: "raised" }, 2, 20), {
+  it("передаёт поиск, режим, категорию, сортировку и страницу; «Все категории» — без фильтра", () => {
+    assert.equal(toCatalogParams(defaultCatalogFilters, 0, 20).category, undefined);
+    const filters = { query: "датчики", status: "all", mode: "fixedDeadline", category: "education", sort: "raised" } as const;
+    assert.deepEqual(toCatalogParams(filters, 2, 20), {
       query: "датчики",
       statuses: undefined,
       mode: "fixedDeadline",
+      category: "education",
       sort: "raised",
       page: 2,
       pageSize: 20,
@@ -47,6 +50,10 @@ describe("matchesFilters", () => {
     assert.equal(matchesFilters(failed, { ...defaultCatalogFilters, status: "finished" }), true);
     assert.equal(matchesFilters(failed, { ...defaultCatalogFilters, status: "active" }), false);
     assert.equal(matchesFilters(failed, { ...defaultCatalogFilters, mode: "openEnded" }), false);
+  });
+
+  it("категорию при откате не применяет: у кампаний из контракта её нет, и страница не опустела бы молча", () => {
+    assert.equal(matchesFilters(campaign({}), { ...defaultCatalogFilters, category: "education" }), true);
   });
 });
 

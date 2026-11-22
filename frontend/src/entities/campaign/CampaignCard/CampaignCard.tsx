@@ -8,7 +8,7 @@ import { CampaignArtwork } from "../CampaignArtwork/CampaignArtwork";
 import { CampaignProgress } from "../CampaignProgress/CampaignProgress";
 import { CampaignStatus } from "../CampaignStatus/CampaignStatus";
 import { formatTimeLeft } from "../lib/deadline";
-import { fundingModeLabels, type Campaign } from "../model/campaign";
+import { type Campaign, campaignCategoryLabels, fundingModeLabels } from "../model/campaign";
 import styles from "./CampaignCard.module.scss";
 
 type CampaignCardProps = {
@@ -41,13 +41,20 @@ export function CampaignCard({ campaign, nowSeconds }: CampaignCardProps) {
 
   return (
     <article className={styles.card}>
-      <CampaignArtwork fundingMode={campaign.fundingMode} id={campaign.id} muted={isClosedWithoutSuccess}>
+      <CampaignArtwork
+        coverUrl={campaign.coverUrl}
+        fundingMode={campaign.fundingMode}
+        id={campaign.id}
+        muted={isClosedWithoutSuccess}
+      >
         <CampaignStatus className={styles.status} status={campaign.status} />
         {termLabel ? <span className={styles.term}>{termLabel}</span> : null}
       </CampaignArtwork>
 
       <div className={styles.body}>
         <p className={styles.mode}>
+          {/* Категорию знает только backend; без неё строка начинается с режима, как раньше. */}
+          {campaign.category ? `${campaignCategoryLabels[campaign.category]} · ` : null}
           {fundingModeLabels[campaign.fundingMode]}
           {/* Число участников знает только backend: при чтении контракта строки нет. */}
           {campaign.donors !== undefined && campaign.donors > 0

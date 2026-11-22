@@ -1,11 +1,18 @@
 import type { CatalogParams, CatalogSort } from "../api/catalogApi.ts";
-import type { Campaign, CampaignStatus, FundingMode } from "../model/campaign.ts";
+import type { Campaign, CampaignCategory, CampaignStatus, FundingMode } from "../model/campaign.ts";
 
 export type StatusFilter = "all" | "active" | "finished";
 export type ModeFilter = "all" | FundingMode;
-export type CatalogFilters = { query: string; status: StatusFilter; mode: ModeFilter; sort: CatalogSort };
+export type CategoryFilter = "all" | CampaignCategory;
+export type CatalogFilters = {
+  query: string;
+  status: StatusFilter;
+  mode: ModeFilter;
+  category: CategoryFilter;
+  sort: CatalogSort;
+};
 
-export const defaultCatalogFilters: CatalogFilters = { query: "", status: "all", mode: "all", sort: "newest" };
+export const defaultCatalogFilters: CatalogFilters = { query: "", status: "all", mode: "all", category: "all", sort: "newest" };
 
 // «Завершены» — всё, что уже не принимает вклады.
 const finishedStatuses: readonly CampaignStatus[] = ["successful", "failed", "withdrawn", "cancelled"];
@@ -15,6 +22,7 @@ export function toCatalogParams(filters: CatalogFilters, page: number, pageSize:
     query: filters.query,
     statuses: filters.status === "all" ? undefined : filters.status === "active" ? ["active"] : finishedStatuses,
     mode: filters.mode === "all" ? undefined : filters.mode,
+    category: filters.category === "all" ? undefined : filters.category,
     sort: filters.sort,
     page,
     pageSize,
@@ -22,6 +30,7 @@ export function toCatalogParams(filters: CatalogFilters, page: number, pageSize:
 }
 
 // Фильтр загруженной страницы — только для чтения из контракта, где backend-фильтров нет.
+// Поиск и категорию контракт не знает: при откате они не применяются, а их поля скрыты или неактивны.
 export function matchesFilters(campaign: Campaign, filters: CatalogFilters) {
   const statusMatches =
     filters.status === "all" || (filters.status === "active" ? campaign.status === "active" : campaign.status !== "active");
