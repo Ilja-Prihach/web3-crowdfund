@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
 import { BackendApiError } from "../../../shared/api/backend.ts";
-import { fetchCampaignDetails, fromDetailsJson, hasDetailsSections, parseCoverUrl } from "./detailsApi.ts";
+import {
+  deleteCampaignCover,
+  fetchCampaignDetails,
+  fromDetailsJson,
+  hasDetailsSections,
+  parseCoverUrl,
+  saveCampaignDetails,
+  uploadCampaignCover,
+} from "./detailsApi.ts";
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -83,5 +91,34 @@ describe("fetchCampaignDetails", () => {
 
     assert.deepEqual(urls, ["/api/v1/campaigns/7/details"]);
     assert.equal(details.story, null);
+  });
+
+  it("сохраняет bigint как строку, а обложку отправляет multipart и удаляет отдельным запросом", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    globalThis.fetch = (url, init) => {
+      calls.push({ url: String(url), init });
+      return Promise.resolve(new Response(JSON.stringify(filled), { status: 200 }));
+    };
+
+    await saveCampaignDetails(7n, {
+      category: "education",
+      story: "История",
+      budget: [{ label: "Зал", amount: 2n ** 200n + 1n }],
+      plan: null,
+      risks: null,
+    });
+    const file = new File([new Uint8Array([1, 2, 3])], "cover.png", { type: "image/png" });
+    await uploadCampaignCover(7n, file);
+    await deleteCampaignCover(7n);
+
+    assert.deepEqual(calls.map(({ url, init }) => [url, init?.method]), [
+      ["/api/v1/campaigns/7/details", "PUT"],
+      ["/api/v1/campaigns/7/cover", "PUT"],
+      ["/api/v1/campaigns/7/cover", "DELETE"],
+    ]);
+    assert.equal(JSON.parse(String(calls[0]?.init?.body)).budget[0].amount, (2n ** 200n + 1n).toString());
+    assert.equal(new Headers(calls[0]?.init?.headers).get("content-type"), "application/json");
+    assert.equal((calls[1]?.init?.body as FormData).get("cover"), file);
+    assert.equal(new Headers(calls[1]?.init?.headers).has("content-type"), false, "boundary ставит fetch");
   });
 });

@@ -16,15 +16,25 @@ export class BackendApiError extends Error {
   }
 }
 
-export type BackendRequestOptions = { signal?: AbortSignal; timeoutMs?: number };
+export type BackendRequestOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  init?: Omit<RequestInit, "signal">;
+};
 
-// GET к backend с таймаутом. Возвращает разобранный JSON успешного ответа; форму данных проверяет вызывающий.
-export async function requestBackend(path: string, { signal, timeoutMs = backendTimeoutMs }: BackendRequestOptions = {}) {
+// Запрос к backend с таймаутом. По умолчанию GET; форму успешного ответа проверяет вызывающий.
+export async function requestBackend(
+  path: string,
+  { signal, timeoutMs = backendTimeoutMs, init }: BackendRequestOptions = {},
+) {
   // Запрос обрывается и по отмене TanStack Query (ушли со страницы, сменили фильтр), и по таймауту.
   const timeout = AbortSignal.timeout(timeoutMs);
   let response: Response;
   try {
-    response = await fetch(`${backendBase}${path}`, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+    response = await fetch(`${backendBase}${path}`, {
+      ...init,
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    });
   } catch (cause) {
     const code = timeout.aborted ? "TIMEOUT" : signal?.aborted ? "ABORTED" : "NETWORK_ERROR";
     throw new BackendApiError(0, code, { cause });

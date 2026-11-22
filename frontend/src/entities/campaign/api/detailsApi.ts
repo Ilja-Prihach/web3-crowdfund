@@ -6,6 +6,13 @@ import { type CampaignCategory, campaignCategories } from "../model/campaign.ts"
 
 export type BudgetRow = { label: string; amount: bigint };
 export type PlanStep = { period: string; task: string };
+export type CampaignDetailsUpdate = {
+  category: CampaignCategory | null;
+  story: string | null;
+  budget: BudgetRow[] | null;
+  plan: PlanStep[] | null;
+  risks: string | null;
+};
 
 export type CampaignDetails = {
   category: CampaignCategory | null;
@@ -88,6 +95,33 @@ export function fromDetailsJson(json: DetailsJson): CampaignDetails {
 export async function fetchCampaignDetails(campaignId: bigint, options?: BackendRequestOptions) {
   const body = (await requestBackend(`/campaigns/${campaignId}/details`, options)) as DetailsJson;
   return fromDetailsJson(body);
+}
+
+const mutation = (method: "PUT" | "DELETE", body?: BodyInit, headers?: HeadersInit): BackendRequestOptions => ({
+  init: { method, body, headers },
+});
+
+export async function saveCampaignDetails(campaignId: bigint, input: CampaignDetailsUpdate) {
+  const body = {
+    ...input,
+    budget: input.budget?.map((row) => ({ ...row, amount: row.amount.toString() })) ?? null,
+  };
+  const json = (await requestBackend(`/campaigns/${campaignId}/details`, {
+    ...mutation("PUT", JSON.stringify(body), { "content-type": "application/json" }),
+  })) as DetailsJson;
+  return fromDetailsJson(json);
+}
+
+export async function uploadCampaignCover(campaignId: bigint, file: File) {
+  const body = new FormData();
+  body.append("cover", file);
+  const json = (await requestBackend(`/campaigns/${campaignId}/cover`, mutation("PUT", body))) as DetailsJson;
+  return fromDetailsJson(json);
+}
+
+export async function deleteCampaignCover(campaignId: bigint) {
+  const json = (await requestBackend(`/campaigns/${campaignId}/cover`, mutation("DELETE"))) as DetailsJson;
+  return fromDetailsJson(json);
 }
 
 // Есть ли что показать в разделах страницы: обложка и категория живут в шапке, а не в разделах.
