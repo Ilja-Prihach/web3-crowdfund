@@ -176,7 +176,7 @@ export const DetailsSchema = Type.Object({
 });
 export type DetailsJson = Static<typeof DetailsSchema>;
 
-const detailsErrors = { 401: ApiErrorSchema, 403: ApiErrorSchema, 404: ApiErrorSchema, 503: ApiErrorSchema };
+const detailsErrors = { 401: ApiErrorSchema, 403: ApiErrorSchema, 404: ApiErrorSchema, 409: ApiErrorSchema, 503: ApiErrorSchema };
 
 export const getDetailsSchema = { params: campaignParams, response: { 200: DetailsSchema } };
 

@@ -41,13 +41,14 @@ const errorCode = (response: { json: <T>() => T }) => response.json<ApiError>().
 async function signedInApp(overrides: Partial<AppDeps> = {}) {
   const { address, sessionId } = await signInForCookie(db);
   const creatorCalls: bigint[] = [];
+  let totalRaised = 0n;
   const media = createMemoryMediaStorage();
   const app = buildApp(
     testDeps(db, {
       media,
-      campaignCreator: (id) => {
+      campaignEditState: (id) => {
         creatorCalls.push(id);
-        return Promise.resolve(id < 2n ? address : null);
+        return Promise.resolve(id < 2n ? { creator: address, totalRaised } : null);
       },
       ...overrides,
     }),
@@ -55,7 +56,7 @@ async function signedInApp(overrides: Partial<AppDeps> = {}) {
   after(() => app.close());
   const cookies = { openfund_session: sessionId };
   const headers = { origin: testAppOrigin };
-  return { app, address, media, creatorCalls, cookies, headers };
+  return { app, address, media, creatorCalls, cookies, headers, setTotalRaised: (value: bigint) => (totalRaised = value) };
 }
 
 function coverForm(image: Buffer) {
@@ -126,10 +127,12 @@ describe("PUT /v1/campaigns/:id/details", () => {
   });
 
   it("не создатель — 403, нет кампании в контракте — 404, RPC недоступен — 503", async () => {
-    const notCreator = await signedInApp({ campaignCreator: () => Promise.resolve(stranger) });
+    const notCreator = await signedInApp({
+      campaignEditState: () => Promise.resolve({ creator: stranger, totalRaised: 0n }),
+    });
     const missing = await signedInApp();
     const down = await signedInApp({
-      campaignCreator: () => Promise.reject(new Error("connect ECONNREFUSED")),
+      campaignEditState: () => Promise.reject(new Error("connect ECONNREFUSED")),
     });
     const put = ({ app, cookies, headers }: Awaited<ReturnType<typeof signedInApp>>, id: number) =>
       app.inject({ method: "PUT", url: `/v1/campaigns/${id}/details`, cookies, headers, payload: form });
@@ -190,6 +193,42 @@ describe("PUT /v1/campaigns/:id/details", () => {
     assert.equal(busy.statusCode, 503);
     assert.equal(errorCode(busy), "CHAIN_BUSY");
     assert.equal(busy.headers["retry-after"], "60");
+  });
+
+  it("после первого пожертвования блокирует детали и обложку без изменений в базе и хранилище", async () => {
+    const { app, media, cookies, headers, setTotalRaised } = await signedInApp();
+    const initial = await app.inject({ method: "PUT", url: "/v1/campaigns/0/details", cookies, headers, payload: form });
+    await app.inject({ method: "PUT", url: "/v1/campaigns/0/cover", cookies, headers, payload: coverForm(await png()) });
+    const before = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    const filesBefore = [...media.files.entries()];
+    setTotalRaised(1n);
+
+    const responses = await Promise.all([
+      app.inject({
+        method: "PUT",
+        url: "/v1/campaigns/0/details",
+        cookies,
+        headers,
+        payload: { ...form, story: "Изменённая история" },
+      }),
+      app.inject({
+        method: "PUT",
+        url: "/v1/campaigns/0/cover",
+        cookies,
+        headers,
+        payload: coverForm(await png({ r: 200, g: 60, b: 40 })),
+      }),
+      app.inject({ method: "DELETE", url: "/v1/campaigns/0/cover", cookies, headers }),
+    ]);
+
+    assert.equal(initial.statusCode, 200);
+    assert.deepEqual(
+      responses.map((response) => [response.statusCode, errorCode(response)]),
+      Array(3).fill([409, "CAMPAIGN_DETAILS_LOCKED"]),
+    );
+    const after = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    assert.deepEqual(after.json(), before.json());
+    assert.deepEqual([...media.files.entries()], filesBefore);
   });
 });
 

@@ -21,8 +21,15 @@ const image = (background: string) =>
 
 function deps() {
   const media = createMemoryMediaStorage();
-  const campaignCreator = (id: bigint) => Promise.resolve(id === 3n ? creator : null);
-  return { db, media, contract: sepoliaCrowdfunding, campaignCreator };
+  let totalRaised = 0n;
+  const campaignEditState = (id: bigint) => Promise.resolve(id === 3n ? { creator, totalRaised } : null);
+  return {
+    db,
+    media,
+    contract: sepoliaCrowdfunding,
+    campaignEditState,
+    setTotalRaised: (value: bigint) => (totalRaised = value),
+  };
 }
 
 describe("importCover", () => {
@@ -52,6 +59,19 @@ describe("importCover", () => {
     const context = deps();
 
     await assert.rejects(importCover(context, { campaignId: 99n, file: await image("#1f5c46") }), /does not exist/);
+
+    assert.equal(context.media.files.size, 0);
+    assert.equal(await db.$count(campaignDetails), 0);
+  });
+
+  it("не позволяет операторской команде обойти блокировку после первого пожертвования", async () => {
+    const context = deps();
+    context.setTotalRaised(1n);
+
+    await assert.rejects(
+      importCover(context, { campaignId: 3n, file: await image("#1f5c46"), category: "community" }),
+      /locked after the first donation/,
+    );
 
     assert.equal(context.media.files.size, 0);
     assert.equal(await db.$count(campaignDetails), 0);
