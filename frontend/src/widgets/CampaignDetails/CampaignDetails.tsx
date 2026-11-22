@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
+import { isAddressEqual } from "viem";
 
 import { CampaignArtwork } from "@/entities/campaign/CampaignArtwork/CampaignArtwork";
 import { CampaignStatus } from "@/entities/campaign/CampaignStatus/CampaignStatus";
@@ -110,6 +111,7 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
   const isClosedWithoutSuccess = campaign.status === "failed" || campaign.status === "cancelled";
   // Обложка, категория и разделы создателя — из backend; без него страница остаётся такой, как из контракта.
   const details = useCampaignDetails(campaign.id);
+  const canManage = account !== undefined && isAddressEqual(account, campaign.creator) && campaign.totalRaised === 0n;
 
   return (
     <div className={styles.page}>
@@ -207,6 +209,12 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
 
             {actions.length === 0 ? <p className={styles.closed}>{closedReasons[campaign.status]}</p> : null}
           </section>
+
+          {canManage ? (
+            <ButtonLink fullWidth href={`/campaigns/${campaign.id}/edit`}>
+              Управлять страницей
+            </ButtonLink>
+          ) : null}
 
           <ButtonLink fullWidth href="/campaigns" variant="secondary">
             <span aria-hidden="true">←</span> Все кампании
