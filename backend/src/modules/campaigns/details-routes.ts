@@ -35,8 +35,9 @@ export type DetailsRoutesDeps = {
   creatorReadsPerMinute: number;
 };
 
-function toJson(row: CampaignDetailsRow | undefined): DetailsJson {
+function toJson(row: CampaignDetailsRow | undefined, locked = false): DetailsJson {
   return {
+    locked,
     category: row?.category ?? null,
     story: row?.story ?? null,
     budget: row?.budget ?? null,
@@ -105,9 +106,14 @@ export const detailsRoutes: FastifyPluginCallbackTypebox<DetailsRoutesDeps> = (a
   const creatorOnly = [requireSession(deps.db), requireCreator];
 
   // Отсутствие деталей — норма: 200 с null, а не 404. Кампании в контракте эта выдача не проверяет.
-  app.get("/:id/details", { schema: getDetailsSchema, config: reads }, async (request) =>
-    toJson(await findDetails(deps.db, sepoliaCrowdfunding, BigInt(request.params.id))),
-  );
+  app.get("/:id/details", { schema: getDetailsSchema, config: reads }, async (request) => {
+    const campaignId = BigInt(request.params.id);
+    const [row, locked] = await Promise.all([
+      findDetails(deps.db, sepoliaCrowdfunding, campaignId),
+      hasDonationHistory(deps.db, sepoliaCrowdfunding, campaignId),
+    ]);
+    return toJson(row, locked);
+  });
 
   app.put("/:id/details", { schema: putDetailsSchema, config: writes, preHandler: creatorOnly }, async (request) => {
     const address = request.session?.address ?? "";

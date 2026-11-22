@@ -15,6 +15,8 @@ export type CampaignDetailsUpdate = {
 };
 
 export type CampaignDetails = {
+  // В журнале backend есть DonationMade: редактирование больше не откроется даже после полного refund.
+  locked: boolean;
   category: CampaignCategory | null;
   story: string | null;
   budget: BudgetRow[] | null;
@@ -27,6 +29,7 @@ export type CampaignDetails = {
 };
 
 type DetailsJson = {
+  locked: boolean;
   category: string | null;
   story: string | null;
   budget: { label: string; amount: string }[] | null;
@@ -72,10 +75,12 @@ function parseList<T>(value: unknown, field: string, parseItem: (item: Record<st
 }
 
 export function fromDetailsJson(json: DetailsJson): CampaignDetails {
+  if (typeof json.locked !== "boolean") throw invalid(`locked ${String(json.locked)}`);
   const updatedAt = json.updatedAt === null ? null : new Date(json.updatedAt);
   if (updatedAt && Number.isNaN(updatedAt.getTime())) throw invalid(`updatedAt ${json.updatedAt}`);
 
   return {
+    locked: json.locked,
     category: parseCategory(json.category),
     story: optionalText(json.story, "story"),
     budget: parseList(json.budget, "budget", (row) => ({

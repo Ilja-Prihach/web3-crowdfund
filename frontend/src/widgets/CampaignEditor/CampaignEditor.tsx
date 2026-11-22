@@ -66,10 +66,11 @@ function CampaignEditorLoader({ id }: { id: bigint }) {
 
 function CampaignEditorAccess({ account, campaign }: { account: ReturnType<typeof useCampaign>["account"]; campaign: Campaign }) {
   const session = useSession();
+  const details = useCampaignDetailsQuery(campaign.id);
   const walletIsCreator = account !== undefined && isAddressEqual(account, campaign.creator);
   const sessionIsCreator = session.data !== null && session.data !== undefined && isAddressEqual(session.data.address, campaign.creator);
 
-  if (campaign.totalRaised > 0n) {
+  if (campaign.totalRaised > 0n || details.data?.locked) {
     return (
       <EditorMessage
         id={campaign.id}
@@ -77,6 +78,10 @@ function CampaignEditorAccess({ account, campaign }: { account: ReturnType<typeo
         text="Кампания получила первое пожертвование. Обложку, категорию и подробности больше нельзя изменять."
       />
     );
+  }
+  if (details.isPending) return <EditorSkeleton id={campaign.id} />;
+  if (details.isError || !details.data) {
+    return <EditorMessage id={campaign.id} title="Не удалось проверить страницу" text="Backend OpenFund недоступен. Попробуйте ещё раз позже." />;
   }
   if (session.isPending) return <EditorSkeleton id={campaign.id} />;
   if (session.isError) {
@@ -100,25 +105,6 @@ function CampaignEditorAccess({ account, campaign }: { account: ReturnType<typeo
   }
   if (!sessionIsCreator) {
     return <EditorMessage id={campaign.id} title="Другой адрес" text="Текущая сессия принадлежит не создателю этой кампании." />;
-  }
-
-  return <CampaignEditorContent campaign={campaign} />;
-}
-
-function CampaignEditorContent({ campaign }: { campaign: Campaign }) {
-  const details = useCampaignDetailsQuery(campaign.id);
-
-  if (details.isPending) return <EditorSkeleton id={campaign.id} />;
-  if (details.isError || !details.data) {
-    return (
-      <EditorShell id={campaign.id}>
-        <ErrorState
-          action={<Button onClick={() => details.refetch()}>Повторить</Button>}
-          description="Backend не отдал текущую версию страницы. Ничего не изменено."
-          title="Не удалось загрузить описание"
-        />
-      </EditorShell>
-    );
   }
 
   return <CampaignDetailsForm campaign={campaign} initial={details.data} />;

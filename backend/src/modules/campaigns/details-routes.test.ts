@@ -20,6 +20,7 @@ beforeEach(() => resetTestDatabase(db));
 
 const stranger = "0x5afe000000000000000000000000000000000005" as Address;
 const emptyDetails: DetailsJson = {
+  locked: false,
   category: null,
   story: null,
   budget: null,
@@ -101,8 +102,9 @@ describe("PUT /v1/campaigns/:id/details", () => {
     assert.equal(saved.statusCode, 200);
     const read = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
 
-    const { updatedAt, ...fields } = read.json<DetailsJson>();
+    const { updatedAt, locked, ...fields } = read.json<DetailsJson>();
     assert.deepEqual(fields, { ...form, coverUrl: null });
+    assert.equal(locked, false);
     assert.ok(updatedAt);
     const [row] = await db.select().from(campaignDetails);
     assert.equal(row?.updatedBy, address.toLowerCase());
@@ -254,6 +256,8 @@ describe("PUT /v1/campaigns/:id/details", () => {
     assert.equal(response.statusCode, 409);
     assert.equal(errorCode(response), "CAMPAIGN_DETAILS_LOCKED");
     assert.equal(await db.$count(campaignDetails), 0);
+    const details = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    assert.equal(details.json<DetailsJson>().locked, true);
   });
 });
 

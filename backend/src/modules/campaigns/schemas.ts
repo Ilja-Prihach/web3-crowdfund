@@ -164,6 +164,8 @@ export const DetailsInputSchema = Type.Object(
 export type DetailsInput = Static<typeof DetailsInputSchema>;
 
 export const DetailsSchema = Type.Object({
+  // Необратимый факт первого DonationMade из журнала indexer.
+  locked: Type.Boolean(),
   category: nullable(Type.Enum(campaignCategories)),
   story: nullable(Type.String()),
   budget: nullable(Type.Array(BudgetRowSchema)),

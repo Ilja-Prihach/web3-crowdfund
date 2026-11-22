@@ -67,6 +67,7 @@ describe("validateCampaignDetailsDraft", () => {
 describe("campaignDetailsToDraft", () => {
   it("переводит существующие bigint обратно в точные строки ETH", () => {
     const details: CampaignDetails = {
+      locked: false,
       category: null,
       story: null,
       budget: [{ label: "Оборудование", amount: 2n ** 200n + 1n }],

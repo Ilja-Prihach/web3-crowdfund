@@ -20,6 +20,7 @@ afterEach(() => {
 const coverPath = `/v1/media/covers/${"a".repeat(64)}.webp`;
 
 const filled = {
+  locked: false,
   category: "education",
   story: "Первый абзац.\n\nВторой абзац.",
   // Больше 2^53: через Number цифры бы исказились.
@@ -29,13 +30,14 @@ const filled = {
   coverUrl: coverPath,
   updatedAt: "2026-11-20T15:00:00.000Z",
 };
-const empty = { category: null, story: null, budget: null, plan: null, risks: null, coverUrl: null, updatedAt: null };
+const empty = { locked: false, category: null, story: null, budget: null, plan: null, risks: null, coverUrl: null, updatedAt: null };
 
 const isInvalid = (error: unknown) => error instanceof BackendApiError && error.code === "INVALID_RESPONSE";
 
 describe("fromDetailsJson", () => {
   it("переводит суммы бюджета в bigint, время — в Date, обложку — в адрес через /api", () => {
     assert.deepEqual(fromDetailsJson(filled), {
+      locked: false,
       category: "education",
       story: "Первый абзац.\n\nВторой абзац.",
       budget: [{ label: "Аренда зала", amount: 2n ** 200n + 1n }],
@@ -49,7 +51,7 @@ describe("fromDetailsJson", () => {
   it("создатель ничего не заполнял — все поля null и разделов нет", () => {
     const details = fromDetailsJson(empty);
 
-    assert.deepEqual(Object.values(details), Array(7).fill(null));
+    assert.deepEqual(details, empty);
     assert.equal(hasDetailsSections(details), false);
     assert.equal(hasDetailsSections({ ...details, risks: "Риск" }), true);
     assert.equal(hasDetailsSections({ ...details, coverUrl: "/api/x.webp", category: "apps" }), false, "обложка и категория — шапка");
@@ -60,6 +62,7 @@ describe("fromDetailsJson", () => {
     assert.throws(() => fromDetailsJson({ ...filled, budget: [{ label: "Зал", amount: "0.5" }] }), isInvalid);
     assert.throws(() => fromDetailsJson({ ...filled, budget: "много" as unknown as [] }), isInvalid);
     assert.throws(() => fromDetailsJson({ ...filled, updatedAt: "вчера" }), isInvalid);
+    assert.throws(() => fromDetailsJson({ ...filled, locked: "нет" as unknown as boolean }), isInvalid);
   });
 });
 

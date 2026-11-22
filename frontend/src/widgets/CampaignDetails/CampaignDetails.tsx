@@ -111,7 +111,11 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
   const isClosedWithoutSuccess = campaign.status === "failed" || campaign.status === "cancelled";
   // Обложка, категория и разделы создателя — из backend; без него страница остаётся такой, как из контракта.
   const details = useCampaignDetails(campaign.id);
-  const canManage = account !== undefined && isAddressEqual(account, campaign.creator) && campaign.totalRaised === 0n;
+  const canManage =
+    account !== undefined &&
+    isAddressEqual(account, campaign.creator) &&
+    campaign.totalRaised === 0n &&
+    details?.locked === false;
 
   return (
     <div className={styles.page}>
