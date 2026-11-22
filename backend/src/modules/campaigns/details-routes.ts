@@ -12,7 +12,7 @@ import type { ApiError } from "../../shared/errors.ts";
 import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
 import { rejectForeignOrigin } from "../../shared/origin.ts";
 import { requireSession } from "../auth/session.ts";
-import { type CampaignDetailsRow, coverUrl, findDetails, replaceCover, saveDetails } from "./details.ts";
+import { type CampaignDetailsRow, coverUrl, findDetails, hasDonationHistory, replaceCover, saveDetails } from "./details.ts";
 import {
   deleteCoverSchema,
   type DetailsInput,
@@ -97,7 +97,8 @@ export const detailsRoutes: FastifyPluginCallbackTypebox<DetailsRoutesDeps> = (a
     if (!isAddressEqual(state.creator, session.address)) {
       return sendError(reply, 403, "NOT_CAMPAIGN_CREATOR", "Only the campaign creator can change its details");
     }
-    if (state.totalRaised > 0n) {
+    // Текущая сумма ловит свежий донат до финализации indexer; журнал сохраняет блокировку после полного refund.
+    if (state.totalRaised > 0n || (await hasDonationHistory(deps.db, sepoliaCrowdfunding, campaignIdOf(request)))) {
       return sendError(reply, 409, "CAMPAIGN_DETAILS_LOCKED", "Campaign details are locked after the first donation");
     }
   }

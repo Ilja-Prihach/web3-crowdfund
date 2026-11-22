@@ -2,7 +2,7 @@ import type { CampaignEditState } from "../chain/creator.ts";
 import type { Database } from "../db/client.ts";
 import type { campaignCategories } from "../db/schema.ts";
 import type { IndexedContract } from "../indexer/events.ts";
-import { replaceCover, saveCategory } from "../modules/campaigns/details.ts";
+import { hasDonationHistory, replaceCover, saveCategory } from "../modules/campaigns/details.ts";
 import { processCover } from "./cover.ts";
 import type { MediaStorage } from "./storage.ts";
 
@@ -22,7 +22,9 @@ export async function importCover(
 ) {
   const state = await deps.campaignEditState(campaignId);
   if (state === null) throw new Error(`Campaign ${campaignId} does not exist in the contract`);
-  if (state.totalRaised > 0n) throw new Error(`Campaign ${campaignId} details are locked after the first donation`);
+  if (state.totalRaised > 0n || (await hasDonationHistory(deps.db, deps.contract, campaignId))) {
+    throw new Error(`Campaign ${campaignId} details are locked after the first donation`);
+  }
 
   const cover = await processCover(file);
   await deps.media.put(cover.key, cover.data);

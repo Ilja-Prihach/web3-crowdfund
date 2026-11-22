@@ -5,7 +5,8 @@ import sharp from "sharp";
 import type { Address } from "viem";
 
 import { type AppDeps, buildApp } from "../../app.ts";
-import { campaignDetails } from "../../db/schema.ts";
+import { campaignDetails, chainEvents } from "../../db/schema.ts";
+import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import { maxCoverBytes } from "../../media/cover.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { createMemoryMediaStorage, testAppOrigin, testDeps } from "../../test/app.ts";
@@ -36,6 +37,19 @@ const form: DetailsInput = {
 };
 
 const errorCode = (response: { json: <T>() => T }) => response.json<ApiError>().error.code;
+
+const recordDonation = (campaignId: bigint) =>
+  db.insert(chainEvents).values({
+    chainId: sepoliaCrowdfunding.chainId,
+    contractAddress: sepoliaCrowdfunding.address.toLowerCase(),
+    blockNumber: 1n,
+    blockTimestamp: new Date(),
+    txHash: `0x${"1".repeat(64)}`,
+    logIndex: 0,
+    eventName: "DonationMade",
+    campaignId,
+    args: { donor: stranger.toLowerCase(), amount: "1" },
+  });
 
 // Приложение, где создатель кампаний 0 и 1 — вошедший пользователь, кампании 2 нет в контракте.
 async function signedInApp(overrides: Partial<AppDeps> = {}) {
@@ -229,6 +243,17 @@ describe("PUT /v1/campaigns/:id/details", () => {
     const after = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
     assert.deepEqual(after.json(), before.json());
     assert.deepEqual([...media.files.entries()], filesBefore);
+  });
+
+  it("сохраняет блокировку после полного возврата, когда totalRaised снова равен нулю", async () => {
+    const { app, cookies, headers } = await signedInApp();
+    await recordDonation(0n);
+
+    const response = await app.inject({ method: "PUT", url: "/v1/campaigns/0/details", cookies, headers, payload: form });
+
+    assert.equal(response.statusCode, 409);
+    assert.equal(errorCode(response), "CAMPAIGN_DETAILS_LOCKED");
+    assert.equal(await db.$count(campaignDetails), 0);
   });
 });
 
