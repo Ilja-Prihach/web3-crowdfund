@@ -19,6 +19,8 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Главная страница собирается из независимых widgets `HeroSection`, `HowItWorksSection`, `FundingModesSection`, `TrustSection` и `ProjectStatusSection`. Они следуют карточному направлению из [`DECISIONS.md#frontend-uses-card-surfaces`](DECISIONS.md#frontend-uses-card-surfaces): заголовки секций строит общий `SectionHeader`, а CTA-ссылки — `ButtonLink`, разделяющий классы с `Button`. Семь декоративных сцен лежат как оптимизированные WebP в `assets/` соответствующих widgets и подключаются через `next/image`, см. [`DECISIONS.md#frontend-illustrations-use-raster-exports`](DECISIONS.md#frontend-illustrations-use-raster-exports). Страница последовательно объясняет назначение продукта, движение ETH через контракт, режимы V2, границу доверия и текущую готовность интерфейса без фиктивных кампаний и неподключённых действий. CTA ведут только к существующим якорям, исходному коду и верифицированному контракту в Etherscan.
 
+После hero виджет `HomeOverview` (#63) одним запросом получает статистику и до трёх карточек через `GET /api/v1/campaigns/overview`. Карточки переиспользуют компоненты каталога. Блок показывает последний обработанный блок Sepolia, различает пустую подборку, отсутствие первой синхронизации и ошибку чтения. Финальная секция ведёт на создание сбора.
+
 ## Web3-слой frontend
 
 Сеть, адрес V2 и ссылка на контракт в Etherscan заданы один раз в `frontend/src/shared/config/web3.ts`; сеть берётся из `viem/chains` (`sepolia`, chain ID `11155111`). ABI хранится в `frontend/src/shared/config/crowdfundingAbi.ts` как `as const`-модуль. Его генерирует `npm run abi:export` из артефакта `forge build` (`contracts/out/` в Git не попадает), поэтому вручную файл не редактируется.
@@ -123,6 +125,8 @@ Frontend использует Next.js App Router. Корневой layout под
 - `ui/SignInPanel` показывает «Проверяем вход…», «Вы вошли» со сроком и выходом, «Не выполнен» с объяснением и кнопкой (только в Sepolia) и ошибку с `role="alert"`; `SignedInMark` — точка на аватаре кнопки кошелька.
 
 Идентификатор сессии и подпись в JavaScript не хранятся: сессия — `httpOnly`-cookie, а frontend знает только ответ `/session`.
+
+`GET /v1/campaigns/overview` читает данные V2 для главной в одной транзакции `REPEATABLE READ READ ONLY`. Проекция даёт число кампаний и число достигших цели, включая кампании после вывода. Журнал `DonationMade` даёт общую сумму внесённых wei и число уникальных адресов доноров. Возвраты эти исторические значения не уменьшают. Сумма передаётся десятичной строкой. Подборка содержит до трёх активных кампаний с наибольшими ID, статус вычисляется на момент запроса по тем же правилам, что в каталоге. До первого checkpoint API возвращает `{ overview: null }`.
 
 ## Профили backend
 
