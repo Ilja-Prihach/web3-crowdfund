@@ -13,6 +13,7 @@ import type { MediaStorage } from "./media/storage.ts";
 import { detailsRoutes, mediaRoutes } from "./modules/campaigns/details-routes.ts";
 import { campaignRoutes } from "./modules/campaigns/routes.ts";
 import { healthRoutes } from "./modules/health/routes.ts";
+import { profileRoutes } from "./modules/profiles/routes.ts";
 import { registerErrorHandlers } from "./shared/errors.ts";
 import { createFixedWindowLimiter } from "./shared/fixed-window.ts";
 
@@ -54,6 +55,7 @@ export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
   // Сессию кладёт хук requireSession; без входа поле остаётся null.
   app.decorateRequest("session", null);
   void app.register(healthRoutes, deps);
+  void app.register(profileRoutes, { db: deps.db, appOrigin: deps.appOrigin, prefix: "/v1/profiles" });
   // Версия в пути: формат ответа можно поменять в /v2, не ломая работающий frontend.
   const limits = deps.authLimits ?? defaultAuthLimits;
   void app.register(authRoutes, {

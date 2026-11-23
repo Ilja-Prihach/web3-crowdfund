@@ -90,7 +90,13 @@ npm run media:import-cover -- 3 /tmp/tool-library.webp --category community
 
 Категории demo-кампаний: 3 и 8 — `community`, 4 — `creative`, 5 и 6 — `open_source`, 7 — `education`.
 
-## Вход подписью
+## Профили пользователей
+
+После `npm run db:migrate` миграция `0005` добавляет таблицу профилей. Профиль создаётся первым `PUT /v1/profiles/me` с действующей SIWE-cookie. Тело: `{ "name": "Имя", "bio": "О себе" }`; оба поля могут быть null, лимиты — 80 и 1000 символов. Владелец определяется только сессией. GET `/v1/profiles/:address` публичный; без заполненного профиля — 404.
+
+История кампаний доступна без профиля: `/v1/profiles/:address/campaigns/created` и `/supported`, с limit/offset и finalizedBlock. Поддержанные включают кампании после полного возврата. API первой версии связывает профиль с одним кошельком; подробности — [`DECISIONS`](../docs/DECISIONS.md#profiles-use-one-verified-wallet). Профили нужно резервировать вместе с остальными off-chain-данными.
+
+## Вход подписью (SIWE)
 
 Маршруты: `POST /v1/auth/nonce` — одноразовый nonce, `POST /v1/auth/verify` — сообщение EIP-4361 с подписью, ставит cookie сессии, `GET /v1/auth/session` — текущая сессия, `POST /v1/auth/logout` — выход. Маршрут, которому нужен вход, подключает `preHandler: requireSession(db)` и читает `request.session`. Лимиты: 10 nonce и 10 проверок в минуту с одного адреса (IPv6 — с подсети `/64`), бюджет проверок через RPC и порог предупреждения о числе живых nonce — `defaultAuthLimits` в `src/modules/auth/service.ts`. Проверка вручную:
 

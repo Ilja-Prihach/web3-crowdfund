@@ -90,7 +90,7 @@ Backend пишется на Node.js, TypeScript и Fastify, данные хра�
 
 - вход подписью кошелька (Sign-In with Ethereum, EIP-4361) — сделан в #52, см. [`DECISIONS.md#backend-signs-in-with-siwe-sessions`](DECISIONS.md#backend-signs-in-with-siwe-sessions); от него зависят загрузка медиа и профили;
 - локальный Anvil с воспроизводимым seed как инструмент разработки и тестов indexer: события создаются мгновенно, время перематывается, сеть сбрасывается; demo-интерфейса это не требует;
-- профиль пользователя, связанный с wallet address: созданные и поддержанные кампании из проекции indexer;
+- профиль пользователя, связанный с одним подтверждённым SIWE wallet address: API профиля и созданных/поддержанных кампаний из проекции indexer — #51; интерфейс — #61. Объединение кошельков отложено, см. [`DECISIONS.md#profiles-use-one-verified-wallet`](DECISIONS.md#profiles-use-one-verified-wallet);
 
 - чтение `CampaignCreated`, `CampaignDeadlineUpdated`, `DonationMade`, `CampaignCancelled`, `RefundClaimed` и `FundsWithdrawn`;
 - идемпотентная обработка по chain ID, transaction hash и log index;

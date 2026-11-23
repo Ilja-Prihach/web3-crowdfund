@@ -124,6 +124,16 @@ Frontend использует Next.js App Router. Корневой layout под
 
 Идентификатор сессии и подпись в JavaScript не хранятся: сессия — `httpOnly`-cookie, а frontend знает только ответ `/session`.
 
+## Профили backend
+
+Модуль `backend/src/modules/profiles` (#51) хранит профиль отдельно от indexer-проекций. Миграция `0005_user_profiles.sql` создаёт `profiles`: address (первичный ключ в нижнем регистре), name, bio, created_at и updated_at. Первый PUT создаёт профиль; повторный атомарно обновляет его, сохраняя created_at. Сессии остаются привязанными к адресу. Решение об одном кошельке на профиль — [`DECISIONS.md#profiles-use-one-verified-wallet`](DECISIONS.md#profiles-use-one-verified-wallet).
+
+- `GET /v1/profiles/:address` — публичное чтение; неизвестный профиль — `404 PROFILE_NOT_FOUND`. Вход принимает hex-адрес в любом регистре; ответ канонизирован в нижний регистр.
+- `PUT /v1/profiles/me` — полная замена name и bio после `requireSession` и проверки Origin. Адрес берётся из сессии; передать другого владельца в теле нельзя. Пустые поля нормализуются в null. Лимит — 30 записей в минуту с IP; ответ с `Cache-Control: no-store`.
+- `GET /v1/profiles/:address/campaigns/created` и `/supported` — страницы кампаний публичного адреса, даже если профиль ещё не заполнен. Параметры limit (1–50) и offset (0–10 000), порядок от новых ID к старым, ответ каталога с total и finalizedBlock. Чтения ограничены 120 запросами в минуту с IP.
+
+Выборка переиспользует `listCampaigns` с внутренними фильтрами creator/supporter. EXISTS по contributions не умножает кампании и включает полностью возвращённую поддержку: строка с amount=0 остаётся в проекции. Страница, total и checkpoint используют существующую транзакцию REPEATABLE READ READ ONLY. Публичные списки не зависят от регистрации пользователя и не меняют финансовых прав.
+
 ## Backend
 
 Backend — отдельное приложение `backend/` на Node.js, TypeScript и Fastify, см. [`DECISIONS.md#backend-uses-fastify-on-node`](DECISIONS.md#backend-uses-fastify-on-node). Сейчас реализованы каркас, подключение к PostgreSQL, модуль `chain`, вход подписью, indexer и API каталога: `app.ts` собирает приложение, `server.ts` открывает порт. Разделение нужно тестам: они вызывают `buildApp()` и отправляют запросы через `app.inject()` в памяти, без сети.

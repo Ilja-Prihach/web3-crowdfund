@@ -21,7 +21,7 @@ export type CampaignRoutesDeps = { db: Database; requestsPerMinute: number };
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
-function toJson(row: CampaignRow): CampaignJson {
+export function campaignToJson(row: CampaignRow): CampaignJson {
   return {
     id: row.campaignId.toString(),
     creator: row.creator,
@@ -84,7 +84,7 @@ export const campaignRoutes: FastifyPluginCallbackTypebox<CampaignRoutesDeps> = 
       nowSeconds: nowSeconds(),
     });
     return {
-      items: result.items.map(toJson),
+      items: result.items.map(campaignToJson),
       total: result.total,
       limit,
       offset,
@@ -100,7 +100,7 @@ export const campaignRoutes: FastifyPluginCallbackTypebox<CampaignRoutesDeps> = 
       nowSeconds(),
     );
     if (!campaign) return notFound(reply, request.params.id);
-    return { campaign: toJson(campaign), finalizedBlock: finalized(finalizedBlock) };
+    return { campaign: campaignToJson(campaign), finalizedBlock: finalized(finalizedBlock) };
   });
 
   // Лента кампании от новых событий к старым; следующая страница — ?before=<nextCursor>.

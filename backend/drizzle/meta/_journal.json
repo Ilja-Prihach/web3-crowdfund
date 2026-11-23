@@ -36,6 +36,13 @@
       "when": 1795193491455,
       "tag": "0004_campaign_details",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795460670782,
+      "tag": "0005_user_profiles",
+      "breakpoints": true
     }
   ]
 }
