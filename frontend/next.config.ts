@@ -1,15 +1,17 @@
 import type { NextConfig } from "next";
 
+const standalone = process.env.OPENFUND_STANDALONE === "1";
 const nextConfig: NextConfig = {
   agentRules: false,
   experimental: { agentUpgrade: "security" },
   reactStrictMode: true,
-  // Backend на том же источнике: браузер ходит в /api/*, а сервер Next передаёт запрос backend.
-  // Только для разработки: в продакшене /api маршрутизирует reverse proxy, потому что прокси Next
-  // не сообщает backend адрес клиента (docs/DECISIONS.md#frontend-and-backend-share-one-origin).
-  async rewrites() {
-    return [{ source: "/api/:path*", destination: `${process.env.BACKEND_URL ?? "http://127.0.0.1:4000"}/:path*` }];
-  },
+  output: standalone ? "standalone" : undefined,
+  // При локальном запуске с Node.js /api обрабатывается через Next. В Compose его обслуживает Nginx.
+  ...(standalone ? {} : {
+    async rewrites() {
+      return [{ source: "/api/:path*", destination: `${process.env.BACKEND_URL ?? "http://127.0.0.1:4000"}/:path*` }];
+    },
+  }),
 };
 
 export default nextConfig;
