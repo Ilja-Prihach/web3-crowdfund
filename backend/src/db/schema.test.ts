@@ -56,6 +56,7 @@ describe("схема indexer", () => {
         "chain_events",
         "contributions",
         "indexer_checkpoints",
+        "profiles",
       ],
     );
   });
