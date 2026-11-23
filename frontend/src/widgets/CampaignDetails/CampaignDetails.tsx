@@ -14,7 +14,7 @@ import { useCampaign } from "@/entities/campaign/model/useCampaign";
 import { useCampaignDetails } from "@/entities/campaign/model/useCampaignDetails";
 import { CampaignActions } from "@/features/campaign-actions/ui/CampaignActions/CampaignActions";
 import { DonateForm } from "@/features/campaign-donate/ui/DonateForm/DonateForm";
-import { contractExplorerUrl, supportedChain } from "@/shared/config/web3";
+import { contractExplorerUrl } from "@/shared/config/web3";
 import { addressHue, shortenAddress } from "@/shared/lib/address";
 import { Button } from "@/shared/ui/Button/Button";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
@@ -38,8 +38,6 @@ const refundRules: Record<Campaign["fundingMode"], string> = {
   fixedDeadline: "Если цель не достигнута к сроку или сбор отменён",
   openEnded: "В любой момент, пока цель не достигнута",
 };
-
-const explorerUrl = supportedChain.blockExplorers.default.url;
 
 type CampaignDetailsProps = {
   // null — ID из адреса не прошёл проверку.
@@ -159,16 +157,14 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               style={{ "--avatar-hue": addressHue(campaign.creator) } as CSSProperties}
             />
             <div>
-              <a
+              <Link
                 className={styles.creatorAddress}
-                href={`${explorerUrl}/address/${campaign.creator}`}
-                rel="noreferrer"
-                target="_blank"
+                href={`/profiles/${campaign.creator}`}
                 title={campaign.creator}
               >
-                {shortenAddress(campaign.creator)} <span aria-hidden="true">↗</span>
-              </a>
-              <p className={styles.creatorRole}>Создатель кампании · адрес в Etherscan</p>
+                {shortenAddress(campaign.creator)} <span aria-hidden="true">→</span>
+              </Link>
+              <p className={styles.creatorRole}>Создатель кампании · профиль и проекты</p>
             </div>
           </div>
         </header>
