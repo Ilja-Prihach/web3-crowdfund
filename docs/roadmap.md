@@ -107,6 +107,8 @@ Backend пишется на Node.js, TypeScript и Fastify, данные хра�
 
 ## Этап 6. Docker
 
+Локальный стек Sepolia (#46) описан в [инструкции Docker Compose](docker.md). Профиль с локальным Anvil — задача #48.
+
 - контейнеры frontend, backend и indexer;
 - PostgreSQL с volume и migrations;
 - локальный Anvil для demo-профиля;
