@@ -7,16 +7,84 @@ services:
       POSTGRES_PASSWORD: openfund
       POSTGRES_DB: openfund
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:${OPENFUND_POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
       # Создаёт openfund_test при первом запуске тома: тесты не трогают рабочую БД.
       - ./backend/db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U openfund -d openfund"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "openfund", "-d", "openfund"]
       interval: 2s
       timeout: 3s
       retries: 15
 
+  migrate:
+    profiles: [stack]
+    build:
+      context: ./backend
+      target: migrate
+    environment:
+      DATABASE_URL: postgres://openfund:openfund@postgres:5432/openfund
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    profiles: [stack]
+    build: ./backend
+    environment: &backend-env
+      DATABASE_URL: postgres://openfund:openfund@postgres:5432/openfund
+      SEPOLIA_RPC_URL: ${SEPOLIA_RPC_URL:-https://sepolia.gateway.tenderly.co}
+      APP_ORIGIN: http://localhost:${OPENFUND_HTTP_PORT:-3000}
+      HOST: 0.0.0.0
+      MEDIA_DIR: /app/storage/media
+    volumes:
+      - media-data:/app/storage/media
+    depends_on: &migration-required
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  indexer:
+    profiles: [stack]
+    build: ./backend
+    command: ["node", "src/indexer.ts"]
+    environment: *backend-env
+    depends_on: *migration-required
+
+  frontend:
+    profiles: [stack]
+    build: ./frontend
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  gateway:
+    profiles: [stack]
+    image: nginx:1.28-alpine
+    ports:
+      - "127.0.0.1:${OPENFUND_HTTP_PORT:-3000}:80"
+    volumes:
+      - ./docker/openfund.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/api/ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
 volumes:
   postgres-data:
+  media-data:
