@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 
+import { eq } from "drizzle-orm";
 import { parseEther } from "viem";
 
 import { buildApp } from "../../app.ts";
@@ -149,6 +150,29 @@ describe("GET /v1/campaigns", () => {
     } finally {
       await app.close();
     }
+  });
+});
+
+describe("GET /v1/campaigns/overview", () => {
+  it("отдаёт историю взносов и только активные кампании из одного снимка", async () => {
+    await db.update(campaigns).set({ fundsWithdrawn: true }).where(eq(campaigns.campaignId, 0n));
+    const response = await get("/v1/campaigns/overview");
+    assert.equal(response.statusCode, 200);
+    const { overview } = response.json<{ overview: {
+      launched: number; reachedGoal: number; donors: number; donatedWei: string; finalizedBlock: string; items: CampaignJson[];
+    } }>();
+    const { items, ...stats } = overview;
+    assert.deepEqual(stats, {
+      launched: 2, reachedGoal: 1, donors: 2, donatedWei: parseEther("1.1").toString(), finalizedBlock: "12141025",
+    });
+    assert.deepEqual(items.map(({ id, status }) => [id, status]), [["1", "active"]]);
+  });
+
+  it("без блока indexer не выдаёт неизвестные показатели за нули", async () => {
+    await db.delete(indexerCheckpoints);
+    const response = await get("/v1/campaigns/overview");
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { overview: null });
   });
 });
 

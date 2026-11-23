@@ -6,6 +6,7 @@ import {
   campaignDetails,
   campaignMetadata,
   campaigns,
+  chainEvents,
   contributions,
   type fundingModes,
 } from "../../db/schema.ts";
@@ -98,6 +99,38 @@ const ofContract = (contract: IndexedContract) =>
 // Страница, общее число и checkpoint читаются из одного снимка базы (REPEATABLE READ):
 // пачка indexer между запросами не сделает total несогласованным со страницей.
 export const snapshot = { isolationLevel: "repeatable read", accessMode: "read only" } as const;
+
+export async function readHomeOverview(db: Database, contract: IndexedContract, nowSeconds: number) {
+  return db.transaction(async (tx) => {
+    const finalizedBlock = await readCheckpoint(tx, contract);
+    if (finalizedBlock === null) return null;
+
+    const [totals] = await tx.select({
+      launched: count(),
+      reachedGoal: sql<number>`count(*) filter (where ${campaigns.totalRaised} >= ${campaigns.goal})`.mapWith(Number),
+    }).from(campaigns).where(ofContract(contract));
+
+    const [donations] = await tx.select({
+      donatedWei: sql<string>`coalesce(sum((${chainEvents.args}->>'amount')::numeric), 0)::text`,
+      donors: sql<number>`count(distinct ${chainEvents.args}->>'donor')`.mapWith(Number),
+    }).from(chainEvents).where(and(
+      eq(chainEvents.chainId, contract.chainId),
+      eq(chainEvents.contractAddress, contract.address.toLowerCase()),
+      eq(chainEvents.eventName, "DonationMade"),
+    ));
+
+    const items = await tx.select(selection(nowSeconds))
+      .from(campaigns)
+      .innerJoin(campaignMetadata, metadataJoin)
+      .leftJoin(campaignDetails, detailsJoin)
+      .where(and(ofContract(contract), eq(statusAt(nowSeconds), "active")))
+      .orderBy(...orderBy.newest)
+      .limit(3);
+
+    if (!totals || !donations) throw new Error("Home aggregates did not return a row");
+    return { ...totals, ...donations, items, finalizedBlock };
+  }, snapshot);
+}
 
 export async function listCampaigns(db: Database, contract: IndexedContract, query: CatalogQuery) {
   const filters = [ofContract(contract)];

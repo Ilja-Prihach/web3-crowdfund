@@ -6,11 +6,12 @@ import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { type EventPosition, listActivity, listDonors, toActivityItem } from "./activity.ts";
 import { coverUrl } from "./details.ts";
-import { findCampaign, listCampaigns } from "./repository.ts";
+import { findCampaign, listCampaigns, readHomeOverview } from "./repository.ts";
 import {
   type ActivityItemJson,
   type CampaignJson,
   getCampaignSchema,
+  homeOverviewSchema,
   listActivitySchema,
   listCampaignsSchema,
   listDonorsSchema,
@@ -68,6 +69,13 @@ function notFound(reply: FastifyReply, id: string) {
 export const campaignRoutes: FastifyPluginCallbackTypebox<CampaignRoutesDeps> = (app, deps, done) => {
   // Поиск дороже обычного чтения: лимит по адресу клиента.
   const config = { rateLimit: { max: deps.requestsPerMinute, timeWindow: 60_000 } };
+
+  app.get("/overview", { schema: homeOverviewSchema, config }, async () => {
+    const overview = await readHomeOverview(deps.db, sepoliaCrowdfunding, nowSeconds());
+    if (overview === null) return { overview: null };
+    const { finalizedBlock, items, ...stats } = overview;
+    return { overview: { ...stats, finalizedBlock: finalizedBlock.toString(), items: items.map(campaignToJson) } };
+  });
 
   app.get("/", { schema: listCampaignsSchema, config }, async (request) => {
     const { q, status, mode, category, sort = "newest", limit = 20, offset = 0 } = request.query;

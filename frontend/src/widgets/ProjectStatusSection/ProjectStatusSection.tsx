@@ -1,4 +1,3 @@
-import { contractExplorerUrl } from "@/shared/config/web3";
 import { ButtonLink } from "@/shared/ui/Button/ButtonLink";
 
 import styles from "./ProjectStatusSection.module.scss";
@@ -12,25 +11,21 @@ export function ProjectStatusSection() {
         <div className={styles.card}>
           <div className={styles.copy}>
             <h2 className={styles.title} id="project-status-title">
-              Контракт уже в сети. Интерфейс собирается поэтапно
+              Запустите свой проект
             </h2>
             <p>
-              Сейчас можно проверить код, состояние и транзакции V2. Подключение кошелька,
-              каталог и создание сборов появятся на следующих этапах.
+              Расскажите, что хотите сделать, выберите цель и режим сбора. Условия будут записаны в контракте Sepolia.
             </p>
           </div>
 
           <div className={styles.side}>
             <div className={styles.actions}>
               <ButtonLink
-                aria-label="Контракт V2 в Etherscan — откроется в новой вкладке"
-                href={contractExplorerUrl}
-                rel="noreferrer"
+                href="/campaigns/new"
                 size="large"
-                target="_blank"
                 variant="accent"
               >
-                Контракт в Etherscan <span aria-hidden="true">↗</span>
+                Создать сбор
               </ButtonLink>
               <a
                 aria-label="Исходный код OpenFund — откроется в новой вкладке"

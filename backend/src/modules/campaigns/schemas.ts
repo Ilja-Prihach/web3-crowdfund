@@ -30,6 +30,22 @@ export const CampaignSchema = Type.Object({
 });
 export type CampaignJson = Static<typeof CampaignSchema>;
 
+export const homeOverviewSchema = {
+  response: {
+    200: Type.Object({ overview: Type.Union([
+      Type.Null(),
+      Type.Object({
+        launched: Type.Integer({ minimum: 0 }),
+        reachedGoal: Type.Integer({ minimum: 0 }),
+        donors: Type.Integer({ minimum: 0 }),
+        donatedWei: Type.String({ pattern: "^(0|[1-9][0-9]*)$" }),
+        finalizedBlock: Uint,
+        items: Type.Array(CampaignSchema, { maxItems: 3 }),
+      }),
+    ]) }),
+  },
+};
+
 // Последний finalized-блок, до которого применены события; null — indexer ещё не запускался.
 const FinalizedBlock = Type.Union([Uint, Type.Null()]);
 const campaignParams = Type.Object({ id: Uint });
