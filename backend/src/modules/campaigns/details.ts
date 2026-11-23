@@ -1,8 +1,26 @@
 import { and, eq } from "drizzle-orm";
 
 import type { Database } from "../../db/client.ts";
-import { campaignDetails } from "../../db/schema.ts";
+import { campaignDetails, chainEvents } from "../../db/schema.ts";
 import type { IndexedContract } from "../../indexer/events.ts";
+
+// totalRaised в V2 уменьшается при refund, поэтому ноль не доказывает, что пожертвований никогда не было.
+// Финализированный DonationMade в append-only журнале сохраняет этот факт после полного возврата.
+export async function hasDonationHistory(db: Database, contract: IndexedContract, campaignId: bigint) {
+  const rows = await db
+    .select({ txHash: chainEvents.txHash })
+    .from(chainEvents)
+    .where(
+      and(
+        eq(chainEvents.chainId, contract.chainId),
+        eq(chainEvents.contractAddress, contract.address.toLowerCase()),
+        eq(chainEvents.campaignId, campaignId),
+        eq(chainEvents.eventName, "DonationMade"),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
 
 export type CampaignDetailsRow = typeof campaignDetails.$inferSelect;
 // Тексты и категория, которые создатель сохраняет одной формой; обложка меняется отдельно.

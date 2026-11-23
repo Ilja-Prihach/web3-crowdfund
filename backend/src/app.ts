@@ -3,13 +3,11 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyServerOptions } from "fastify";
-import type { Address } from "viem";
-
 import type { ChainClient } from "./chain/client.ts";
+import { type CampaignEditState, readCampaignEditState } from "./chain/creator.ts";
 import type { Database } from "./db/client.ts";
 import { authRoutes } from "./modules/auth/routes.ts";
 import { type AuthLimits, defaultAuthLimits } from "./modules/auth/service.ts";
-import { readCampaignCreator } from "./chain/creator.ts";
 import { crowdfunding } from "./chain/contract.ts";
 import type { MediaStorage } from "./media/storage.ts";
 import { detailsRoutes, mediaRoutes } from "./modules/campaigns/details-routes.ts";
@@ -28,8 +26,8 @@ export type AppDeps = {
   authLimits?: AuthLimits;
   catalogRequestsPerMinute?: number;
   media: MediaStorage;
-  // Создатель кампании по контракту; по умолчанию — getCampaigns через chain.
-  campaignCreator?: (campaignId: bigint) => Promise<Address | null>;
+  // Создатель и сумма пожертвований по контракту; по умолчанию — getCampaigns через chain.
+  campaignEditState?: (campaignId: bigint) => Promise<CampaignEditState | null>;
   detailsWritesPerMinute?: number;
   creatorReadsPerMinute?: number;
 };
@@ -74,7 +72,8 @@ export function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
     db: deps.db,
     media: deps.media,
     appOrigin: deps.appOrigin,
-    campaignCreator: deps.campaignCreator ?? ((id) => readCampaignCreator(deps.chain, crowdfunding.address, id)),
+    campaignEditState:
+      deps.campaignEditState ?? ((id) => readCampaignEditState(deps.chain, crowdfunding.address, id)),
     readsPerMinute,
     writesPerMinute: deps.detailsWritesPerMinute ?? 30,
     creatorReadsPerMinute: deps.creatorReadsPerMinute ?? 120,

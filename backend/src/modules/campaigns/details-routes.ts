@@ -1,8 +1,9 @@
 import fastifyMultipart from "@fastify/multipart";
 import type { FastifyPluginCallbackTypebox } from "@fastify/type-provider-typebox";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { type Address, isAddressEqual } from "viem";
+import { isAddressEqual } from "viem";
 
+import type { CampaignEditState } from "../../chain/creator.ts";
 import type { Database } from "../../db/client.ts";
 import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import { CoverError, maxCoverBytes, processCover } from "../../media/cover.ts";
@@ -11,7 +12,7 @@ import type { ApiError } from "../../shared/errors.ts";
 import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
 import { rejectForeignOrigin } from "../../shared/origin.ts";
 import { requireSession } from "../auth/session.ts";
-import { type CampaignDetailsRow, coverUrl, findDetails, replaceCover, saveDetails } from "./details.ts";
+import { type CampaignDetailsRow, coverUrl, findDetails, hasDonationHistory, replaceCover, saveDetails } from "./details.ts";
 import {
   deleteCoverSchema,
   type DetailsInput,
@@ -26,16 +27,17 @@ export type DetailsRoutesDeps = {
   db: Database;
   media: MediaStorage;
   appOrigin: string;
-  // Создатель кампании по контракту; null — кампании нет. Тест подставляет свою функцию вместо RPC.
-  campaignCreator: (campaignId: bigint) => Promise<Address | null>;
+  // Создатель и сумма пожертвований по контракту; null — кампании нет. Тест подставляет функцию вместо RPC.
+  campaignEditState: (campaignId: bigint) => Promise<CampaignEditState | null>;
   readsPerMinute: number;
   writesPerMinute: number;
   // Общий бюджет чтений creator из RPC на процесс: сессию может получить любой ключ, а квота RPC одна.
   creatorReadsPerMinute: number;
 };
 
-function toJson(row: CampaignDetailsRow | undefined): DetailsJson {
+function toJson(row: CampaignDetailsRow | undefined, locked = false): DetailsJson {
   return {
+    locked,
     category: row?.category ?? null,
     story: row?.story ?? null,
     budget: row?.budget ?? null,
@@ -85,24 +87,33 @@ export const detailsRoutes: FastifyPluginCallbackTypebox<DetailsRoutesDeps> = (a
       return sendError(reply, 503, "CHAIN_BUSY", "Too many requests to the chain, retry later");
     }
 
-    let creator: Address | null;
+    let state: CampaignEditState | null;
     try {
-      creator = await deps.campaignCreator(campaignIdOf(request));
+      state = await deps.campaignEditState(campaignIdOf(request));
     } catch (error) {
       request.log.warn({ err: error }, "campaign creator read failed");
       return sendError(reply, 503, "CHAIN_UNAVAILABLE", "Cannot read the campaign from the chain, retry later");
     }
-    if (creator === null) return sendError(reply, 404, "CAMPAIGN_NOT_FOUND", "Campaign does not exist in the contract");
-    if (!isAddressEqual(creator, session.address)) {
+    if (state === null) return sendError(reply, 404, "CAMPAIGN_NOT_FOUND", "Campaign does not exist in the contract");
+    if (!isAddressEqual(state.creator, session.address)) {
       return sendError(reply, 403, "NOT_CAMPAIGN_CREATOR", "Only the campaign creator can change its details");
+    }
+    // Текущая сумма ловит свежий донат до финализации indexer; журнал сохраняет блокировку после полного refund.
+    if (state.totalRaised > 0n || (await hasDonationHistory(deps.db, sepoliaCrowdfunding, campaignIdOf(request)))) {
+      return sendError(reply, 409, "CAMPAIGN_DETAILS_LOCKED", "Campaign details are locked after the first donation");
     }
   }
   const creatorOnly = [requireSession(deps.db), requireCreator];
 
   // Отсутствие деталей — норма: 200 с null, а не 404. Кампании в контракте эта выдача не проверяет.
-  app.get("/:id/details", { schema: getDetailsSchema, config: reads }, async (request) =>
-    toJson(await findDetails(deps.db, sepoliaCrowdfunding, BigInt(request.params.id))),
-  );
+  app.get("/:id/details", { schema: getDetailsSchema, config: reads }, async (request) => {
+    const campaignId = BigInt(request.params.id);
+    const [row, locked] = await Promise.all([
+      findDetails(deps.db, sepoliaCrowdfunding, campaignId),
+      hasDonationHistory(deps.db, sepoliaCrowdfunding, campaignId),
+    ]);
+    return toJson(row, locked);
+  });
 
   app.put("/:id/details", { schema: putDetailsSchema, config: writes, preHandler: creatorOnly }, async (request) => {
     const address = request.session?.address ?? "";

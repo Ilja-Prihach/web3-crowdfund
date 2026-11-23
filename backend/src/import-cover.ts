@@ -5,7 +5,7 @@ import { pino } from "pino";
 
 import { createChainClient } from "./chain/client.ts";
 import { crowdfunding } from "./chain/contract.ts";
-import { readCampaignCreator } from "./chain/creator.ts";
+import { readCampaignEditState } from "./chain/creator.ts";
 import { loadEnv } from "./config/env.ts";
 import { createDatabase } from "./db/client.ts";
 import { campaignCategories } from "./db/schema.ts";
@@ -39,7 +39,7 @@ try {
       db,
       media: createLocalMediaStorage(env.mediaDir),
       contract: sepoliaCrowdfunding,
-      campaignCreator: (campaignId) => readCampaignCreator(chain, crowdfunding.address, campaignId),
+      campaignEditState: (campaignId) => readCampaignEditState(chain, crowdfunding.address, campaignId),
     },
     { campaignId: BigInt(id), file: await readFile(path), category },
   );

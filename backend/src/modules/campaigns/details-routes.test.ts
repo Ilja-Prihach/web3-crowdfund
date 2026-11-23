@@ -5,7 +5,8 @@ import sharp from "sharp";
 import type { Address } from "viem";
 
 import { type AppDeps, buildApp } from "../../app.ts";
-import { campaignDetails } from "../../db/schema.ts";
+import { campaignDetails, chainEvents } from "../../db/schema.ts";
+import { sepoliaCrowdfunding } from "../../indexer/events.ts";
 import { maxCoverBytes } from "../../media/cover.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { createMemoryMediaStorage, testAppOrigin, testDeps } from "../../test/app.ts";
@@ -19,6 +20,7 @@ beforeEach(() => resetTestDatabase(db));
 
 const stranger = "0x5afe000000000000000000000000000000000005" as Address;
 const emptyDetails: DetailsJson = {
+  locked: false,
   category: null,
   story: null,
   budget: null,
@@ -37,17 +39,31 @@ const form: DetailsInput = {
 
 const errorCode = (response: { json: <T>() => T }) => response.json<ApiError>().error.code;
 
+const recordDonation = (campaignId: bigint) =>
+  db.insert(chainEvents).values({
+    chainId: sepoliaCrowdfunding.chainId,
+    contractAddress: sepoliaCrowdfunding.address.toLowerCase(),
+    blockNumber: 1n,
+    blockTimestamp: new Date(),
+    txHash: `0x${"1".repeat(64)}`,
+    logIndex: 0,
+    eventName: "DonationMade",
+    campaignId,
+    args: { donor: stranger.toLowerCase(), amount: "1" },
+  });
+
 // Приложение, где создатель кампаний 0 и 1 — вошедший пользователь, кампании 2 нет в контракте.
 async function signedInApp(overrides: Partial<AppDeps> = {}) {
   const { address, sessionId } = await signInForCookie(db);
   const creatorCalls: bigint[] = [];
+  let totalRaised = 0n;
   const media = createMemoryMediaStorage();
   const app = buildApp(
     testDeps(db, {
       media,
-      campaignCreator: (id) => {
+      campaignEditState: (id) => {
         creatorCalls.push(id);
-        return Promise.resolve(id < 2n ? address : null);
+        return Promise.resolve(id < 2n ? { creator: address, totalRaised } : null);
       },
       ...overrides,
     }),
@@ -55,7 +71,7 @@ async function signedInApp(overrides: Partial<AppDeps> = {}) {
   after(() => app.close());
   const cookies = { openfund_session: sessionId };
   const headers = { origin: testAppOrigin };
-  return { app, address, media, creatorCalls, cookies, headers };
+  return { app, address, media, creatorCalls, cookies, headers, setTotalRaised: (value: bigint) => (totalRaised = value) };
 }
 
 function coverForm(image: Buffer) {
@@ -86,8 +102,9 @@ describe("PUT /v1/campaigns/:id/details", () => {
     assert.equal(saved.statusCode, 200);
     const read = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
 
-    const { updatedAt, ...fields } = read.json<DetailsJson>();
+    const { updatedAt, locked, ...fields } = read.json<DetailsJson>();
     assert.deepEqual(fields, { ...form, coverUrl: null });
+    assert.equal(locked, false);
     assert.ok(updatedAt);
     const [row] = await db.select().from(campaignDetails);
     assert.equal(row?.updatedBy, address.toLowerCase());
@@ -126,10 +143,12 @@ describe("PUT /v1/campaigns/:id/details", () => {
   });
 
   it("не создатель — 403, нет кампании в контракте — 404, RPC недоступен — 503", async () => {
-    const notCreator = await signedInApp({ campaignCreator: () => Promise.resolve(stranger) });
+    const notCreator = await signedInApp({
+      campaignEditState: () => Promise.resolve({ creator: stranger, totalRaised: 0n }),
+    });
     const missing = await signedInApp();
     const down = await signedInApp({
-      campaignCreator: () => Promise.reject(new Error("connect ECONNREFUSED")),
+      campaignEditState: () => Promise.reject(new Error("connect ECONNREFUSED")),
     });
     const put = ({ app, cookies, headers }: Awaited<ReturnType<typeof signedInApp>>, id: number) =>
       app.inject({ method: "PUT", url: `/v1/campaigns/${id}/details`, cookies, headers, payload: form });
@@ -190,6 +209,55 @@ describe("PUT /v1/campaigns/:id/details", () => {
     assert.equal(busy.statusCode, 503);
     assert.equal(errorCode(busy), "CHAIN_BUSY");
     assert.equal(busy.headers["retry-after"], "60");
+  });
+
+  it("после первого пожертвования блокирует детали и обложку без изменений в базе и хранилище", async () => {
+    const { app, media, cookies, headers, setTotalRaised } = await signedInApp();
+    const initial = await app.inject({ method: "PUT", url: "/v1/campaigns/0/details", cookies, headers, payload: form });
+    await app.inject({ method: "PUT", url: "/v1/campaigns/0/cover", cookies, headers, payload: coverForm(await png()) });
+    const before = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    const filesBefore = [...media.files.entries()];
+    setTotalRaised(1n);
+
+    const responses = await Promise.all([
+      app.inject({
+        method: "PUT",
+        url: "/v1/campaigns/0/details",
+        cookies,
+        headers,
+        payload: { ...form, story: "Изменённая история" },
+      }),
+      app.inject({
+        method: "PUT",
+        url: "/v1/campaigns/0/cover",
+        cookies,
+        headers,
+        payload: coverForm(await png({ r: 200, g: 60, b: 40 })),
+      }),
+      app.inject({ method: "DELETE", url: "/v1/campaigns/0/cover", cookies, headers }),
+    ]);
+
+    assert.equal(initial.statusCode, 200);
+    assert.deepEqual(
+      responses.map((response) => [response.statusCode, errorCode(response)]),
+      Array(3).fill([409, "CAMPAIGN_DETAILS_LOCKED"]),
+    );
+    const after = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    assert.deepEqual(after.json(), before.json());
+    assert.deepEqual([...media.files.entries()], filesBefore);
+  });
+
+  it("сохраняет блокировку после полного возврата, когда totalRaised снова равен нулю", async () => {
+    const { app, cookies, headers } = await signedInApp();
+    await recordDonation(0n);
+
+    const response = await app.inject({ method: "PUT", url: "/v1/campaigns/0/details", cookies, headers, payload: form });
+
+    assert.equal(response.statusCode, 409);
+    assert.equal(errorCode(response), "CAMPAIGN_DETAILS_LOCKED");
+    assert.equal(await db.$count(campaignDetails), 0);
+    const details = await app.inject({ method: "GET", url: "/v1/campaigns/0/details" });
+    assert.equal(details.json<DetailsJson>().locked, true);
   });
 });
 

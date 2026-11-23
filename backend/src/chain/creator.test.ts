@@ -6,13 +6,13 @@ import { parseEther } from "viem";
 import { anvilAccounts, useAnvil } from "../test/anvil.ts";
 import { deployCrowdfunding } from "../test/crowdfunding.ts";
 import { createChainClient } from "./client.ts";
-import { readCampaignCreator } from "./creator.ts";
+import { readCampaignEditState } from "./creator.ts";
 
 const [creator, other] = anvilAccounts;
 const stand = useAnvil((anvil) => deployCrowdfunding(anvil.client, creator));
 
-describe("readCampaignCreator на Anvil", () => {
-  it("читает создателя кампании №0 и следующих, а несуществующую возвращает как null", async () => {
+describe("readCampaignEditState на Anvil", () => {
+  it("читает создателя и сумму пожертвований, а несуществующую кампанию возвращает как null", async () => {
     const campaign = stand.context;
     const chain = createChainClient(stand.anvil.url);
 
@@ -21,9 +21,20 @@ describe("readCampaignCreator на Anvil", () => {
     const second = await campaign.createCampaign(other, { goal: parseEther("1") });
     assert.equal(first.campaignId, 0n);
 
-    assert.equal(await readCampaignCreator(chain, campaign.address, 0n), creator.address);
-    assert.equal(await readCampaignCreator(chain, campaign.address, second.campaignId), other.address);
-    assert.equal(await readCampaignCreator(chain, campaign.address, 2n), null);
-    assert.equal(await readCampaignCreator(chain, campaign.address, 2n ** 255n), null);
+    assert.deepEqual(await readCampaignEditState(chain, campaign.address, 0n), {
+      creator: creator.address,
+      totalRaised: 0n,
+    });
+    await campaign.donate(other, 0n, parseEther("0.25"));
+    assert.deepEqual(await readCampaignEditState(chain, campaign.address, 0n), {
+      creator: creator.address,
+      totalRaised: parseEther("0.25"),
+    });
+    assert.deepEqual(await readCampaignEditState(chain, campaign.address, second.campaignId), {
+      creator: other.address,
+      totalRaised: 0n,
+    });
+    assert.equal(await readCampaignEditState(chain, campaign.address, 2n), null);
+    assert.equal(await readCampaignEditState(chain, campaign.address, 2n ** 255n), null);
   });
 });
