@@ -24,6 +24,9 @@ export const profileRoutes: FastifyPluginCallbackTypebox<{ db: Database; appOrig
   // Адрес только из сессии: поле address в теле не может изменить владельца профиля.
   app.put("/me", { schema: putProfileSchema, config: writes, preHandler: requireSession(deps.db) }, async (request, reply) => {
     if (!request.session) throw new Error("Session was not loaded");
+    if (request.body.expectedAddress && request.body.expectedAddress.toLowerCase() !== request.session.address.toLowerCase()) {
+      return reply.code(403).send({ error: { code: "PROFILE_OWNER_CHANGED", message: "Session owner no longer matches the profile being edited" } });
+    }
     void reply.header("cache-control", "no-store");
     return toJson(await saveProfile(deps.db, request.session.address, request.body));
   });

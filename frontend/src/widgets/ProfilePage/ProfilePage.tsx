@@ -72,7 +72,7 @@ function ProfileView({ address }: { address: Address }) {
         <p className={styles.notice}>Владелец пока не заполнил профиль. История кампаний этого адреса доступна ниже.</p>
       ) : null}
 
-      {profile.isSuccess ? <ProfileEditor address={address} profile={profile.data} /> : null}
+      {profile.data !== undefined ? <ProfileEditor address={address} profile={profile.data} /> : null}
 
       <section aria-labelledby="profile-projects" className={styles.projects}>
         <div className={styles.sectionHead}>

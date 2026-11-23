@@ -91,6 +91,15 @@ describe("профили", () => {
     assert.equal(read.json<ProfileJson>().bio, "Описание");
   });
 
+  it("смена cookie в другой вкладке не записывает черновик в другой профиль", async () => {
+    const { app, cookies, headers, address } = await context();
+    const response = await app.inject({ method: "PUT", url: "/v1/profiles/me", cookies, headers, payload: { ...payload, expectedAddress: alice } });
+    assert.equal(response.statusCode, 403);
+    assert.equal(await db.$count(profiles), 0);
+    const matching = await app.inject({ method: "PUT", url: "/v1/profiles/me", cookies, headers, payload: { ...payload, expectedAddress: address.toLowerCase() } });
+    assert.equal(matching.statusCode, 200);
+  });
+
   it("параллельные PUT одного кошелька сохраняют одну строку", async () => {
     const { app, cookies, headers } = await context();
     const replies = await Promise.all(Array.from({ length: 5 }, (_, index) => app.inject({

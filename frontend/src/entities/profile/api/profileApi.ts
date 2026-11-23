@@ -45,9 +45,9 @@ export async function fetchProfile(address: Address, signal?: AbortSignal) {
   }
 }
 
-export async function saveProfile(input: ProfileInput) {
+export async function saveProfile(address: Address, input: ProfileInput) {
   return fromProfileJson(await requestBackend("/profiles/me", { init: {
-    method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(input),
+    method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...input, expectedAddress: address }),
   } }));
 }
 

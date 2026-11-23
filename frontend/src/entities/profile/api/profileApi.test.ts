@@ -31,14 +31,14 @@ it("чужой профиль в успешном ответе отклоняе�
   globalThis.fetch = async () => Response.json({ ...fixture, address: `0x${"b".repeat(40)}` });
   await assert.rejects(fetchProfile(address), BackendApiError);
 });
-it("PUT отправляет только редактируемые поля", async () => {
+it("PUT передаёт редактируемые поля и ожидаемого владельца формы", async () => {
   globalThis.fetch = async (url, init) => {
     assert.equal(url, "/api/v1/profiles/me");
     assert.equal(init?.method, "PUT");
-    assert.deepEqual(JSON.parse(String(init?.body)), { name: "Автор", bio: null });
+    assert.deepEqual(JSON.parse(String(init?.body)), { name: "Автор", bio: null, expectedAddress: address });
     return Response.json(fixture);
   };
-  assert.equal((await saveProfile({ name: "Автор", bio: null })).name, "Автор");
+  assert.equal((await saveProfile(address, { name: "Автор", bio: null })).name, "Автор");
 });
 it("черновик нормализует пустые поля, проверяет лимиты и NUL", () => {
   assert.deepEqual(validateProfileDraft(" ", " ").input, { name: null, bio: null });

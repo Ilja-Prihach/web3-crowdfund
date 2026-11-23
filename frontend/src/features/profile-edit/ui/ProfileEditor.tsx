@@ -5,7 +5,7 @@ import { useId, useState, type FormEvent } from "react";
 import { isAddressEqual, type Address } from "viem";
 import { useConnection } from "wagmi";
 
-import { saveProfile, type Profile } from "@/entities/profile/api/profileApi";
+import { saveProfile, type Profile, type ProfileInput } from "@/entities/profile/api/profileApi";
 import { profileQueryKey } from "@/entities/profile/model/useProfile";
 import { useSession } from "@/features/auth/model/useAuth";
 import { SignInPanel } from "@/features/auth/ui/SignInPanel/SignInPanel";
@@ -21,14 +21,15 @@ export function ProfileEditor({ address, profile }: { address: Address; profile:
   const connection = useConnection();
   const sessionIsOwner = Boolean(session.data && isAddressEqual(session.data.address, address));
   const walletIsOwner = Boolean(connection.address && isAddressEqual(connection.address, address));
+  const [wasOwner, setWasOwner] = useState(false);
+  if (sessionIsOwner && !wasOwner) setWasOwner(true);
   // При смене кошелька форма закрывается сразу, не дожидаясь завершения backend logout.
   if (connection.address && !walletIsOwner) return null;
-  if (sessionIsOwner) return <EditForm address={address} initial={profile} key={address} />;
-  if (!walletIsOwner) return null;
-  return <section className={styles.card}><h2>Это ваш профиль</h2><p>Подтвердите владение кошельком, чтобы добавить имя и рассказать о себе.</p><SignInPanel /></section>;
+  if (sessionIsOwner || wasOwner || walletIsOwner) return <EditForm address={address} authorized={sessionIsOwner} initial={profile} key={address} walletIsOwner={walletIsOwner} />;
+  return null;
 }
 
-function EditForm({ address, initial }: { address: Address; initial: Profile | null }) {
+function EditForm({ address, authorized, initial, walletIsOwner }: { address: Address; authorized: boolean; initial: Profile | null; walletIsOwner: boolean }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? "");
   const [bio, setBio] = useState(initial?.bio ?? "");
@@ -37,7 +38,7 @@ function EditForm({ address, initial }: { address: Address; initial: Profile | n
   const nameId = useId();
   const bioId = useId();
   const mutation = useMutation({
-    mutationFn: saveProfile,
+    mutationFn: (input: ProfileInput) => saveProfile(address, input),
     onSuccess: (result) => {
       // Если аккаунт сменился во время запроса, результат не должен подменить чужую страницу.
       queryClient.setQueryData(profileQueryKey(result.address), result);
@@ -54,18 +55,19 @@ function EditForm({ address, initial }: { address: Address; initial: Profile | n
     event.preventDefault();
     const validation = validateProfileDraft(name, bio);
     setError(validation.error);
-    if (validation.input) mutation.mutate(validation.input);
+    if (validation.input && authorized) mutation.mutate(validation.input);
   };
 
   return (
     <section className={styles.card}>
-      {!open ? (
+      {!authorized ? <div><h2>Подтвердите владение профилем</h2><p>Ваш черновик сохранён на этой странице. {walletIsOwner ? "Войдите подписью, чтобы продолжить." : "Подключите кошелёк этого профиля для повторного входа."}</p>{walletIsOwner ? <SignInPanel /> : null}</div> : null}
+      {!open && authorized ? (
         <div className={styles.summary}><div><h2>Ваш профиль</h2><p>Имя и описание видны всем посетителям.</p></div><Button onClick={() => { setName(initial?.name ?? ""); setBio(initial?.bio ?? ""); setError(null); mutation.reset(); setOpen(true); }} variant="secondary">{initial ? "Редактировать профиль" : "Заполнить профиль"}</Button></div>
-      ) : (
+      ) : open ? (
         <form noValidate onSubmit={submit}>
           <h2>Расскажите о себе</h2>
           <p>Эти данные публичны. Имя не подтверждает личность — адрес кошелька остаётся главным идентификатором.</p>
-          <fieldset disabled={mutation.isPending}>
+          <fieldset disabled={mutation.isPending || !authorized}>
             <Field hint={`${name.length} / 80 символов`} id={nameId} label="Имя или название команды" onChange={(event) => setName(event.target.value)} value={name} />
             <label htmlFor={bioId}>О себе</label>
             <textarea aria-describedby={`${bioId}-hint`} id={bioId} onChange={(event) => setBio(event.target.value)} rows={5} value={bio} />
@@ -74,7 +76,7 @@ function EditForm({ address, initial }: { address: Address; initial: Profile | n
           </fieldset>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
         </form>
-      )}
+      ) : null}
       {mutation.isSuccess && !open ? <p className={styles.success} role="status">Профиль сохранён.</p> : null}
     </section>
   );

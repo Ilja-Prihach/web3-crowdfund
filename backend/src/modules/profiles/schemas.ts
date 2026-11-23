@@ -15,7 +15,11 @@ export const ProfileSchema = Type.Object({
 });
 export const getProfileSchema = { params: profileParams, response: { 200: ProfileSchema, 404: ApiErrorSchema } };
 export const putProfileSchema = {
-  body: Type.Object({ name: nullableText(80), bio: nullableText(1000) }, { additionalProperties: false }),
+  body: Type.Object({
+    name: nullableText(80), bio: nullableText(1000),
+    // Предусловие UI: cookie могла смениться в другой вкладке после загрузки формы.
+    expectedAddress: Type.Optional(Type.String({ pattern: "^0x[0-9a-fA-F]{40}$" })),
+  }, { additionalProperties: false }),
   response: { 200: ProfileSchema, 401: ApiErrorSchema, 403: ApiErrorSchema },
 };
 export const profileCampaignsSchema = {
