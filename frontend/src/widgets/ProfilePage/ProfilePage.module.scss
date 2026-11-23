@@ -18,7 +18,7 @@
   box-shadow: var(--shadow-sm);
 }
 .identity { min-width: 0; flex: 1 1 18rem; }
-.identity h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3.4rem); overflow-wrap: anywhere; line-height: 1.15; margin: var(--space-2) 0; }
+.identity h1 { font-size: clamp(2rem, 4vw, 3.4rem); overflow-wrap: anywhere; line-height: 1.15; margin: var(--space-2) 0; }
 .eyebrow { @include mixins.eyebrow; }
 .address { overflow-wrap: anywhere; font-size: var(--font-size-small); color: var(--color-text-muted); }
 .bio { max-width: 44rem; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: var(--space-4); color: var(--color-text-soft); }
@@ -28,7 +28,7 @@
 .notice { margin-top: var(--space-5); padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-soft); }
 .projects { margin-top: var(--space-8); }
 .sectionHead { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: end; justify-content: space-between; }
-.sectionHead h2 { font-family: var(--font-serif); font-size: clamp(1.8rem, 3vw, 2.5rem); margin-top: var(--space-2); }
+.sectionHead h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); margin-top: var(--space-2); }
 .tabs { display: flex; padding: 4px; border-radius: var(--radius-round); background: var(--color-surface-muted); }
 .tabs button { min-height: 2.75rem; border: 0; border-radius: var(--radius-round); padding: var(--space-2) var(--space-4); color: var(--color-text-soft); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--color-text); background: var(--color-surface); box-shadow: var(--shadow-sm); }

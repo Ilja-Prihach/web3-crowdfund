@@ -7,6 +7,7 @@ import type { Address } from "viem";
 import { CampaignCard } from "@/entities/campaign/CampaignCard/CampaignCard";
 import type { ProfileCampaignKind } from "@/entities/profile/api/profileApi";
 import { useProfile, useProfileCampaigns } from "@/entities/profile/model/useProfile";
+import { ProfileEditor } from "@/features/profile-edit/ui/ProfileEditor";
 import { supportedChain } from "@/shared/config/web3";
 import { addressHue, shortenAddress } from "@/shared/lib/address";
 import { Button } from "@/shared/ui/Button/Button";
@@ -70,6 +71,8 @@ function ProfileView({ address }: { address: Address }) {
       ) : profile.data === null ? (
         <p className={styles.notice}>Владелец пока не заполнил профиль. История кампаний этого адреса доступна ниже.</p>
       ) : null}
+
+      {profile.isSuccess ? <ProfileEditor address={address} profile={profile.data} /> : null}
 
       <section aria-labelledby="profile-projects" className={styles.projects}>
         <div className={styles.sectionHead}>
