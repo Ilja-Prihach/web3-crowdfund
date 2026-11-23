@@ -3,7 +3,8 @@ import { Type } from "typebox";
 import { ApiErrorSchema } from "../../shared/errors.ts";
 import { listCampaignsSchema } from "../campaigns/schemas.ts";
 
-const nullableText = (maxLength: number) => Type.Union([Type.String({ maxLength }), Type.Null()]);
+// PostgreSQL text не принимает NUL: отклоняем ввод схемой как 400 до обращения к БД.
+const nullableText = (maxLength: number) => Type.Union([Type.String({ maxLength, pattern: "^[^\\u0000]*$" }), Type.Null()]);
 export const profileParams = Type.Object({ address: Type.String({ pattern: "^0x[0-9a-fA-F]{40}$" }) });
 export const ProfileSchema = Type.Object({
   address: Type.String({ pattern: "^0x[0-9a-f]{40}$" }),

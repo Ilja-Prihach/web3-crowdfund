@@ -79,6 +79,18 @@ describe("профили", () => {
     assert.equal(empty.json<ProfileJson>().address, address.toLowerCase());
   });
 
+  it("нулевой символ в имени или описании возвращает 400 и не меняет профиль", async () => {
+    const { app, address, cookies, headers } = await context();
+    await saveProfile(db, address, { name: "Сохранённое имя", bio: "Описание" });
+    for (const body of [{ name: "A\u0000B", bio: null }, { name: null, bio: "A\u0000B" }]) {
+      const response = await app.inject({ method: "PUT", url: "/v1/profiles/me", cookies, headers, payload: body });
+      assert.equal(response.statusCode, 400);
+    }
+    const read = await app.inject({ method: "GET", url: `/v1/profiles/${address}` });
+    assert.equal(read.json<ProfileJson>().name, "Сохранённое имя");
+    assert.equal(read.json<ProfileJson>().bio, "Описание");
+  });
+
   it("параллельные PUT одного кошелька сохраняют одну строку", async () => {
     const { app, cookies, headers } = await context();
     const replies = await Promise.all(Array.from({ length: 5 }, (_, index) => app.inject({
