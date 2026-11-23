@@ -173,6 +173,24 @@ export const contributions = pgTable(
   ],
 );
 
+// MVP: один профиль на подтверждённый SIWE-адрес. PK исключает дубликаты даже при одновременных запросах.
+// Профиль не является проекцией и не удаляется при indexer:rebuild.
+export const profiles = pgTable(
+  "profiles",
+  {
+    address: text("address").primaryKey(),
+    name: text("name"),
+    bio: text("bio"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("profiles_address_format", sql`${table.address} ~ '^0x[0-9a-f]{40}$'`),
+    check("profiles_name_length", sql`${table.name} is null or (length(trim(${table.name})) > 0 and length(${table.name}) <= 80)`),
+    check("profiles_bio_length", sql`${table.bio} is null or (length(trim(${table.bio})) > 0 and length(${table.bio}) <= 1000)`),
+  ],
+);
+
 // Категории кампаний из product-vision.md: в контракте их нет, выбирает создатель.
 export const campaignCategories = ["open_source", "education", "creative", "apps", "community"] as const;
 

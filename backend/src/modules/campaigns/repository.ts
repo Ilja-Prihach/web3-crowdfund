@@ -28,6 +28,8 @@ export type CatalogQuery = {
   offset: number;
   // Unix-время в секундах, относительно которого считается статус: маршрут передаёт текущее, тест — своё.
   nowSeconds: number;
+  creator?: string;
+  supporter?: string;
 };
 
 // Статус по правилам _getCampaignStatus контракта, в том же порядке проверок. Не хранится:
@@ -99,6 +101,15 @@ export const snapshot = { isolationLevel: "repeatable read", accessMode: "read o
 
 export async function listCampaigns(db: Database, contract: IndexedContract, query: CatalogQuery) {
   const filters = [ofContract(contract)];
+  if (query.creator) filters.push(eq(campaigns.creator, query.creator.toLowerCase()));
+  // Строка вклада сохраняется с amount=0 после полного refund: история поддержки не исчезает.
+  if (query.supporter) filters.push(sql`exists (
+    select 1 from ${contributions}
+    where ${contributions.chainId} = ${campaigns.chainId}
+      and ${contributions.contractAddress} = ${campaigns.contractAddress}
+      and ${contributions.campaignId} = ${campaigns.campaignId}
+      and ${contributions.donor} = ${query.supporter.toLowerCase()}
+  )`);
   if (query.q) {
     const pattern = likePattern(query.q);
     filters.push(or(ilike(campaignMetadata.title, pattern), ilike(campaignMetadata.description, pattern)));
