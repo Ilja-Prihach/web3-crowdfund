@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 
@@ -94,6 +95,7 @@ export function WalletMenu({ onSwitchWallet, accountPanel, triggerBadge, onDisco
         </p>
         <p className={styles.fullAddress}>{address}</p>
         {accountPanel}
+        <Link className={styles.item} href={`/profiles/${address}`} onClick={() => setIsOpen(false)}>Мой профиль</Link>
         <button className={styles.item} onClick={copyAddress} type="button">
           {copyLabel}
         </button>
