@@ -99,14 +99,14 @@ export function WalletMenu({ onSwitchWallet, accountPanel, triggerBadge, onDisco
         <button className={styles.item} onClick={copyAddress} type="button">
           {copyLabel}
         </button>
-        <a
+        {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <a
           className={styles.item}
           href={`${supportedChain.blockExplorers.default.url}/address/${address}`}
           rel="noreferrer"
           target="_blank"
         >
           Открыть в Etherscan <span aria-hidden="true">↗</span>
-        </a>
+        </a>}
         <button
           className={styles.item}
           onClick={() => {
@@ -115,7 +115,7 @@ export function WalletMenu({ onSwitchWallet, accountPanel, triggerBadge, onDisco
           }}
           type="button"
         >
-          Сменить кошелёк
+          {process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Сменить роль" : "Сменить кошелёк"}
         </button>
         <button
           className={`${styles.item} ${styles.danger}`}

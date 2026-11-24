@@ -15,6 +15,7 @@ import styles from "./ConnectWallet.module.scss";
 type ConnectWalletProps = Pick<ComponentProps<typeof WalletMenu>, "accountPanel" | "triggerBadge" | "onDisconnect">;
 
 export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: ConnectWalletProps) {
+  const demo = process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1";
   const dialogRef = useRef<HTMLDialogElement>(null);
   const connection = useConnection();
   const connectors = useConnectors();
@@ -61,8 +62,8 @@ export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: Conn
         />
       ) : (
         <Button onClick={openDialog} size="compact">
-          <span className={styles.labelFull}>Подключить кошелёк</span>
-          <span className={styles.labelShort}>Кошелёк</span>
+          <span className={styles.labelFull}>{demo ? "Выбрать роль" : "Подключить кошелёк"}</span>
+          <span className={styles.labelShort}>{demo ? "Роль" : "Кошелёк"}</span>
         </Button>
       )}
 
@@ -84,22 +85,22 @@ export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: Conn
             />
             <div className={styles.visualShade} />
             <div className={styles.visualCopy}>
-              <span className={styles.networkBadge}>Sepolia · тестовая сеть</span>
-              <p className={styles.visualTitle}>Ключи остаются у вас</p>
+              <span className={styles.networkBadge}>{demo ? "Локальная демосеть" : "Sepolia · тестовая сеть"}</span>
+              <p className={styles.visualTitle}>{demo ? "Попробуйте OpenFund" : "Ключи остаются у вас"}</p>
               <p className={styles.visualText}>
-                OpenFund получает только публичный адрес. Подключение не переводит ETH.
+                {demo ? "Выберите роль и попробуйте действия с тестовыми средствами." : "OpenFund получает только публичный адрес. Подключение не переводит ETH."}
               </p>
             </div>
           </div>
 
           <div className={styles.content}>
             <h2 className={styles.title} id="connect-wallet-title">
-              {currentConnector ? "Сменить кошелёк" : "Подключите кошелёк"}
+              {currentConnector ? (demo ? "Сменить роль" : "Сменить кошелёк") : (demo ? "Выберите роль" : "Подключите кошелёк")}
             </h2>
             <p className={styles.lead} id="connect-wallet-description">
               {currentConnector
                 ? `Сейчас подключён ${getWalletName(currentConnector)}. Он отключится, когда вы подключите другой.`
-                : "Выберите расширение браузера. Подключение не отправляет транзакцию."}
+                : demo ? "Выберите роль для работы в локальной демосети." : "Выберите расширение браузера. Подключение не отправляет транзакцию."}
             </p>
 
             <ul className={styles.wallets}>
@@ -118,7 +119,7 @@ export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: Conn
                       onClick={() => selectWallet(connector)}
                       type="button"
                     >
-                      {connector.icon ? (
+                      {"icon" in connector && connector.icon ? (
                         <Image
                           alt=""
                           className={styles.walletIcon}
@@ -160,12 +161,12 @@ export function ConnectWallet({ accountPanel, triggerBadge, onDisconnect }: Conn
               </p>
             ) : null}
 
-            <p className={styles.hint}>
+            {!demo && <p className={styles.hint}>
               Нет кошелька?{" "}
               <a href="https://metamask.io/download/" rel="noreferrer" target="_blank">
                 Установить MetaMask <span aria-hidden="true">↗</span>
               </a>
-            </p>
+            </p>}
           </div>
         </div>
 

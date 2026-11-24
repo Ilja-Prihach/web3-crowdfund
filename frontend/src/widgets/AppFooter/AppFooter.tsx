@@ -18,17 +18,17 @@ export function AppFooter() {
           </span>
         </Link>
 
-        <p className={styles.notice}>Тестовая сеть Sepolia: ETH здесь не имеет реальной стоимости</p>
+        <p className={styles.notice}>{process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Локальная демосеть: ETH здесь не имеет реальной стоимости" : "Тестовая сеть Sepolia: ETH здесь не имеет реальной стоимости"}</p>
 
         <nav aria-label="Дополнительная навигация" className={styles.links}>
-          <a
+          {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <a
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
             href={contractExplorerUrl}
             rel="noreferrer"
             target="_blank"
           >
             Контракт V2 <span aria-hidden="true">↗</span>
-          </a>
+          </a>}
           <a
             aria-label="Исходный код OpenFund — откроется в новой вкладке"
             href={sourceUrl}

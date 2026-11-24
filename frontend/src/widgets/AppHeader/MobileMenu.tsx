@@ -54,7 +54,7 @@ export function MobileMenu() {
           ))}
         </ul>
         <ThemeToggle showLabel />
-        <ButtonLink
+        {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <ButtonLink
           aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
           fullWidth
           href={contractExplorerUrl}
@@ -63,7 +63,7 @@ export function MobileMenu() {
           target="_blank"
         >
           Контракт в Etherscan <span aria-hidden="true">↗</span>
-        </ButtonLink>
+        </ButtonLink>}
       </nav>
     </div>
   );

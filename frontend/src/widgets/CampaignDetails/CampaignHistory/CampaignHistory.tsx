@@ -21,7 +21,7 @@ import { Skeleton } from "@/shared/ui/Skeleton/Skeleton";
 
 import styles from "./CampaignHistory.module.scss";
 
-const explorerUrl = supportedChain.blockExplorers.default.url;
+const explorerUrl = supportedChain.blockExplorers?.default.url ?? "";
 const blockFormat = new Intl.NumberFormat("ru-RU");
 
 // Цвет точки события: деньги пришли, ушли обратно, выведены или сбор закрыт.
@@ -193,10 +193,10 @@ function ActivityRow({ item, isOwn: own }: { item: ActivityItem; isOwn: boolean 
             {formatEventTime(item.blockTimestamp)}
           </time>
         )}
-        <span aria-hidden="true">·</span>
+        {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <><span aria-hidden="true">·</span>
         <a href={`${explorerUrl}/tx/${item.txHash}`} rel="noreferrer" target="_blank">
           Транзакция <span aria-hidden="true">↗</span>
-        </a>
+        </a></>}
       </p>
     </li>
   );
@@ -210,9 +210,9 @@ function Actor({ address, isOwn: own }: { address: Address; isOwn: boolean }) {
         className={styles.avatar}
         style={{ "--avatar-hue": addressHue(address) } as CSSProperties}
       />
-      <a className={styles.address} href={`${explorerUrl}/address/${address}`} rel="noreferrer" target="_blank" title={address}>
+      {process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? <span className={styles.address}>{shortenAddress(address)}</span> : <a className={styles.address} href={`${explorerUrl}/address/${address}`} rel="noreferrer" target="_blank" title={address}>
         {shortenAddress(address)}
-      </a>
+      </a>}
       {own ? <span className={styles.you}>вы</span> : null}
     </span>
   );

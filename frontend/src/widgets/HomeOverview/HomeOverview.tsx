@@ -35,7 +35,7 @@ export function HomeOverview() {
             <div><dt>Кампаний достигли цели</dt><dd>{numberFormat.format(overview.reachedGoal)}</dd></div>
           </dl>
           <p className={styles.source}>
-            Sepolia · данные на блоке {numberFormat.format(overview.finalizedBlock)}. Новые события появляются после финализации и обработки индексатором.
+            {process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Локальная демосеть" : "Sepolia"} · данные на блоке {numberFormat.format(overview.finalizedBlock)}. Новые события появляются после финализации и обработки индексатором.
           </p>
         </section>
       ) : query.isPending ? <Skeleton variant="panel" /> : null}
@@ -66,7 +66,7 @@ export function HomeOverview() {
         {overview?.campaigns.length === 0 ? <p className={styles.notice}>Сейчас нет активных сборов.</p> : null}
         {overview === null && !query.isError ? (
           <div className={styles.notice} role="status">
-            <p>Статистика и подборка появятся после первой синхронизации с Sepolia.</p>
+            <p>Статистика и подборка появятся после первой синхронизации с сетью.</p>
             <Button onClick={() => void query.refetch()} isLoading={query.isFetching} variant="quiet">Обновить</Button>
           </div>
         ) : null}

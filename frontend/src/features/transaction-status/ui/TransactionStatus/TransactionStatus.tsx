@@ -52,7 +52,7 @@ export function TransactionStatus({
   successTitle,
   summary,
 }: TransactionStatusProps) {
-  const txUrl = hash ? `${supportedChain.blockExplorers.default.url}/tx/${hash}` : undefined;
+  const txUrl = hash && supportedChain.blockExplorers && process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" ? `${supportedChain.blockExplorers.default.url}/tx/${hash}` : undefined;
   const isRejected = stage === "failed" && isUserRejection(error);
 
   return (
@@ -85,7 +85,7 @@ export function TransactionStatus({
 
       <p className={styles.text}>
         {stage === "signing"
-          ? "Проверьте сумму и адрес контракта во всплывающем окне кошелька."
+          ? process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Отправляем транзакцию в локальную сеть." : "Проверьте сумму и адрес контракта во всплывающем окне кошелька."
           : stage === "confirming"
             ? "Обычно Sepolia подтверждает транзакцию за 10–30 секунд. Не закрывайте страницу, чтобы увидеть результат."
             : stage === "confirmed"

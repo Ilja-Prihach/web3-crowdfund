@@ -99,11 +99,11 @@ export function CampaignCatalog() {
         <p className={styles.summary}>
           {total === undefined
             ? catalog.isError
-              ? "Контракт V2 · Ethereum Sepolia"
+              ? process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Контракт V2 · локальная демосеть" : "Контракт V2 · Ethereum Sepolia"
               : "Загружаем кампании…"
             : fromBackend && filtersActive
               ? `Найдено: ${total} ${pluralize(total, ["сбор", "сбора", "сборов"])}`
-              : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · Ethereum Sepolia`}
+              : `${total} ${pluralize(total, ["сбор", "сбора", "сборов"])} в контракте V2 · ${process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "локальная демосеть" : "Ethereum Sepolia"}`}
         </p>
         {/* Каталог backend отстаёт до finalized-блока: говорим об этом, а суммы на странице кампании — из контракта. */}
         {fromBackend && catalog.finalizedBlock !== null ? (

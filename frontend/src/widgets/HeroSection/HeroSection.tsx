@@ -33,7 +33,7 @@ export function HeroSection() {
             <ButtonLink href="/campaigns" size="large">
               Смотреть кампании
             </ButtonLink>
-            <ButtonLink
+            {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <ButtonLink
               aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"
               href={contractExplorerUrl}
               rel="noreferrer"
@@ -42,7 +42,7 @@ export function HeroSection() {
               variant="secondary"
             >
               Проверить контракт <span aria-hidden="true">↗</span>
-            </ButtonLink>
+            </ButtonLink>}
           </div>
 
           <ul className={styles.proof}>
