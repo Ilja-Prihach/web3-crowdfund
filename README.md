@@ -13,6 +13,7 @@ Decentralized crowdfunding platform where campaign creators can raise ETH transp
 
 ## Documentation
 
+- [Run the full stack locally with Docker Compose](docs/docker.md)
 - [Documentation index](docs/README.md)
 - [Current project status](docs/project-status.md)
 - [Product vision](docs/product-vision.md)
