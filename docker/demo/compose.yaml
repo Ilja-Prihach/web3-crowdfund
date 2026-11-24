@@ -26,7 +26,9 @@ services:
       anvil:
         condition: service_healthy
 
-  backend:
+  seed-covers:
+    build: ./backend
+    command: ["node", "/app/seed-covers.mjs"]
     environment: &demo-env
       DATABASE_URL: postgres://openfund:openfund@postgres:5432/openfund
       SEPOLIA_RPC_URL: http://anvil:8545
@@ -35,8 +37,22 @@ services:
       HOST: 0.0.0.0
       MEDIA_DIR: /app/storage/media
       INDEXER_POLL_INTERVAL_MS: "1000"
+    volumes:
+      - media-data:/app/storage/media
+      - ./docker/demo/seed-covers.mjs:/app/seed-covers.mjs:ro
+      - ./docker/demo/covers:/demo-covers:ro
     depends_on:
       seed:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+
+  backend:
+    environment: *demo-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      seed-covers:
         condition: service_completed_successfully
 
   indexer:
