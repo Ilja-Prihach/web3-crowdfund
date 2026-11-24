@@ -71,11 +71,11 @@ Roadmap задаёт порядок, а не обещание параллель
 
 Критерий выполнен: создание, вклад, возврат, отмена, смена срока и вывод средств выполнены через интерфейс настоящими транзакциями в Sepolia, см. [`deployments.md`](deployments.md#демо-кампании-каталога).
 
-## Этап 4. Локальный demo-режим — отложен
+## Этап 4. Локальный demo-режим
 
-Решением 3 ноября 2026 года этап отложен: backend от него не зависит, а части, которые backend нужны, перенесены в этап 5, см. [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred). Вернуться к нему естественно на этапе 6, где Docker и так поднимает локальный Anvil.
+Режим вернулся после завершения локального Docker-стека (#48). Запуск описан в [`docker.md`](docker.md). История решения — [`DECISIONS.md#demo-mode-is-deferred`](DECISIONS.md#demo-mode-is-deferred).
 
-Что остаётся в отложенном этапе:
+Состав режима:
 
 - роли `Demo Creator` и `Demo Backer` на разблокированных аккаунтах Anvil: узел подписывает транзакции сам, поэтому приватный ключ не попадает во frontend;
 - выбор роли вместо подключения кошелька и полоса demo-режима;
@@ -107,7 +107,7 @@ Backend пишется на Node.js, TypeScript и Fastify, данные хра�
 
 ## Этап 6. Docker
 
-Локальный стек Sepolia (#46) описан в [инструкции Docker Compose](docker.md). Профиль с локальным Anvil — задача #48.
+Локальный стек Sepolia (#46) и демо с Anvil (#48) описаны в [инструкции Docker Compose](docker.md).
 
 - контейнеры frontend, backend и indexer;
 - PostgreSQL с volume и migrations;

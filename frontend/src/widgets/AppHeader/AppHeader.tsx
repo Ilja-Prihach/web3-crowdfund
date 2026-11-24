@@ -34,7 +34,7 @@ export function AppHeader() {
           <div className={styles.network}>
             <NetworkBadge />
           </div>
-          <ButtonLink
+          {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <ButtonLink
             aria-label="Контракт V2 в Sepolia — откроется в новой вкладке"
             className={styles.contractLink}
             href={contractExplorerUrl}
@@ -44,7 +44,7 @@ export function AppHeader() {
             variant="secondary"
           >
             Контракт <span aria-hidden="true">↗</span>
-          </ButtonLink>
+          </ButtonLink>}
           <div className={styles.theme}>
             <ThemeToggle />
           </div>

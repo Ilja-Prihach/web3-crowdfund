@@ -11,6 +11,7 @@ import { AppFooter } from "@/widgets/AppFooter/AppFooter";
 import { AppHeader } from "@/widgets/AppHeader/AppHeader";
 
 import "./globals.scss";
+import styles from "./demo.module.scss";
 import { Providers } from "./providers";
 
 const interfaceFont = Manrope({
@@ -57,6 +58,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         </a>
         <Providers initialState={initialState}>
           <AppHeader />
+          {process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" && (
+            <p className={styles.notice}>Деморежим · локальная сеть и тестовые средства</p>
+          )}
           <WrongNetworkBanner />
           {children}
           <AppFooter />

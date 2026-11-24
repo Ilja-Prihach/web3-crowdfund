@@ -131,17 +131,17 @@ export function TrustSection() {
             <p className={styles.vaultTag}>◆ Смарт-контракт V2</p>
             <div className={styles.vaultFoot}>
               <p>
-                <strong>Верифицирован в Sepolia</strong>
-                <span>0x6890…077A</span>
+                <strong>{process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "Локальный контракт" : "Верифицирован в Sepolia"}</strong>
+                <span>{process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? "0x5FbD…0aa3" : "0x6890…077A"}</span>
               </p>
-              <a
+              {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <a
                 aria-label="Проверить контракт V2 в Etherscan — откроется в новой вкладке"
                 href={contractExplorerUrl}
                 rel="noreferrer"
                 target="_blank"
               >
                 Etherscan <span aria-hidden="true">↗</span>
-              </a>
+              </a>}
             </div>
           </div>
 

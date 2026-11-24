@@ -60,7 +60,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 
   const sepoliaRpcUrl = source.SEPOLIA_RPC_URL;
   // URL может содержать ключ провайдера, поэтому значение в ошибку тоже не попадает.
-  if (!sepoliaRpcUrl || !parseSecureUrl(sepoliaRpcUrl)) {
+  const demoRpc = source.OPENFUND_DEMO === "1" && sepoliaRpcUrl === "http://anvil:8545";
+  if (!sepoliaRpcUrl || (!parseSecureUrl(sepoliaRpcUrl) && !demoRpc)) {
     throw new Error("SEPOLIA_RPC_URL must be an https URL (http only for localhost), see backend/.env.example");
   }
 

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const standalone = process.env.OPENFUND_STANDALONE === "1";
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_OPENFUND_DEMO: process.env.NEXT_PUBLIC_OPENFUND_DEMO ?? "0" },
   agentRules: false,
   experimental: { agentUpgrade: "security" },
   reactStrictMode: true,

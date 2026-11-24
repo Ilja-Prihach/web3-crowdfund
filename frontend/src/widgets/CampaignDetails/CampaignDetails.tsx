@@ -230,9 +230,9 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               <span className={styles.onchainBadge}>On-chain</span>
               <span>
                 Название и описание записаны при создании и не меняются. {" "}
-                <a href={contractExplorerUrl} rel="noreferrer" target="_blank">
+                {process.env.NEXT_PUBLIC_OPENFUND_DEMO === "1" ? `Кампания №${campaign.id.toString()} в V2` : <a href={contractExplorerUrl} rel="noreferrer" target="_blank">
                   Кампания №{campaign.id.toString()} в V2 <span aria-hidden="true">↗</span>
-                </a>
+                </a>}
               </span>
             </p>
           </section>

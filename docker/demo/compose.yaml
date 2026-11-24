@@ -1,0 +1,85 @@
+services:
+  anvil:
+    image: openfund-demo-foundry
+    build:
+      context: .
+      dockerfile: docker/demo/Dockerfile
+    user: root
+    entrypoint: ["sh", "-c"]
+    command:
+      - 'exec anvil --host 0.0.0.0 --chain-id 31337 --block-time 1 --state /data/state.json --state-interval 1 --timestamp "$$(($$(date +%s) - 172800))"'
+    volumes:
+      - chain-data:/data
+    healthcheck:
+      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://127.0.0.1:8545"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  seed:
+    image: openfund-demo-foundry
+    build:
+      context: .
+      dockerfile: docker/demo/Dockerfile
+    entrypoint: ["bash", "/seed.sh"]
+    depends_on:
+      anvil:
+        condition: service_healthy
+
+  seed-covers:
+    build: ./backend
+    command: ["node", "/app/seed-covers.mjs"]
+    environment: &demo-env
+      DATABASE_URL: postgres://openfund:openfund@postgres:5432/openfund
+      SEPOLIA_RPC_URL: http://anvil:8545
+      OPENFUND_DEMO: "1"
+      APP_ORIGIN: http://localhost:${OPENFUND_HTTP_PORT:-3000}
+      HOST: 0.0.0.0
+      MEDIA_DIR: /app/storage/media
+      INDEXER_POLL_INTERVAL_MS: "1000"
+    volumes:
+      - media-data:/app/storage/media
+      - ./docker/demo/seed-covers.mjs:/app/seed-covers.mjs:ro
+      - ./docker/demo/covers:/demo-covers:ro
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+
+  backend:
+    environment: *demo-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      seed-covers:
+        condition: service_completed_successfully
+
+  indexer:
+    environment: *demo-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "const {Client}=require('pg');const c=new Client(process.env.DATABASE_URL);c.connect().then(()=>c.query(\"select count(*)::int as count from campaigns where chain_id = 31337 and contract_address = '0x5fbdb2315678afecb367f032d93f642f64180aa3'\")).then(r=>process.exit(r.rows[0].count >= 5 ? 0 : 1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_OPENFUND_DEMO: "1"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  gateway:
+    depends_on:
+      indexer:
+        condition: service_healthy
+    volumes:
+      - ./docker/demo/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  chain-data:

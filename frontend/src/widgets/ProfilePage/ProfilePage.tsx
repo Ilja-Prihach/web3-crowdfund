@@ -62,7 +62,7 @@ function ProfileView({ address }: { address: Address }) {
         </div>
         <div className={styles.actions}>
           <Button onClick={copy} size="compact" variant="secondary">{copyState}</Button>
-          <ButtonLink href={`${supportedChain.blockExplorers.default.url}/address/${address}`} rel="noreferrer" size="compact" target="_blank" variant="secondary">Etherscan ↗</ButtonLink>
+          {process.env.NEXT_PUBLIC_OPENFUND_DEMO !== "1" && <ButtonLink href={`${supportedChain.blockExplorers.default.url}/address/${address}`} rel="noreferrer" size="compact" target="_blank" variant="secondary">Etherscan ↗</ButtonLink>}
         </div>
       </header>
 
