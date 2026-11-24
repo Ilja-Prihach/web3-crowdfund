@@ -10,6 +10,13 @@ const appOrigin = "http://localhost:3000";
 const required = { DATABASE_URL: databaseUrl, SEPOLIA_RPC_URL: sepoliaRpcUrl, APP_ORIGIN: appOrigin };
 
 describe("loadEnv", () => {
+  it("разрешает внутренний RPC Anvil только для деморежима", () => {
+    const localRpc = "http://anvil:8545";
+    assert.equal(loadEnv({ ...required, OPENFUND_DEMO: "1", SEPOLIA_RPC_URL: localRpc }).sepoliaRpcUrl, localRpc);
+    assert.throws(() => loadEnv({ ...required, SEPOLIA_RPC_URL: localRpc }), /SEPOLIA_RPC_URL/);
+    assert.throws(() => loadEnv({ ...required, OPENFUND_DEMO: "1", SEPOLIA_RPC_URL: "http://example.com:8545" }), /SEPOLIA_RPC_URL/);
+  });
+
   it("подставляет значения по умолчанию", () => {
     assert.deepEqual(loadEnv(required), {
       port: 4000,
