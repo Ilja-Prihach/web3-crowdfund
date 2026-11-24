@@ -1,0 +1,8 @@
+**
+!contracts/
+!contracts/src/
+!contracts/src/**
+!docker/
+!docker/demo/
+!docker/demo/seed.sh
+!docker/demo/compile.cjs
