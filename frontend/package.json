@@ -26,6 +26,11 @@
     "viem": "2.57.13",
     "wagmi": "3.7.9"
   },
+  "overrides": {
+    "@storybook/react-vite": {
+      "@joshwooding/vite-plugin-react-docgen-typescript": "0.9.1"
+    }
+  },
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.9",
     "@storybook/addon-docs": "10.6.9",

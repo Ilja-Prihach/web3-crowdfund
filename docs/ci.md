@@ -25,6 +25,8 @@ Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lin
 7. Устанавливает Chromium через Playwright, выполняет `npm run storybook:test` и `npm run storybook:build`.
 8. `npm run build` — собирает production-версию Next.js.
 
+Для устранения dev-находок npm audit точечные `overrides` закрепляют исправленный плагин Storybook, `minimatch` для `typescript-estree` и `esbuild` для `@esbuild-kit/core-utils`. Эти версии выходят за диапазоны, указанные вышестоящими пакетами. При их обновлении нужно проверять lint, Storybook, генерацию и применение миграций, а после выхода совместимых исправлений — убрать соответствующий override.
+
 `Lint, typecheck, test` работает в каталоге `backend/` и поднимает сервис PostgreSQL 18.4 с БД `openfund_test` на порту `5433`, как локальный `compose.yaml`; тесты получают его адрес через `TEST_DATABASE_URL`:
 
 1. Загружает репозиторий вместе с подмодулями `contracts/lib`.
