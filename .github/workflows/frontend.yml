@@ -41,5 +41,14 @@ jobs:
       - name: Test frontend
         run: npm test
 
+      - name: Install Chromium for Storybook
+        run: npx playwright install --with-deps --no-shell chromium
+
+      - name: Test Storybook
+        run: npm run storybook:test
+
+      - name: Build Storybook
+        run: npm run storybook:build
+
       - name: Build frontend
         run: npm run build
