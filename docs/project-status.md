@@ -10,6 +10,8 @@ Frontend MVP на Next.js, React и TypeScript завершён десятью P
 
 Полный локальный стек запускается через Docker Compose (#46). Локальный деморежим с Anvil и двумя ролями доступен через отдельный Compose-проект (#48). Порядок запуска, настройки и восстановление базы и обложек описаны в [`docker.md`](docker.md).
 
+Каталог UI-компонентов и их состояний доступен в локальном Storybook с переключением темы, размерами экранов и MCP (#97). Команды описаны в [`frontend/README.md`](../frontend/README.md#storybook).
+
 Продуктовая концепция описана в [`product-vision.md`](product-vision.md), порядок этапов — в [`roadmap.md`](roadmap.md).
 
 ## Что работает в V2
@@ -82,7 +84,7 @@ Backend профилей (#51) реализован: публичное чтен
 - абсолютную атомарность правила «до первого пожертвования» V2 дать не может: после полного возврата ещё не финализированного доната и до обработки события indexer остаётся узкое окно; текущий `totalRaised` и постоянный журнал закрывают обычные сценарии, см. [`DECISIONS.md#campaign-details-freeze-after-first-donation`](DECISIONS.md#campaign-details-freeze-after-first-donation);
 - если backend недоступен, каталог откатывается на чтение контракта, и тогда фильтры действуют только на загруженную страницу, а поиск, категории и сортировка по сумме отключены, вместо обложек — узоры;
 - в MetaMask со скрытыми тестовыми сетями программное переключение на Sepolia завершалось внутренней ошибкой окна расширения (`Cannot read properties of undefined (reading 'origin')`); причина не подтверждена, обход — включить тестовые сети и выбрать Sepolia вручную, о чём подсказывает полоса неверной сети;
-- `npm audit` frontend чистый после обновления Next.js и транзитивного `typescript-eslint`. В backend остаются dev-only moderate-находки, не затрагивающие production: minimatch (GHSA-g3hv-75wg-m249) внутри `typescript-eslint` и esbuild 0.18 (GHSA-67mh-4wv8-2f99) внутри `drizzle-kit`; шаблоны minimatch берутся только из нашего конфига ESLint, а dev-сервер esbuild не запускается. `npm audit --omit=dev` чистый в обоих приложениях; install-скрипты esbuild в backend запрещены через `allowScripts`;
+- В frontend `npm audit` сообщает о пяти moderate-записях в dev-цепочке Storybook: `glob` и вложенный `minimatch`, исправления в совместимом диапазоне пока нет. В backend остаются dev-only moderate-находки: minimatch (GHSA-g3hv-75wg-m249) внутри `typescript-eslint` и esbuild 0.18 (GHSA-67mh-4wv8-2f99) внутри `drizzle-kit`; шаблоны minimatch берутся только из нашего конфига ESLint, а dev-сервер esbuild не запускается. `npm audit --omit=dev` чистый в обоих приложениях; install-скрипты esbuild в backend запрещены через `allowScripts`;
 - контракт развёрнут только в тестовой сети, Mainnet deployment не планируется на текущем этапе;
 - исходники подтверждены Sourcify, но отдельно через Etherscan API не верифицировались;
 - актуальная Sepolia оценивает deployment gas значительно выше локальной Cancun-симуляции; перед любым следующим deployment требуется новый RPC estimate, см. [`gotchas.md`](gotchas.md#sepolia-deployment-gas-differs-from-local-simulation).

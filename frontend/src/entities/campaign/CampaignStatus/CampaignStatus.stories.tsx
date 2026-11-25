@@ -1,0 +1,10 @@
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { CampaignStatus } from "./CampaignStatus";
+const meta = { title: "Campaign/CampaignStatus", component: CampaignStatus, args: { status: "active" }, tags: ["autodocs"] } satisfies Meta<typeof CampaignStatus>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Active: Story = {};
+export const Successful: Story = { args: { status: "successful" } };
+export const Failed: Story = { args: { status: "failed" } };
+export const Withdrawn: Story = { args: { status: "withdrawn" } };
+export const Cancelled: Story = { args: { status: "cancelled" } };

@@ -14,7 +14,7 @@ Workflow `PR metadata` запускается при открытии, повт�
 
 Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lint, typecheck, test` выполняются независимо на `ubuntu-latest`.
 
-`Lint, typecheck, build` работает в каталоге `frontend/`:
+`Lint, typecheck, build` работает в каталоге `frontend/`. В этот же job входят статическая сборка Storybook и компонентные проверки в Chromium с accessibility addon:
 
 1. Загружает репозиторий.
 2. Устанавливает версию Node.js из `frontend/.nvmrc` и включает npm cache по lock-файлу.
@@ -22,7 +22,8 @@ Jobs `Format, build, test`, `Slither analysis`, `Lint, typecheck, build` и `Lin
 4. `npm run lint` — проверяет исходники ESLint без допустимых предупреждений.
 5. `npm run typecheck` — проверяет TypeScript без генерации файлов.
 6. `npm test` — запускает unit-тесты чистых функций встроенным `node:test`.
-7. `npm run build` — собирает production-версию Next.js.
+7. Устанавливает Chromium через Playwright, выполняет `npm run storybook:test` и `npm run storybook:build`.
+8. `npm run build` — собирает production-версию Next.js.
 
 `Lint, typecheck, test` работает в каталоге `backend/` и поднимает сервис PostgreSQL 18.4 с БД `openfund_test` на порту `5433`, как локальный `compose.yaml`; тесты получают его адрес через `TEST_DATABASE_URL`:
 

@@ -18,6 +18,7 @@ coverage/
 
 # Frontend build output
 .next/
+storybook-static/
 dist/
 *.tsbuildinfo
 
