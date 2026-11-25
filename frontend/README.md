@@ -56,6 +56,21 @@ npm run build
 
 `npm test` запускает unit-тесты `src/**/*.test.ts` встроенным `node:test`; Node.js 24 выполняет TypeScript без сборки. Те же команды после чистого `npm ci` выполняет workflow `Frontend CI`. Предупреждения ESLint считаются ошибками.
 
+## Storybook
+
+Из каталога `frontend/`:
+
+```sh
+npm run storybook
+npm run storybook:build
+npx playwright install --no-shell chromium
+npm run storybook:test
+```
+
+Локальный каталог доступен на `http://127.0.0.1:6006`. В панели можно выбрать светлую или тёмную тему и размеры 390 или 1440 px. Stories используют локальные данные и не обращаются к кошельку, backend или RPC. Для истории карточки с обложкой используется локальная иллюстрация из `docker/demo/covers/`.
+
+При запущенном Storybook MCP доступен по `http://127.0.0.1:6006/mcp`, а манифест компонентов — по `/manifests/components.json`. Перед работой с UI агент может использовать MCP, чтобы посмотреть доступные компоненты и их состояния. При изменении компонента обновляйте соответствующие stories и проверки взаимодействий.
+
 ## Архитектурные правила
 
 - `app` собирает маршруты и providers;
