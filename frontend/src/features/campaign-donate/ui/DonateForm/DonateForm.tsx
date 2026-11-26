@@ -16,11 +16,12 @@ const quickAmounts = ["0,001", "0,005", "0,01"];
 
 type DonateFormProps = {
   campaignId: bigint;
+  available: boolean;
   // Сколько осталось до цели: подсказка, а не ограничение — контракт принимает и больший вклад.
   remaining: bigint;
 };
 
-export function DonateForm({ campaignId, remaining }: DonateFormProps) {
+export function DonateForm({ campaignId, available, remaining }: DonateFormProps) {
   const fieldId = useId();
   const [input, setInput] = useState("");
   const [isSubmitAttempted, setIsSubmitAttempted] = useState(false);
@@ -66,6 +67,8 @@ export function DonateForm({ campaignId, remaining }: DonateFormProps) {
       />
     );
   }
+
+  if (!available) return null;
 
   const blockReason = !isConnected
     ? "Подключите кошелёк в шапке сайта, чтобы поддержать кампанию."

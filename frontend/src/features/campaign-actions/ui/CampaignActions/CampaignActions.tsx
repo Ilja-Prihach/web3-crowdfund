@@ -103,7 +103,7 @@ export function CampaignActions({ actions, campaign, contribution }: CampaignAct
     );
   }
 
-  if (selected === "cancel") {
+  if (selected === "cancel" && actions.includes("cancel")) {
     return (
       <section aria-labelledby={`${fieldId}-cancel`} className={styles.confirm}>
         <h3 id={`${fieldId}-cancel`}>Отменить сбор?</h3>
@@ -123,7 +123,7 @@ export function CampaignActions({ actions, campaign, contribution }: CampaignAct
     );
   }
 
-  if (selected === "updateDeadline") {
+  if (selected === "updateDeadline" && actions.includes("updateDeadline")) {
     const submit = (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setIsSubmitAttempted(true);
@@ -176,6 +176,8 @@ export function CampaignActions({ actions, campaign, contribution }: CampaignAct
   };
 
   const ordered = (Object.keys(actionLabels) as ManagedAction[]).filter((action) => actions.includes(action));
+
+  if (ordered.length === 0) return null;
 
   return (
     <div className={styles.actions}>
