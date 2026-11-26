@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 
+import type { LightMyRequestResponse } from "fastify";
 import sharp from "sharp";
 import type { Address } from "viem";
 
@@ -262,6 +263,22 @@ describe("PUT /v1/campaigns/:id/details", () => {
 });
 
 describe("обложка кампании", () => {
+  it("отдаёт ограниченные адаптивные размеры существующей обложки", async () => {
+    const { app, media, cookies, headers } = await signedInApp();
+    const upload = await app.inject({ method: "PUT", url: "/v1/campaigns/0/cover", cookies, headers, payload: coverForm(await png()) });
+    const { coverUrl } = upload.json<DetailsJson>();
+    assert.ok(coverUrl);
+
+    for (const width of [400, 800]) {
+      const response: LightMyRequestResponse = await app.inject({ method: "GET", url: `${coverUrl}?w=${width}` });
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.headers["cache-control"], "public, max-age=86400");
+      assert.deepEqual(await sharp(response.rawPayload).metadata().then(({ width: w, height }) => [w, height]), [width, width * 9 / 16]);
+    }
+    assert.equal((await app.inject({ method: "GET", url: `${coverUrl}?w=401` })).statusCode, 400);
+    assert.equal(media.files.size, 1, "варианты не создают новые файлы");
+  });
+
   it("пережимает загрузку, отдаёт её с вечным кэшем и удаляет прежний файл при замене", async () => {
     const { app, media, cookies, headers } = await signedInApp();
     const upload = async (image: Buffer) =>
@@ -281,6 +298,7 @@ describe("обложка кампании", () => {
     const second = await upload(await png({ r: 200, g: 60, b: 40 }));
     assert.notEqual(second.json<DetailsJson>().coverUrl, coverUrl);
     assert.equal(media.files.size, 1, "прежний файл удалён");
+    assert.equal((await app.inject({ method: "GET", url: `${coverUrl}?w=400` })).statusCode, 404);
   });
 
   it("не удаляет файл, если та же картинка стоит у другой кампании", async () => {
