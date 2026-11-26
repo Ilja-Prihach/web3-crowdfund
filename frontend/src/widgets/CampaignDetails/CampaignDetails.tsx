@@ -199,13 +199,9 @@ function CampaignView({ account, campaign, contribution }: CampaignViewProps) {
               <p className={styles.hint}>Подключите кошелёк, чтобы увидеть свой вклад и доступные действия.</p>
             ) : null}
 
-            {actions.includes("donate") ? (
-              <DonateForm campaignId={campaign.id} remaining={campaign.goal - campaign.totalRaised} />
-            ) : null}
-
-            {managedActions.length > 0 ? (
-              <CampaignActions actions={managedActions} campaign={campaign} contribution={contribution ?? 0n} />
-            ) : null}
+            {/* Компоненты остаются смонтированными: результат транзакции нужен и после смены доступных действий. */}
+            <DonateForm available={actions.includes("donate")} campaignId={campaign.id} remaining={campaign.goal - campaign.totalRaised} />
+            <CampaignActions actions={managedActions} campaign={campaign} contribution={contribution ?? 0n} />
 
             {actions.length === 0 ? <p className={styles.closed}>{closedReasons[campaign.status]}</p> : null}
           </section>
