@@ -1,0 +1,19 @@
+@startuml
+' C4: контекст системы. Диаграмма работает без внешних библиотек.
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Посетитель / создатель / участник" as User
+rectangle "Кошелёк пользователя" as Wallet <<external>>
+rectangle "OpenFund\nWeb3-приложение" as System <<system>>
+rectangle "Ethereum Sepolia\nконтракт Crowdfunding V2" as Chain <<external>>
+User --> System : открывает сайт и управляет сбором
+User --> Wallet : подтверждает подписи и транзакции
+System --> Wallet : запрашивает подпись
+System --> Chain : читает состояние и события через RPC
+Wallet --> Chain : отправляет транзакции через свой RPC
+note bottom of System
+В локальном демо вместо Sepolia используется Anvil
+и тестовые роли; настоящие средства не используются.
+end note
+@enduml

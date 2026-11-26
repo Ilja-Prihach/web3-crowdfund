@@ -1,0 +1,35 @@
+@startuml
+' C4: контейнеры локального Compose, без внешних include.
+top to bottom direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Пользователь" as User
+rectangle "Кошелёк" as Wallet <<external>>
+rectangle "RPC сети" as RPC <<external>>
+rectangle "Контракт V2\nSepolia или Anvil" as Contract <<external>>
+package "OpenFund — локальный Compose" {
+  rectangle "Nginx" as Gateway <<container>>
+  rectangle "Frontend\nNext.js + браузер" as Web <<container>>
+  rectangle "Backend API\nFastify" as API <<container>>
+  rectangle "Indexer\nNode.js" as Indexer <<container>>
+  database "PostgreSQL" as DB <<storage>>
+  folder "Файлы обложек" as Media <<storage>>
+}
+User --> Gateway : HTTP
+Gateway --> Web : страницы
+Gateway --> API : /api/*
+Web --> API : запросы через Nginx
+Web --> Wallet : подпись
+Wallet --> RPC : транзакции
+Web --> RPC : чтение и симуляция
+API --> DB : данные и сессии
+API --> Media : обложки
+API --> RPC : проверки
+Indexer --> RPC : финализированные логи
+Indexer --> DB : события, проекции, checkpoint
+RPC --> Contract
+note bottom of DB
+Контракт определяет финансовое состояние.
+Профили, описания и обложки хранятся отдельно.
+end note
+@enduml
