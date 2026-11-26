@@ -9,6 +9,11 @@ export const maxCoverBytes = 5 * 1024 * 1024;
 // Маленький PNG может развернуться в гигабайты пикселей («декомпрессионная бомба»). 40 Мп хватает любой камере телефона.
 export const maxCoverPixels = 40_000_000;
 
+// Варианты формируются из готового WebP, поэтому подходят и для уже загруженных обложек.
+export function resizeCover(data: Buffer, width: 400 | 800): Promise<Buffer> {
+  return sharp(data).resize({ width }).webp({ quality: 80 }).toBuffer();
+}
+
 const acceptedFormats = new Set(["jpeg", "png", "webp"]);
 
 // Отказ с машинным кодом: маршрут переводит его в 4xx, а не в 500.

@@ -214,4 +214,5 @@ export const deleteCoverSchema = { params: campaignParams, response: { 200: Deta
 export const coverFilePattern = "^[0-9a-f]{64}\\.webp$";
 export const getCoverFileSchema = {
   params: Type.Object({ file: Type.String({ pattern: coverFilePattern }) }),
+  querystring: Type.Object({ w: Type.Optional(Type.Union([Type.Literal("400"), Type.Literal("800")])) }),
 };

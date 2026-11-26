@@ -86,7 +86,7 @@ export function CampaignCoverEditor({ campaign, details }: CampaignCoverEditorPr
 
       <div className={styles.layout}>
         <div className={styles.preview}>
-          <CampaignArtwork coverUrl={previewUrl ?? details.coverUrl} fundingMode={campaign.fundingMode} id={campaign.id} />
+          <CampaignArtwork coverUrl={previewUrl ?? details.coverUrl} fundingMode={campaign.fundingMode} id={campaign.id} sizes="(max-width: 959px) 100vw, 480px" />
         </div>
 
         <div className={styles.controls}>
