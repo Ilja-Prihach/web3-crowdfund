@@ -1,0 +1,33 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Пользователь" as User
+participant "Frontend" as Web
+participant "Кошелёк" as Wallet
+participant "Backend API" as API
+database "PostgreSQL" as DB
+participant "RPC сети" as RPC
+User -> Web : нажимает «Войти подписью»
+Web -> API : POST /api/v1/auth/nonce
+API -> DB : сохраняет одноразовый nonce
+API --> Web : nonce
+Web -> Wallet : сообщение SIWE для подписи
+Wallet -> User : показывает сообщение
+User -> Wallet : подписывает сообщение
+Wallet --> Web : подпись
+Web -> API : POST /api/v1/auth/verify: сообщение и подпись
+API -> API : проверяет поля сообщения
+API -> DB : погашает действительный nonce
+API -> API : восстанавливает адрес из подписи
+opt Локально восстановить адрес не удалось
+  API -> RPC : проверка смарт-кошелька в пределах лимита
+  RPC --> API : результат проверки
+end
+API -> DB : создаёт сессию с хэшем идентификатора
+API --> Web : данные сессии и HttpOnly-cookie
+Web --> User : показывает вход на сайт
+note over Web, Wallet
+Подпись сообщения не отправляет транзакцию и не расходует газ.
+Ошибка проверки не создаёт сессию; nonce используется однократно.
+end note
+@enduml

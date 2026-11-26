@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+participant "Indexer" as Indexer
+participant "RPC сети" as RPC
+database "PostgreSQL" as DB
+participant "Backend API" as API
+participant "Frontend" as Web
+actor "Посетитель" as User
+Indexer -> RPC : запрашивает finalized-блок
+RPC --> Indexer : номер блока
+Indexer -> DB : читает checkpoint
+DB --> Indexer : последний обработанный блок
+Indexer -> RPC : читает логи и нужные метаданные пачки
+RPC --> Indexer : события и данные контракта
+Indexer -> DB : одна транзакция: события, проекции, checkpoint
+note over Indexer, DB : Повторная обработка не дублирует события
+User -> Web : открывает каталог
+Web -> API : GET /api/v1/campaigns с фильтрами и страницей
+API -> DB : читает проекции и checkpoint
+DB --> API : кампании и обработанный блок
+API --> Web : страница каталога
+Web --> User : показывает кампании и задержку данных
+note over Web, API
+При недоступности backend каталог может читать страницу
+из контракта с ограниченными фильтрами.
+end note
+@enduml

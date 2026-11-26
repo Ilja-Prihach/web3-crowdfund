@@ -1,0 +1,34 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Участник" as User
+participant "Frontend" as Web
+participant "RPC сети" as RPC
+participant "Кошелёк" as Wallet
+participant "Контракт V2" as Contract
+User -> Web : вводит сумму и нажимает «Поддержать»
+Web -> RPC : simulateContract donate (eth_call)
+RPC -> Contract : проверка без изменения состояния
+Contract --> RPC : результат симуляции
+RPC --> Web : успех или ошибка
+alt Симуляция прошла
+  Web -> Wallet : запрос на отправку транзакции
+  Wallet -> User : подтверждение транзакции
+  User -> Wallet : подписывает
+  Wallet -> RPC : отправляет подписанную транзакцию
+  RPC --> Wallet : hash транзакции
+  Wallet --> Web : hash транзакции
+  Web -> RPC : ожидает receipt
+  RPC -> Contract : включение donate и ETH в блок
+  Contract --> RPC : результат и событие DonationMade
+  RPC --> Web : receipt
+  Web -> RPC : перечитывает состояние и вклад
+  Web --> User : показывает результат
+else Симуляция не прошла
+  Web --> User : показывает ошибку без отправки
+end
+note over Web, Wallet
+Кошелёк может отклонить подпись, а транзакция —
+завершиться ошибкой уже после симуляции.
+end note
+@enduml
