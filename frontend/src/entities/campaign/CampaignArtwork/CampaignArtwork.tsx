@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { type ReactNode, useState } from "react";
 
 import type { FundingMode } from "../model/campaign";
@@ -95,14 +94,18 @@ type CampaignArtworkProps = {
   muted?: boolean;
   // Крупная обложка страницы грузится сразу, а не лениво.
   priority?: boolean;
+  sizes?: string;
   children?: ReactNode;
 };
 
-export function CampaignArtwork({ children, coverUrl, fundingMode, id, muted = false, priority = false }: CampaignArtworkProps) {
+export function CampaignArtwork({ children, coverUrl, fundingMode, id, muted = false, priority = false, sizes = "(max-width: 639px) 100vw, (max-width: 959px) 50vw, 33vw" }: CampaignArtworkProps) {
   const pattern = patterns[Number(id % BigInt(patterns.length))];
   // Адрес, который не загрузился: картинка прячется, и остаётся узор. Новый адрес пробует снова.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const cover = coverUrl && coverUrl !== failedUrl ? coverUrl : null;
+  // Только backend-обложки имеют варианты; blob-превью и локальные изображения остаются как есть.
+  const responsive = cover && /^\/api\/v1\/media\/covers\/[0-9a-f]{64}\.webp$/.test(cover);
+  const srcSet = responsive ? `${cover}?w=400 400w, ${cover}?w=800 800w, ${cover} 1200w` : undefined;
 
   return (
     <div className={styles.artwork}>
@@ -122,16 +125,17 @@ export function CampaignArtwork({ children, coverUrl, fundingMode, id, muted = f
           {pattern.art}
         </svg>
         {cover ? (
-          // unoptimized: backend уже отдаёт WebP 1200×675, второй раз пережимать в Next нечего.
-          // alt пустой: обложка — оформление, название кампании стоит рядом текстом.
-          <Image
+          // Размеры обрабатывает backend, поэтому используется стандартный srcSet браузера.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             alt=""
             className={styles.cover}
-            fill
+            fetchPriority={priority ? "high" : "auto"}
+            loading={priority ? "eager" : "lazy"}
             onError={() => setFailedUrl(cover)}
-            priority={priority}
+            sizes={srcSet ? sizes : undefined}
             src={cover}
-            unoptimized
+            srcSet={srcSet}
           />
         ) : null}
       </div>

@@ -6,7 +6,7 @@ import { isAddressEqual } from "viem";
 import type { CampaignEditState } from "../../chain/creator.ts";
 import type { Database } from "../../db/client.ts";
 import { sepoliaCrowdfunding } from "../../indexer/events.ts";
-import { CoverError, maxCoverBytes, processCover } from "../../media/cover.ts";
+import { CoverError, maxCoverBytes, processCover, resizeCover } from "../../media/cover.ts";
 import type { MediaStorage } from "../../media/storage.ts";
 import type { ApiError } from "../../shared/errors.ts";
 import { createFixedWindowLimiter } from "../../shared/fixed-window.ts";
@@ -188,10 +188,12 @@ export const mediaRoutes: FastifyPluginCallbackTypebox<Pick<DetailsRoutesDeps, "
   app.get("/covers/:file", { schema: getCoverFileSchema, config }, async (request, reply) => {
     const data = await deps.media.get(`covers/${request.params.file}`);
     if (!data) return sendError(reply, 404, "MEDIA_NOT_FOUND", "Cover not found");
+    const width = request.query.w === "400" ? 400 : request.query.w === "800" ? 800 : null;
+    const image = width === null ? data : await resizeCover(data, width);
     return reply
       .header("content-type", "image/webp")
-      .header("cache-control", "public, max-age=31536000, immutable")
-      .send(data);
+      .header("cache-control", width === null ? "public, max-age=31536000, immutable" : "public, max-age=86400")
+      .send(image);
   });
 
   done();
