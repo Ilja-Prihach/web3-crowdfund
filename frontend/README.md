@@ -56,6 +56,8 @@ npm run build
 
 `npm test` запускает unit-тесты `src/**/*.test.ts` встроенным `node:test`; Node.js 24 выполняет TypeScript без сборки. Те же команды после чистого `npm ci` выполняет workflow `Frontend CI`. Предупреждения ESLint считаются ошибками.
 
+Для сквозной проверки подтверждений транзакций на запущенном локальном демо выполните `node scripts/check-transaction-status.mjs`. Скрипт использует установленный для Playwright Chromium, создаёт две кампании и проводит операции с тестовым ETH. Для другого локального порта задайте `OPENFUND_DEMO_URL`. Данные демо сохраняются после проверки.
+
 ## Storybook
 
 Из каталога `frontend/`:
