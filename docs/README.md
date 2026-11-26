@@ -21,6 +21,8 @@
 | Какой продукт строится? | [`product-vision.md`](product-vision.md) |
 | В каком порядке он развивается? | [`roadmap.md`](roadmap.md) |
 | Как устроен контракт? | [`architecture.md`](architecture.md) |
+| Как взаимодействуют части системы и основные сценарии? | [`diagrams.md`](diagrams.md) |
+| В каких файлах искать код и проверки? | [`code-map.md`](code-map.md) |
 | Почему выбрано это решение? | [`DECISIONS.md`](DECISIONS.md) |
 | Какие ловушки уже встречались? | [`gotchas.md`](gotchas.md) |
 | Какие угрозы и защиты учтены? | [`security.md`](security.md) |
